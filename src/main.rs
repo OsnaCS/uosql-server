@@ -10,21 +10,21 @@ mod logger;
 fn main() {
     // Configure and enable the logger. We may `unwrap` here, because a panic
     // would happen right after starting the program
-    logger::with_loglevel(log::LogLevelFilter::Debug)
+    logger::with_loglevel(log::LogLevelFilter::Trace)
         .with_logfile(std::path::Path::new("log.txt"))
         .enable().unwrap();
-    info!("Starting uoSQL server...");
+    // info!("Starting uoSQL server...");
 
     listen();
-    auth::find_user("name", "passwd");
-    println!("Hello, world!");
+    // auth::find_user("name", "passwd");
+    // println!("Hello, world!");
 }
 
 
 fn listen() {
-    trace!("trace");
-    debug!("debug");
-    info!("Hi");
-    warn!("warn");
-    error!("err");
+    trace!("trace trace trace trace trace");
+    debug!("debug debug debug debug debug");
+    info!("info info info info info");
+    warn!("warn warn warn warn warn");
+    error!("err err err err err");
 }

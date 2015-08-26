@@ -8,6 +8,7 @@ use log::*;
 use std::path::Path;
 use std::fs;
 use std::io;
+use term::{self, ToStyle};
 
 /// Returns a builder that can enable the logger globally.
 pub fn with_loglevel(lvl: LogLevelFilter) -> Builder<'static> {
@@ -101,12 +102,50 @@ impl Log for Logger {
             return;
         }
 
-        println!("[{level}][{thread}][{module} @ {file}:{line}] {msg}",
-            level = record.level(),
-            thread = "T?",
-            module = record.target(),
-            file = record.location().file(),
+        // Prepare module and file path (remove unnecessary parts)
+        let pos = record.target().find("::");
+        let mod_path = match pos {
+            None => "::",
+            Some(pos) => &record.target()[pos ..],
+        };
+
+        // Ignore the leading 'src/'
+        let file = &record.location().file()[4 ..];
+
+        let (lvl_col, msg_col) = get_colors(record.level());
+
+        println!("[{level: <5}][{module} @ {file}:{line}]{delim} {msg}",
+            level = lvl_col.paint(record.level()),
+            module = mod_path,
+            file = term::Color::Blue.paint(file),
             line = record.location().line(),
-            msg = record.args());
+            delim = term::Color::White.paint("$"),
+            msg = msg_col.paint(record.args()));
     }
+}
+
+fn get_colors(lvl: LogLevel) -> (term::Style, term::Style) {
+    use term::{Attr, ToStyle};
+    use term::Color::*;
+    use log::LogLevel::*;
+
+    // Style for the user's message
+    let msg_col = match lvl {
+        Error   => Attr::Bold   .fg(Red),
+        Warn    => Attr::Plain  .fg(Yellow),
+        Info    => Attr::Plain  .fg(White),
+        Debug   => Attr::Plain  .fg(NotSet),
+        Trace   => Attr::Dim    .fg(NotSet),
+    };
+
+    // Color for the first info field: The log level
+    let lvl_col = match lvl {
+        Error   => Attr::Bold   .fg(Red),
+        Warn    => Attr::Plain  .fg(Yellow),
+        Info    => Attr::Plain  .fg(White),
+        Debug   => Attr::Plain  .fg(NotSet),
+        Trace   => Attr::Dim    .fg(NotSet),
+    };
+
+    (lvl_col, msg_col)
 }
