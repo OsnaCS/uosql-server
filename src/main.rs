@@ -7,6 +7,7 @@ pub mod parse;
 pub mod storage;
 pub mod conn;
 pub mod logger;
+pub mod net;
 
 /// Entry point for server. Allow dead_code to supress warnings when
 /// compiled as a library.
