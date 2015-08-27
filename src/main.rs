@@ -6,8 +6,11 @@ pub mod auth;
 pub mod parse;
 pub mod storage;
 pub mod conn;
-mod logger;
+pub mod logger;
 
+/// Entry point for server. Allow dead_code to supress warnings when
+/// compiled as a library.
+#[allow(dead_code)]
 fn main() {
     // Configure and enable the logger. We may `unwrap` here, because a panic
     // would happen right after starting the program
@@ -16,8 +19,8 @@ fn main() {
         .enable().unwrap();
     info!("Starting uoSQL server...");
 
+    // Start listening for incoming Tcp connections
     listen();
-    // auth::find_user("wwacker", "123456");
 }
 
 fn listen() {
