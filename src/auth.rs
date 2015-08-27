@@ -28,7 +28,7 @@ pub enum AuthError {
 /// If the user was not found or the password does not match, an `Err` value
 /// is returned. See `AuthError` for more information.
 pub fn find_user(name: &str, passwd: &str) -> Result<User, AuthError> {
-    info!("buuu");
+    debug!("User '{}' was succesfully (pseudo-!) authenticated", name);
     Ok(User {
         name: name.into(),
     })
