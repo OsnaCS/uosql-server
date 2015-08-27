@@ -3,11 +3,12 @@ extern crate log;
 extern crate term_painter as term;
 
 pub mod auth;
-pub mod parse;
-pub mod storage;
 pub mod conn;
 pub mod logger;
 pub mod net;
+pub mod parse;
+pub mod query;
+pub mod storage;
 
 /// Entry point for server. Allow dead_code to supress warnings when
 /// compiled as a library.
