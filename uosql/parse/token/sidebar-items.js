@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Token","A token: Everything the lexer can produce"]],"struct":[["TokenSpan","A token with it's associated Span in the source code"]]});

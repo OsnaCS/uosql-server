@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Command","Sent by the client to the server."]],"struct":[["Greeting","This is the first packet being sent by the server after the TCP connection is established."],["Login","The client responds with this packet to a `Greeting` packet, finishing the authentication handshake."],["Response","Sent by the server to the client."]]});

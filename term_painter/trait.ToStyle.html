@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `ToStyle` trait in crate `term_painter`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, ToStyle">
+
+    <title>term_painter::ToStyle - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../main.css">
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <section class="sidebar">
+        
+        <p class='location'><a href='index.html'>term_painter</a></p><script>window.sidebarCurrent = {name: 'ToStyle', ty: 'trait', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </section>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press 'S' to search, '?' for more options..."
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content trait">
+<h1 class='fqn'><span class='in-band'>Trait <a href='index.html'>term_painter</a>::<wbr><a class='trait' href=''>ToStyle</a></span><span class='out-of-band'><span id='render-detail'>
+            <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                [<span class='inner'>&#x2212;</span>]
+            </a>
+        </span><a id='src-11' class='srclink' href='../src/term_painter/lib.rs.html#172-267' title='goto source code'>[src]</a></span></h1>
+<pre class='rust trait'>pub trait ToStyle: <a class='trait' href='http://doc.rust-lang.org/nightly/core/marker/trait.Sized.html' title='core::marker::Sized'>Sized</a> {
+    fn <a href='#tymethod.to_style' class='fnname'>to_style</a>(self) -&gt; <a class='struct' href='../term_painter/struct.Style.html' title='term_painter::Style'>Style</a>;
+
+    fn <a href='#method.fg' class='fnname'>fg</a>(self, c: <a class='enum' href='../term_painter/enum.Color.html' title='term_painter::Color'>Color</a>) -&gt; <a class='struct' href='../term_painter/struct.Style.html' title='term_painter::Style'>Style</a> { ... }
+    fn <a href='#method.bg' class='fnname'>bg</a>(self, c: <a class='enum' href='../term_painter/enum.Color.html' title='term_painter::Color'>Color</a>) -&gt; <a class='struct' href='../term_painter/struct.Style.html' title='term_painter::Style'>Style</a> { ... }
+    fn <a href='#method.bold' class='fnname'>bold</a>(self) -&gt; <a class='struct' href='../term_painter/struct.Style.html' title='term_painter::Style'>Style</a> { ... }
+    fn <a href='#method.dim' class='fnname'>dim</a>(self) -&gt; <a class='struct' href='../term_painter/struct.Style.html' title='term_painter::Style'>Style</a> { ... }
+    fn <a href='#method.underline' class='fnname'>underline</a>(self) -&gt; <a class='struct' href='../term_painter/struct.Style.html' title='term_painter::Style'>Style</a> { ... }
+    fn <a href='#method.not_underline' class='fnname'>not_underline</a>(self) -&gt; <a class='struct' href='../term_painter/struct.Style.html' title='term_painter::Style'>Style</a> { ... }
+    fn <a href='#method.blink' class='fnname'>blink</a>(self) -&gt; <a class='struct' href='../term_painter/struct.Style.html' title='term_painter::Style'>Style</a> { ... }
+    fn <a href='#method.reverse' class='fnname'>reverse</a>(self) -&gt; <a class='struct' href='../term_painter/struct.Style.html' title='term_painter::Style'>Style</a> { ... }
+    fn <a href='#method.secure' class='fnname'>secure</a>(self) -&gt; <a class='struct' href='../term_painter/struct.Style.html' title='term_painter::Style'>Style</a> { ... }
+    fn <a href='#method.paint' class='fnname'>paint</a>&lt;T&gt;(&amp;self, obj: T) -&gt; <a class='struct' href='../term_painter/struct.Painted.html' title='term_painter::Painted'>Painted</a>&lt;T&gt; <span class='where'>where Self: <a class='trait' href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a></span> { ... }
+    fn <a href='#method.with' class='fnname'>with</a>&lt;F, R&gt;(&amp;self, f: F) -&gt; R <span class='where'>where F: <a class='trait' href='http://doc.rust-lang.org/nightly/core/ops/trait.FnOnce.html' title='core::ops::FnOnce'>FnOnce</a>() -&gt; R, Self: <a class='trait' href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a></span> { ... }
+}</pre><div class='docblock'><p>Everything that can be seen as part of a style. This is the core of this
+crate. All functions (&quot;style modifier&quot;) consume self and return a modified
+version of the style.</p>
+</div>
+            <h2 id='required-methods'>Required Methods</h2>
+            <div class='methods'>
+        <h3 id='tymethod.to_style' class='method stab '><code>fn <a href='#tymethod.to_style' class='fnname'>to_style</a>(self) -&gt; <a class='struct' href='../term_painter/struct.Style.html' title='term_painter::Style'>Style</a></code></h3></div>
+            <h2 id='provided-methods'>Provided Methods</h2>
+            <div class='methods'>
+        <h3 id='method.fg' class='method stab '><code>fn <a href='#method.fg' class='fnname'>fg</a>(self, c: <a class='enum' href='../term_painter/enum.Color.html' title='term_painter::Color'>Color</a>) -&gt; <a class='struct' href='../term_painter/struct.Style.html' title='term_painter::Style'>Style</a></code></h3><div class='docblock'><p>Sets the foreground (text) color.</p>
+</div><h3 id='method.bg' class='method stab '><code>fn <a href='#method.bg' class='fnname'>bg</a>(self, c: <a class='enum' href='../term_painter/enum.Color.html' title='term_painter::Color'>Color</a>) -&gt; <a class='struct' href='../term_painter/struct.Style.html' title='term_painter::Style'>Style</a></code></h3><div class='docblock'><p>Sets the background color.</p>
+</div><h3 id='method.bold' class='method stab '><code>fn <a href='#method.bold' class='fnname'>bold</a>(self) -&gt; <a class='struct' href='../term_painter/struct.Style.html' title='term_painter::Style'>Style</a></code></h3><div class='docblock'><p>Makes the text bold.</p>
+</div><h3 id='method.dim' class='method stab '><code>fn <a href='#method.dim' class='fnname'>dim</a>(self) -&gt; <a class='struct' href='../term_painter/struct.Style.html' title='term_painter::Style'>Style</a></code></h3><div class='docblock'><p>Dim mode.</p>
+</div><h3 id='method.underline' class='method stab '><code>fn <a href='#method.underline' class='fnname'>underline</a>(self) -&gt; <a class='struct' href='../term_painter/struct.Style.html' title='term_painter::Style'>Style</a></code></h3><div class='docblock'><p>Underlines the text.</p>
+</div><h3 id='method.not_underline' class='method stab '><code>fn <a href='#method.not_underline' class='fnname'>not_underline</a>(self) -&gt; <a class='struct' href='../term_painter/struct.Style.html' title='term_painter::Style'>Style</a></code></h3><div class='docblock'><p>Removes underline-attribute.</p>
+</div><h3 id='method.blink' class='method stab '><code>fn <a href='#method.blink' class='fnname'>blink</a>(self) -&gt; <a class='struct' href='../term_painter/struct.Style.html' title='term_painter::Style'>Style</a></code></h3><div class='docblock'><p>Underlines the text.</p>
+</div><h3 id='method.reverse' class='method stab '><code>fn <a href='#method.reverse' class='fnname'>reverse</a>(self) -&gt; <a class='struct' href='../term_painter/struct.Style.html' title='term_painter::Style'>Style</a></code></h3><div class='docblock'><p>Underlines the text.</p>
+</div><h3 id='method.secure' class='method stab '><code>fn <a href='#method.secure' class='fnname'>secure</a>(self) -&gt; <a class='struct' href='../term_painter/struct.Style.html' title='term_painter::Style'>Style</a></code></h3><div class='docblock'><p>Secure mode.</p>
+</div><h3 id='method.paint' class='method stab '><code>fn <a href='#method.paint' class='fnname'>paint</a>&lt;T&gt;(&amp;self, obj: T) -&gt; <a class='struct' href='../term_painter/struct.Painted.html' title='term_painter::Painted'>Painted</a>&lt;T&gt; <span class='where'>where Self: <a class='trait' href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a></span></code></h3><div class='docblock'><p>Wraps the style specified in <code>self</code> and something of arbitrary type
+into a <code>Painted</code>. When <code>Painted</code> is printed it will print the arbitrary
+something with the given style.</p>
+</div><h3 id='method.with' class='method stab '><code>fn <a href='#method.with' class='fnname'>with</a>&lt;F, R&gt;(&amp;self, f: F) -&gt; R <span class='where'>where F: <a class='trait' href='http://doc.rust-lang.org/nightly/core/ops/trait.FnOnce.html' title='core::ops::FnOnce'>FnOnce</a>() -&gt; R, Self: <a class='trait' href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a></span></code></h3><div class='docblock'><p>Executes the given function, applying the style information before
+calling it and resetting after it finished.</p>
+</div></div>
+        <h2 id='implementors'>Implementors</h2>
+        <ul class='item-list' id='implementors-list'>
+    <li><code>impl <a class='trait' href='../term_painter/trait.ToStyle.html' title='term_painter::ToStyle'>ToStyle</a> for <a class='enum' href='../term_painter/enum.Color.html' title='term_painter::Color'>Color</a></code></li>
+<li><code>impl <a class='trait' href='../term_painter/trait.ToStyle.html' title='term_painter::ToStyle'>ToStyle</a> for <a class='enum' href='../term_painter/enum.Attr.html' title='term_painter::Attr'>Attr</a></code></li>
+<li><code>impl <a class='trait' href='../term_painter/trait.ToStyle.html' title='term_painter::ToStyle'>ToStyle</a> for <a class='struct' href='../term_painter/struct.Style.html' title='term_painter::Style'>Style</a></code></li>
+</ul><script type="text/javascript" async
+                              src="../implementors/term_painter/trait.ToStyle.js">
+                      </script></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <div id="help" class="hidden">
+        <div class="shortcuts">
+            <h1>Keyboard shortcuts</h1>
+            <dl>
+                <dt>?</dt>
+                <dd>Show this help dialog</dd>
+                <dt>S</dt>
+                <dd>Focus the search field</dd>
+                <dt>&larrb;</dt>
+                <dd>Move up in search results</dd>
+                <dt>&rarrb;</dt>
+                <dd>Move down in search results</dd>
+                <dt>&#9166;</dt>
+                <dd>Go to active search result</dd>
+            </dl>
+        </div>
+        <div class="infos">
+            <h1>Search tricks</h1>
+            <p>
+                Prefix searches with a type followed by a colon (e.g.
+                <code>fn:</code>) to restrict the search to a given type.
+            </p>
+            <p>
+                Accepted types are: <code>fn</code>, <code>mod</code>,
+                <code>struct</code>, <code>enum</code>,
+                <code>trait</code>, <code>typedef</code> (or
+                <code>tdef</code>).
+            </p>
+            <p>
+                Search functions by type signature (e.g.
+                <code>vec -> usize</code>)
+            </p>
+        </div>
+    </div>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "term_painter";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script async src="../search-index.js"></script>
+</body>
+</html>

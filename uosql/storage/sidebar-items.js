@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Column","A table column. Has a name, a type, ..."],["Table","A database table"]],"trait":[["Engine","Storage Engine Interface."]]});
