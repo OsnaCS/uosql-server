@@ -2,3 +2,13 @@
 name = "uosql-server"
 version = "0.1.0"
 authors = ["Lukas Kalbertodt <lukas.kalbertodt@gmail.com>"]
+
+# We can compile the server as library to be used by additional executables
+# located in the src/bin/ directory.
+[lib]
+name = "uosql"
+path = "src/main.rs"
+
+[dependencies]
+log = "*"
+term-painter = "*"
