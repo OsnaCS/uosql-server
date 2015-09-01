@@ -5,5 +5,8 @@ extern crate uosql;
 use uosql::parse;
 
 fn main() {
-    println!("{:?}", parse::parse("hi"));
+	let l = parse::lex::Lexer::from_query("hi, Lisa! Wie geht es dir?");
+	for i in l {
+		println!("{:?}", i.tok);
+	}
 }
