@@ -17,14 +17,51 @@
 
 // TODO: Remove this line as soon as this module is actually used
 #![allow(dead_code, unused_variables)]
+use std::net::TcpStream;
+use std::io::{Write};
+use byteorder::{BigEndian, WriteBytesExt}; // for write_u16()
+
+
+//constants for message status
+const GREETING : u8 = 0;
+const LOGIN : u8 = 1;
+/***********************************/
 
 const PROTOCOL_VERSION : u8 = 1;
 
+/// trait to pack the messages for sending
+pub trait ToNetwork{ // TODO: set trait private 
+	fn write<W:Write>(&self, w: &mut W);
+}
+
 /// This is the first packet being sent by the server after the TCP connection
 /// is established.
-pub struct Greeting {
-    protocol_version: u8,
+pub struct Greeting {// TODO set private 
+    pub protocol_version: u8,	// 1 byte
+    pub size_of_message: u16,	// 2 bytes
+    pub message: String,		// n bytes
+}
 
+impl Greeting{
+	pub fn make_greeting(version: u8, msg: String)-> Greeting{
+		Greeting{protocol_version: version, size_of_message: msg.len() as u16, message: msg}
+	}
+}
+
+/// implementation of the write method for the struct greeting 
+impl ToNetwork for Greeting{
+	fn write<W:Write>(&self, w: &mut W){
+		w.write(&[GREETING]); //kind of message
+		w.write(&[self.protocol_version]);
+		w.write_u16::<BigEndian>(self.size_of_message).unwrap();
+		w.write(self.message.as_bytes());
+	}
+}
+
+/// writes a welcome-message to the given server-client-stream
+pub fn do_handshake<W:Write>(stream: &mut W){
+	let greet = Greeting::make_greeting(PROTOCOL_VERSION, "Welcome".to_string());
+	greet.write(stream);
 }
 
 /// The client responds with this packet to a `Greeting` packet, finishing the
