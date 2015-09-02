@@ -8,6 +8,12 @@ use std::io::prelude::*;
 use std::fs::OpenOptions;
 use std::fs::File;
 use std::io;
+use bincode::rustc_serialize::{encode, decode,encode_into,decode_from};
+use bincode::SizeLimit;
+use std::io::{Error, ErrorKind};
+use std::path::Path;
+use std::fs::create_dir;
+
 
 /// Storage Engine Interface.
 ///
@@ -26,16 +32,43 @@ pub trait Engine {
 /// table (like column names, column types, storage engine, ...). It's `access`
 /// method locks the table globally and returns a storage engine to access
 /// the table data.
+
+/// A Enum for File Modes
+///
+/// Can be used to define the save and load configuration of open_file
 #[derive(Debug)]
 enum FileMode{LoadDefault, SaveDefault,}
 
-#[derive(Debug)]
+/// A Enum for Datatypes (will be removed later)
+#[repr(u8)]
+#[derive(Clone,Copy,Debug,RustcDecodable, RustcEncodable)]
+enum DataType{ Integer = 1, Float = 2,}
+impl DataType{
+    pub fn value(&self) -> u8{
+       *self as u8
+    }
+}
+
+pub struct Database {
+    name: String,
+}
+
+impl Database {
+    pub fn create_database(database: &str) -> Result<(),io::Error>{
+        println!("trying to create dir!");
+        try!(create_dir(database));
+        println!("created dir");
+        Ok(())
+    }
+}
+
+#[derive(Debug,RustcDecodable, RustcEncodable)]
 pub struct Table {
     engine_id: u8,
     version_nmbr: u8,
     magic_nmbr: u8,
     column_nmbr: u16,
-    //columns: Vec<Column>,
+    columns: Vec<Column>,
 
 }
 
@@ -43,33 +76,43 @@ impl Table {
     pub fn load(database: &str, table: &str) -> Result<(), io::Error> {
         // TODO: Read the .tbl file from disk and parse it
         let mut file = try!(Self::open_file(database,table,FileMode::LoadDefault));
-
+        let data: Table = decode_from(&mut file, SizeLimit::Infinite).unwrap();
+        println!("{:?}", data);
         Ok(())
     }
 
     pub fn create_new() -> Table {
-        Table { engine_id: 3 , version_nmbr:  1, magic_nmbr: 170, column_nmbr: 0}
+        let mut t: Vec<Column> = Vec::new();
+        t.push(Column::create_new());
+        Table { engine_id: 3 , version_nmbr:  1, magic_nmbr: 170, column_nmbr: 1, columns: t}
     }
 
     pub fn save(&self,database: &str, table: &str) -> Result<(), io::Error> {
+        //call for open file
         let mut file = try!(Self::open_file(database,table,FileMode::SaveDefault));
 
-        try!(file.write_u8(self.magic_nmbr));
-        try!(file.write_u8(self.version_nmbr));
-        try!(file.write_u8(self.engine_id));
-        try!(file.write_u16::<BigEndian>(self.column_nmbr));
+        let v = encode_into(&self,&mut file,SizeLimit::Infinite).unwrap();
 
+        //debug message all okay
         println!("I Wrote my File");
         Ok(())
     }
 
     fn open_file(database: &str, table: &str, mode: FileMode) -> Result<(File), io::Error> {
+        //create new file or open new one
+        let st = String::from(format!("{}/{}",database,table));
+        let path = Path::new(&st);
 
-        OpenOptions::new()
-            .read(true)
-            .write(true)
-            .create(true)
-            .open(table)
+
+        match mode {
+            FileMode::SaveDefault => OpenOptions::new()
+                .write(true)
+                .create(true)
+                .open(path),
+            FileMode::LoadDefault => OpenOptions::new()
+                .read(true)
+                .open(path),
+            }
     }
 
     pub fn columns(&self) -> &[Column] {
@@ -79,7 +122,27 @@ impl Table {
 }
 
 /// A table column. Has a name, a type, ...
-pub struct Column;
+#[derive(Debug,RustcDecodable, RustcEncodable)]
+pub struct Column{
+    name: String, //name of column
+    data_type: DataType, //name of the data type that is contained in this column
+}
+
+impl Column{
+    ///deprecated
+    pub fn save_to_file(&self, file: &mut File) -> Result<(), io::Error> {
+        //write column information down
+        try!(file.write_u8(self.data_type.value()));
+        try!(file.write_u8(self.name.len() as u8));
+        try!(file.write_all(self.name.as_bytes()));
+
+        Ok(())
+    }
+
+    pub fn create_new() -> Column{
+        Column{name: "duh".to_string(), data_type: DataType::Integer}
+    }
+}
 
 // # Some information for the `storage` working group:
 //
