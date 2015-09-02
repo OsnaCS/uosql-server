@@ -1,4 +1,4 @@
-use super::token::{Token, TokenSpan};
+use super::token::{Token, TokenSpan, Lit};
 use std::str::Chars;
 use super::Span;
 use std::iter::{Iterator};
@@ -111,6 +111,25 @@ impl<'a> Lexer<'a> {
         s
     }
 
+    fn scan_lit(&mut self) -> String {
+        //liter = everything until " | ' , bump over ' | "
+        let mut s = String::new();
+        self.bump(); //to first char of literal
+        loop {
+            match self.curr.unwrap_or(' ') {
+                c @ '\'' |
+                c @ '"' => {
+                    break
+                }
+                c @ _ => {
+                    s.push(c);
+                }
+            }
+            self.bump();
+        }
+        s
+    }
+
     ///skips all the whitespaces
     fn skip_whitespace(&mut self) {
         while is_whitespace(self.curr.unwrap()){
@@ -203,10 +222,11 @@ impl<'a> Iterator for Lexer<'a> {
                 Token::ParenCl
             },
 
-            //ADel
+            //Literals
             '\'' | '"' => {
+                let l = self.scan_lit();
                 self.bump();
-                Token::ADel
+                Token::Literal(Lit::Str(l))
             },
 
             //Equ
@@ -261,6 +281,12 @@ impl<'a> Iterator for Lexer<'a> {
             '/' => {
                 self.bump();
                 Token::Div
+            }
+
+            //Mod
+            '%' => {
+                self.bump();
+                Token::Mod
             }
 
             //Star
