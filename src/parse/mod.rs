@@ -19,5 +19,5 @@ pub struct Span {
 /// the parsed AST.
 pub fn parse(query: &str) -> ast::Query {
 
-    ast::Query::Select
+    ast::Query::ManipulationStmt
 }
