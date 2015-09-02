@@ -8,6 +8,8 @@ use std::io::prelude::*;
 use std::fs::OpenOptions;
 use std::fs::File;
 use std::io;
+use bincode::rustc_serialize::{encode, decode,encode_into,decode_from};
+use bincode::SizeLimit;
 
 /// Storage Engine Interface.
 ///
@@ -35,14 +37,14 @@ enum FileMode{LoadDefault, SaveDefault,}
 
 /// A Enum for Datatypes (will be removed later)
 #[repr(u8)]
-#[derive(Clone,Copy,Debug)]
+#[derive(Clone,Copy,Debug,RustcDecodable, RustcEncodable)]
 enum DataType{ Integer = 1, Float = 2,}
 impl DataType{
     pub fn value(&self) -> u8{
        *self as u8
     }
 }
-#[derive(Debug)]
+#[derive(Debug,RustcDecodable, RustcEncodable)]
 pub struct Table {
     engine_id: u8,
     version_nmbr: u8,
@@ -56,7 +58,8 @@ impl Table {
     pub fn load(database: &str, table: &str) -> Result<(), io::Error> {
         // TODO: Read the .tbl file from disk and parse it
         let mut file = try!(Self::open_file(database,table,FileMode::LoadDefault));
-
+        let data: Table = decode_from(&mut file, SizeLimit::Infinite).unwrap();
+        println!("{:?}", data);
         Ok(())
     }
 
@@ -70,17 +73,7 @@ impl Table {
         //call for open file
         let mut file = try!(Self::open_file(database,table,FileMode::SaveDefault));
 
-        //write information from table struct to file
-        try!(file.write_u8(self.magic_nmbr));
-        try!(file.write_u8(self.version_nmbr));
-        try!(file.write_u8(self.engine_id));
-        try!(file.write_u16::<BigEndian>(self.column_nmbr));
-
-        //tell columns to write itself in the file
-        let mf = &mut file;
-        for i in &self.columns{
-            i.save_to_file(mf);
-        }
+        let v = encode_into(&self,&mut file,SizeLimit::Infinite).unwrap();
 
         //debug message all okay
         println!("I Wrote my File");
@@ -107,15 +100,15 @@ impl Table {
 }
 
 /// A table column. Has a name, a type, ...
-#[derive(Debug)]
+#[derive(Debug,RustcDecodable, RustcEncodable)]
 pub struct Column{
     name: String, //name of column
     data_type: DataType, //name of the data type that is contained in this column
 }
 
 impl Column{
+    ///deprecated
     pub fn save_to_file(&self, file: &mut File) -> Result<(), io::Error> {
-
         //write column information down
         try!(file.write_u8(self.data_type.value()));
         try!(file.write_u8(self.name.len() as u8));
