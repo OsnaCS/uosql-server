@@ -37,14 +37,18 @@ pub enum DropStmt{
 }
 #[derive(Debug, Clone)]
 pub struct CreateTableStmt{
-    tid: String,
-    cols: Vec<CreateColumn>,
+    pub tid: String,
+    pub cols: Option<Vec<CreateColumn>>,
 }
+
+
+
 #[derive(Debug, Clone)]
 pub struct CreateColumn {
-    id: String,
-    datatype: DType,
+    pub id: String,
+    pub datatype: DType,
 }
+
 
 
 
