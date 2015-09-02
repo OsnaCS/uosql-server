@@ -2,6 +2,13 @@
 //!
 //!
 
+
+use byteorder::{BigEndian,ReadBytesExt,WriteBytesExt};
+use std::io::prelude::*;
+use std::fs::OpenOptions;
+use std::fs::File;
+use std::io;
+
 /// Storage Engine Interface.
 ///
 /// A storage engine, like MyISAM and InnoDB, is responsible for reading and
@@ -19,12 +26,50 @@ pub trait Engine {
 /// table (like column names, column types, storage engine, ...). It's `access`
 /// method locks the table globally and returns a storage engine to access
 /// the table data.
-pub struct Table;
+#[derive(Debug)]
+enum FileMode{LoadDefault, SaveDefault,}
+
+#[derive(Debug)]
+pub struct Table {
+    engine_id: u8,
+    version_nmbr: u8,
+    magic_nmbr: u8,
+    column_nmbr: u16,
+    //columns: Vec<Column>,
+
+}
 
 impl Table {
-    pub fn load(database: &str, table: &str) -> Table {
+    pub fn load(database: &str, table: &str) -> Result<(), io::Error> {
         // TODO: Read the .tbl file from disk and parse it
-        Table
+        let mut file = try!(Self::open_file(database,table,FileMode::LoadDefault));
+
+        Ok(())
+    }
+
+    pub fn create_new() -> Table {
+        Table { engine_id: 3 , version_nmbr:  1, magic_nmbr: 170, column_nmbr: 0}
+    }
+
+    pub fn save(&self,database: &str, table: &str) -> Result<(), io::Error> {
+        let mut file = try!(Self::open_file(database,table,FileMode::SaveDefault));
+
+        try!(file.write_u8(self.magic_nmbr));
+        try!(file.write_u8(self.version_nmbr));
+        try!(file.write_u8(self.engine_id));
+        try!(file.write_u16::<BigEndian>(self.column_nmbr));
+
+        println!("I Wrote my File");
+        Ok(())
+    }
+
+    fn open_file(database: &str, table: &str, mode: FileMode) -> Result<(File), io::Error> {
+
+        OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .open(table)
     }
 
     pub fn columns(&self) -> &[Column] {
