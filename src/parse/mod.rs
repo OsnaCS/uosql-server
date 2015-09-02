@@ -11,8 +11,8 @@ pub mod lex;
 /// Represents a substring in the query string in byte indices.
 #[derive(Debug)]
 pub struct Span {
-    lo: u32,
-    hi: u32,
+    lo: usize,
+    hi: usize,
 }
 
 /// Main function of this module: Takes a sql query as string and returns
