@@ -7,14 +7,49 @@ pub struct TokenSpan {
     pub span: Span,
 }
 
+#[derive(Debug)]
+pub enum Lit {
+	Str(String),
+	Int(String)
+}
+
 /// A token: Everything the lexer can produce
 #[derive(Debug)]
 pub enum Token {
-    Word,
-    Whitespace,
-    Bang,
+
+    Word(String),
+    Num(String),
+
+    //detects literals
+    Literal(Lit),
+
+    Semi,
     Dot,
-    QMark,
     Comma,
+    // Bang,
+    // QMark,
+
+    //delimiter (,),',"
+    ParenOp,
+    ParenCl,
+    ADel,
+
+    //mathematic ops
+    Equ,
+    GThan,
+    SThan,
+    GEThan,
+    SEThan,
+    NEqu,
+    Add,
+    Sub,
+    Div,
+    Mod,
+
+    //sensitive Wildcard/Mult, eval in parser
+    Star,
+
+    Whitespace,
+
     Unknown
 }
