@@ -26,16 +26,29 @@ pub trait Engine {
 /// table (like column names, column types, storage engine, ...). It's `access`
 /// method locks the table globally and returns a storage engine to access
 /// the table data.
+
+/// A Enum for File Modes
+///
+/// Can be used to define the save and load configuration of open_file
 #[derive(Debug)]
 enum FileMode{LoadDefault, SaveDefault,}
 
+/// A Enum for Datatypes (will be removed later)
+#[repr(u8)]
+#[derive(Clone,Copy,Debug)]
+enum DataType{ Integer = 1, Float = 2,}
+impl DataType{
+    pub fn value(&self) -> u8{
+       *self as u8
+    }
+}
 #[derive(Debug)]
 pub struct Table {
     engine_id: u8,
     version_nmbr: u8,
     magic_nmbr: u8,
     column_nmbr: u16,
-    //columns: Vec<Column>,
+    columns: Vec<Column>,
 
 }
 
@@ -48,28 +61,43 @@ impl Table {
     }
 
     pub fn create_new() -> Table {
-        Table { engine_id: 3 , version_nmbr:  1, magic_nmbr: 170, column_nmbr: 0}
+        let mut t: Vec<Column> = Vec::new();
+        t.push(Column::create_new());
+        Table { engine_id: 3 , version_nmbr:  1, magic_nmbr: 170, column_nmbr: 1, columns: t}
     }
 
     pub fn save(&self,database: &str, table: &str) -> Result<(), io::Error> {
+        //call for open file
         let mut file = try!(Self::open_file(database,table,FileMode::SaveDefault));
 
+        //write information from table struct to file
         try!(file.write_u8(self.magic_nmbr));
         try!(file.write_u8(self.version_nmbr));
         try!(file.write_u8(self.engine_id));
         try!(file.write_u16::<BigEndian>(self.column_nmbr));
 
+        //tell columns to write itself in the file
+        let mf = &mut file;
+        for i in &self.columns{
+            i.save_to_file(mf);
+        }
+
+        //debug message all okay
         println!("I Wrote my File");
         Ok(())
     }
 
     fn open_file(database: &str, table: &str, mode: FileMode) -> Result<(File), io::Error> {
-
-        OpenOptions::new()
-            .read(true)
-            .write(true)
-            .create(true)
-            .open(table)
+        //create new file or open new one
+        match mode {
+            FileMode::SaveDefault => OpenOptions::new()
+                .write(true)
+                .create(true)
+                .open(table),
+            FileMode::LoadDefault => OpenOptions::new()
+                .read(true)
+                .open(table),
+            }
     }
 
     pub fn columns(&self) -> &[Column] {
@@ -79,7 +107,27 @@ impl Table {
 }
 
 /// A table column. Has a name, a type, ...
-pub struct Column;
+#[derive(Debug)]
+pub struct Column{
+    name: String, //name of column
+    data_type: DataType, //name of the data type that is contained in this column
+}
+
+impl Column{
+    pub fn save_to_file(&self, file: &mut File) -> Result<(), io::Error> {
+
+        //write column information down
+        try!(file.write_u8(self.data_type.value()));
+        try!(file.write_u8(self.name.len() as u8));
+        try!(file.write_all(self.name.as_bytes()));
+
+        Ok(())
+    }
+
+    pub fn create_new() -> Column{
+        Column{name: "duh".to_string(), data_type: DataType::Integer}
+    }
+}
 
 // # Some information for the `storage` working group:
 //
