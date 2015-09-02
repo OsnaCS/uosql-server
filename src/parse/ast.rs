@@ -1,7 +1,6 @@
 /// Top level type. Is returned by `parse`.
 #[derive(Debug, Clone)]
 pub enum Query {
-	// Select,
     DefStmt(DefStmt),
     ManipulationStmt(ManipulationStmt)
 }
@@ -105,7 +104,6 @@ pub enum SpecOps {
 
 #[derive(Debug, Clone)]
 pub enum Conditions {
-	// Leaf
 	Leaf(Condition),
 	And((Box<Conditions>, Box<Conditions>)),
 	Or((Box<Conditions>, Box<Conditions>))
