@@ -10,6 +10,10 @@ use std::fs::File;
 use std::io;
 use bincode::rustc_serialize::{encode, decode,encode_into,decode_from};
 use bincode::SizeLimit;
+use std::io::{Error, ErrorKind};
+use std::path::Path;
+use std::fs::create_dir;
+
 
 /// Storage Engine Interface.
 ///
@@ -44,6 +48,20 @@ impl DataType{
        *self as u8
     }
 }
+
+pub struct Database {
+    name: String,
+}
+
+impl Database {
+    pub fn create_database(database: &str) -> Result<(),io::Error>{
+        println!("trying to create dir!");
+        try!(create_dir(database));
+        println!("created dir");
+        Ok(())
+    }
+}
+
 #[derive(Debug,RustcDecodable, RustcEncodable)]
 pub struct Table {
     engine_id: u8,
@@ -82,14 +100,18 @@ impl Table {
 
     fn open_file(database: &str, table: &str, mode: FileMode) -> Result<(File), io::Error> {
         //create new file or open new one
+        let st = String::from(format!("{}/{}",database,table));
+        let path = Path::new(&st);
+
+
         match mode {
             FileMode::SaveDefault => OpenOptions::new()
                 .write(true)
                 .create(true)
-                .open(table),
+                .open(path),
             FileMode::LoadDefault => OpenOptions::new()
                 .read(true)
-                .open(table),
+                .open(path),
             }
     }
 
