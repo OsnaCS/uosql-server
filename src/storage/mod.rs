@@ -3,16 +3,15 @@
 //!
 
 
-use byteorder::{BigEndian,ReadBytesExt,WriteBytesExt};
-use std::io::prelude::*;
-use std::fs::OpenOptions;
-use std::fs::File;
-use std::io;
-use bincode::rustc_serialize::{encode, decode,encode_into,decode_from};
-use bincode::SizeLimit;
-use std::io::{Error, ErrorKind};
 use std::path::Path;
-use std::fs::create_dir;
+use std::convert::From;
+use std::io::{Error};
+use std::io::prelude::*;
+use std::io;
+use std::fs::{OpenOptions,File,create_dir};
+
+use bincode::SizeLimit;
+use bincode::rustc_serialize::{EncodingError,encode_into,decode_from};
 
 
 /// Storage Engine Interface.
@@ -32,6 +31,23 @@ pub trait Engine {
 /// table (like column names, column types, storage engine, ...). It's `access`
 /// method locks the table globally and returns a storage engine to access
 /// the table data.
+
+pub enum DatabaseError{
+    Io(Error),
+    Bin(EncodingError),
+}
+
+impl From<io::Error> for DatabaseError {
+    fn from(err: io::Error) -> DatabaseError {
+        DatabaseError::Io(err)
+    }
+}
+
+impl  From<EncodingError> for DatabaseError {
+    fn from(err: EncodingError) -> DatabaseError {
+        DatabaseError::Bin(err)
+    }
+}
 
 /// A Enum for File Modes
 ///
@@ -54,9 +70,12 @@ pub struct Database {
 }
 
 impl Database {
-    pub fn create_database(database: &str) -> Result<(),io::Error>{
+    pub fn new_database(database_name: &str) -> Database{
+        Database{name: database_name.to_string()}
+    }
+    pub fn create_database(&self) -> Result<(),DatabaseError>{
         println!("trying to create dir!");
-        try!(create_dir(database));
+        try!(create_dir(&self.name));
         println!("created dir");
         Ok(())
     }
@@ -73,9 +92,10 @@ pub struct Table {
 }
 
 impl Table {
-    pub fn load(database: &str, table: &str) -> Result<(), io::Error> {
+    pub fn load(database: &str, table: &str) -> Result<(), DatabaseError> {
         // TODO: Read the .tbl file from disk and parse it
         let mut file = try!(Self::open_file(database,table,FileMode::LoadDefault));
+
         let data: Table = decode_from(&mut file, SizeLimit::Infinite).unwrap();
         println!("{:?}", data);
         Ok(())
@@ -87,18 +107,18 @@ impl Table {
         Table { engine_id: 3 , version_nmbr:  1, magic_nmbr: 170, column_nmbr: 1, columns: t}
     }
 
-    pub fn save(&self,database: &str, table: &str) -> Result<(), io::Error> {
+    pub fn save(&self,database: &str, table: &str) -> Result<(), DatabaseError> {
         //call for open file
         let mut file = try!(Self::open_file(database,table,FileMode::SaveDefault));
 
-        let v = encode_into(&self,&mut file,SizeLimit::Infinite).unwrap();
+        try!(encode_into(&self,&mut file,SizeLimit::Infinite));
 
         //debug message all okay
         println!("I Wrote my File");
         Ok(())
     }
 
-    fn open_file(database: &str, table: &str, mode: FileMode) -> Result<(File), io::Error> {
+    fn open_file(database: &str, table: &str, mode: FileMode) -> Result<File, DatabaseError> {
         //create new file or open new one
         let st = String::from(format!("{}/{}",database,table));
         let path = Path::new(&st);
@@ -112,33 +132,23 @@ impl Table {
             FileMode::LoadDefault => OpenOptions::new()
                 .read(true)
                 .open(path),
-            }
+        }.map_err(|e| e.into())
     }
 
     pub fn columns(&self) -> &[Column] {
         // TODO: Return real columns
-        &[]
+        &self.columns
     }
 }
 
 /// A table column. Has a name, a type, ...
-#[derive(Debug,RustcDecodable, RustcEncodable)]
+#[derive(Debug,RustcDecodable, RustcEncodable,Clone)]
 pub struct Column{
     name: String, //name of column
     data_type: DataType, //name of the data type that is contained in this column
 }
 
 impl Column{
-    ///deprecated
-    pub fn save_to_file(&self, file: &mut File) -> Result<(), io::Error> {
-        //write column information down
-        try!(file.write_u8(self.data_type.value()));
-        try!(file.write_u8(self.name.len() as u8));
-        try!(file.write_all(self.name.as_bytes()));
-
-        Ok(())
-    }
-
     pub fn create_new() -> Column{
         Column{name: "duh".to_string(), data_type: DataType::Integer}
     }
