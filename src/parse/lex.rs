@@ -170,7 +170,7 @@ impl<'a> Iterator for Lexer<'a> {
             //words
             'a' ... 'z' | 'A' ... 'Z' => {
                 let w = self.scan_words();
-                Token::Word(w)
+                Token::Word(w.to_lowercase())
             },
 
             //nums
