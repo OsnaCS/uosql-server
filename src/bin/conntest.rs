@@ -5,7 +5,7 @@ extern crate bincode;
 
 
 /// test of some functions and structs by net
-fn main(){
-	
+fn main() {
+	println!("hello world");
 	
 }

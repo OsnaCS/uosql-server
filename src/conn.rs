@@ -1,7 +1,6 @@
 //! Contains the entry point code for handling an incoming connection.
 //!
 use std::net::TcpStream;
-use std::io::{Error, ErrorKind};
 use net;
 use auth;
 
@@ -14,7 +13,7 @@ pub fn handle(mut stream: TcpStream) {
 
     // Perform handshake, check user login --> done
     let res = net::do_handshake(&mut stream);
-    let auth_res = match res{
+    let auth_res = match res {
         Ok((user, pw)) => auth::find_user(&user, &pw),
         _ => Err(auth::AuthError::UserNotFound)
     };

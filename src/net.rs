@@ -17,27 +17,29 @@
 
 // TODO: Remove this line as soon as this module is actually used
 #![allow(dead_code, unused_variables)]
-use std::net::TcpStream;
 use std::io::{Write,Read, Error, ErrorKind};
-use byteorder::{BigEndian, WriteBytesExt, ReadBytesExt}; // for write_u16()
+use byteorder::{ReadBytesExt}; // for write_u16()
 use std::io;
 use bincode::rustc_serialize::{decode_from, encode_into};
 use bincode::SizeLimit;
 use std::io::Cursor;
 
+/// Code numeric value
 #[derive(RustcEncodable, RustcDecodable)]
 #[repr(u8)]
-pub enum CNV{
-	GREETING = 0,
-	LOGIN,
-	ERROR,
+pub enum Cnv {
+	GreetPkg = 0,
+	LoginPkg,
+	CommandPkg,
+	ErrorPkg,
 }
+
 #[derive(RustcEncodable, RustcDecodable)]
 #[repr(u8)]
-pub enum ErrorCode{
-	UNSPECIFIC_ERR = 0,
-	IO_ERR,
-	UNEXPEC_PKG_ERR,
+pub enum ErrorCode {
+	UnspecificErr = 0,
+	IoErr,
+	UnexpecPkgErr,
 }
 
 const PROTOCOL_VERSION : u8 = 1;
@@ -50,68 +52,69 @@ pub struct Greeting {
     message: String,		// n bytes
 }
 
-impl Greeting{
-	pub fn make_greeting(version: u8, msg: String)-> Greeting{
-		Greeting{protocol_version: version, message: msg}
+impl Greeting {
+	pub fn make_greeting(version: u8, msg: String)-> Greeting {
+		Greeting { protocol_version: version, message: msg }
 	}
 }
 
 /// writes a welcome-message to the given server-client-stream
-pub fn do_handshake<W:Write + Read>(stream: &mut W) -> Result<(String, String), io::Error>{
+pub fn do_handshake<W:Write + Read>(stream: &mut W) -> Result<(String, String), io::Error> {
 	let greet = Greeting::make_greeting(PROTOCOL_VERSION, "Welcome".to_string());
 	
 	// send handshake package to client
-	stream.write(&[CNV::GREETING as u8]); //kind of message
+	stream.write(&[Cnv::GreetPkg as u8]); //kind of message
 	let greet_encode = encode_into(&greet, stream, SizeLimit::Bounded(1024));
 
 	// receive login data from client
 	let mut login = Login::new();
-	match read_login(stream, &mut login){
-		Ok(something) => return Ok((login.username, login.password)),
-		Err(msg) => return Err(msg)
+	match read_login(stream, &mut login) {
+		Ok(something) => Ok((login.username, login.password)),
+		Err(msg) => Err(msg)
 	}
 }
 
 /// The client responds with this packet to a `Greeting` packet, finishing the
 /// authentication handshake.
 #[derive(RustcEncodable, RustcDecodable)]
-pub struct Login{
+pub struct Login {
 	username: String,
 	password: String
 }
 
-impl Login{
+impl Login {
 	// default values
-	pub fn new() -> Login{
-		Login{username: "".to_string(), password: "".to_string()}
+	pub fn new() -> Login {
+		Login { username: "".to_string(), password: "".to_string() }
 	}
 
-	pub fn set_name(&mut self, usern: String){
+	pub fn set_name(&mut self, usern: String) {
 		self.username = usern
 	}
 
-	pub fn set_password(&mut self, passwd: String){
+	pub fn set_password(&mut self, passwd: String) {
 		self.password = passwd
 	}
 }
 
 /// reads the data from the response to the handshake,
 /// username and password extracted and authenticated
-pub fn read_login<R:Read+Write>(stream: &mut R, login: &mut Login) -> Result<(), io::Error>{
+pub fn read_login<R:Read+Write>(stream: &mut R, login: &mut Login) -> Result<(), io::Error> {
 	
 	// read the first byte
 	let status = try!(stream.read_u8());
-	if status != CNV::LOGIN as u8 {
+	if status != Cnv::LoginPkg as u8 {
 		//send error_package
-		send_error_package(stream, ErrorCode::UNEXPEC_PKG_ERR);
+		send_error_package(stream, ErrorCode::UnexpecPkgErr);
 		return Ok(())
 	}
 
 	let res = decode_from::<R,Login>(stream, SizeLimit::Bounded(1024));
-	match res{
-		Ok(log) => {login.set_name(log.username); 
+	match res {
+		Ok(log) => { login.set_name(log.username); 
 			login.set_password(log.password); 
-			return Ok(())},
+			return Ok(())
+			},
 		_=> Err(Error::new(ErrorKind::Other, "not again"))
 	}
 }
@@ -123,15 +126,15 @@ pub fn read_bytes<R:Read>(stream: &mut R, len: u16)-> Result<Vec<u8>, io::Error>
 
 	let status = chunk.read_to_end(&mut vec); // reads the bytes and stores it in vec
 
-	match status{
-		Ok(n)=> if len as usize == n {return Ok(vec)} else {return Err(Error::new(ErrorKind::Other, "eof"))},
-		Err(msg)=> return Err(msg)
+	match status {
+		Ok(n) => if len as usize == n { return Ok(vec) } else { return Err(Error::new(ErrorKind::Other, "eof")) },
+		Err(msg) => return Err(msg)
 
 	}
 }
 
-pub fn send_error_package<W:Write>(stream: &mut W, err: ErrorCode){
-	stream.write(&[CNV::ERROR as u8]);
+pub fn send_error_package<W:Write>(stream: &mut W, err: ErrorCode) {
+	stream.write(&[Cnv::ErrorPkg as u8]);
 	stream.write(&[err as u8]);
 }
 
@@ -139,6 +142,8 @@ pub fn send_error_package<W:Write>(stream: &mut W, err: ErrorCode){
 ///
 /// Many commands are executed via query, but there are some "special"
 /// commands that are not sent as query.
+#[derive(RustcEncodable, RustcDecodable)]
+#[repr(u8)]
 pub enum Command {
     Quit,
     Ping,
