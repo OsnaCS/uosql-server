@@ -12,15 +12,13 @@ pub fn handle(mut stream: TcpStream) {
         .unwrap_or("???".into());
     info!("Handling connection from {}", addr);
 
-    // TODO: Perform handshake --> done
+    // Perform handshake, check user login --> done
     let res = net::do_handshake(&mut stream);
     let auth_res = match res{
         Ok((user, pw)) => auth::find_user(&user, &pw),
         _ => Err(auth::AuthError::UserNotFound)
-
     };
-    // TODO: check user login
-    
+        
     // TODO: Read commands from the client (with help of `net`)
 
     // TODO: Dispatch commands (handle easy ones directly, forward others)
