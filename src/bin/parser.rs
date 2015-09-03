@@ -8,7 +8,7 @@ use uosql::parse;
 
 fn main() {
 
-    let mut p = parse::Parser::create("create table X");
+    let mut p = parse::Parser::create("drop table X");
     println!("{:?}",p.parse());
 
 }

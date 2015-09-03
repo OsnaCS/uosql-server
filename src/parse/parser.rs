@@ -107,7 +107,6 @@ impl<'a> Parser<'a>{
         try!(self.expect_token(&[Token::Whitespace]));
         self.lexer_next();
 
-
         match try!(self.expect_keyword(&[Keyword::Table])) {
             // Create the table subtree
             Keyword::Table=> return Err(ParseError::DebugError("Table Creation needs Implementation".to_string())),
@@ -117,6 +116,7 @@ impl<'a> Parser<'a>{
             // Unknown parsing error
             _=> return Err(ParseError::UnknownError),
         };
+
     }
 
 
@@ -125,10 +125,19 @@ impl<'a> Parser<'a>{
 
     // ..
     fn parse_drop_stmt(&mut self)  -> Result<DropStmt, ParseError> {
-        Ok(DropStmt::Table("TestTable".to_string()))
-        // let type = self.expect_keyword(Table);
-        // TODO: implement Drop
+        self.lexer_next();
+        try!(self.expect_token(&[Token::Whitespace]));
+        self.lexer_next();
 
+        match try!(self.expect_keyword(&[Keyword::Table])) {
+            // Create the table subtree
+            Keyword::Table=> return Err(ParseError::DebugError("Table drop needs Implementation".to_string())),
+            // Create the view subtree
+            // Create .....
+
+            // Unknown parsing error
+            _=> return Err(ParseError::UnknownError),
+        };
     }
 
 
