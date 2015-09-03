@@ -5,7 +5,8 @@ use std::ops::DerefMut;
 
 fn main() {
 
-    let db = Database::new_database("storage_team").unwrap();
+    //let db = Database::new_database("storage_team").unwrap();
+    let db = Database::load_database("storage_team").unwrap();
 
     let mut cols = Vec::new();
     cols.push(Column {name: "Heiner".into(), data_type: DataType::Integer});
