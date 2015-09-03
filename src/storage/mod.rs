@@ -5,13 +5,19 @@
 
 use std::path::Path;
 use std::convert::From;
-use std::io::{Error};
+use byteorder::Error;
 use std::io::prelude::*;
 use std::io;
-use std::fs::{OpenOptions,File,create_dir};
+use std::fs::{ OpenOptions,File,create_dir };
+
+use byteorder::{ WriteBytesExt, ReadBytesExt, BigEndian };
 
 use bincode::SizeLimit;
-use bincode::rustc_serialize::{EncodingError,encode_into,decode_from};
+use bincode::rustc_serialize::{ EncodingError,DecodingError,encode_into,decode_from };
+
+/// constants
+ const MAGIC_NUMBER: u64 = 0x6561742073686974; // secret
+ const MAGIC_NUMBER_BYTES: usize = 8;
 
 
 /// Storage Engine Interface.
@@ -31,10 +37,13 @@ pub trait Engine {
 /// table (like column names, column types, storage engine, ...). It's `access`
 /// method locks the table globally and returns a storage engine to access
 /// the table data.
-
-pub enum DatabaseError{
-    Io(Error),
-    Bin(EncodingError),
+#[derive(Debug)]
+pub enum DatabaseError {
+    Io(io::Error),
+    BinEn(EncodingError),
+    BinDe(DecodingError),
+    Byteorder(::byteorder::Error),
+    MagicNmbr,
 }
 
 impl From<io::Error> for DatabaseError {
@@ -45,7 +54,19 @@ impl From<io::Error> for DatabaseError {
 
 impl  From<EncodingError> for DatabaseError {
     fn from(err: EncodingError) -> DatabaseError {
-        DatabaseError::Bin(err)
+        DatabaseError::BinEn(err)
+    }
+}
+
+impl From<DecodingError> for DatabaseError {
+    fn from(err: DecodingError) -> DatabaseError {
+        DatabaseError::BinDe(err)
+    }
+}
+
+impl From< ::byteorder::Error> for DatabaseError {
+    fn from(err: ::byteorder::Error) -> DatabaseError {
+        DatabaseError::Byteorder(err)
     }
 }
 
@@ -53,14 +74,14 @@ impl  From<EncodingError> for DatabaseError {
 ///
 /// Can be used to define the save and load configuration of open_file
 #[derive(Debug)]
-enum FileMode{LoadDefault, SaveDefault,}
+enum FileMode{ LoadDefault, SaveDefault, }
 
 /// A Enum for Datatypes (will be removed later)
 #[repr(u8)]
 #[derive(Clone,Copy,Debug,RustcDecodable, RustcEncodable)]
-enum DataType{ Integer = 1, Float = 2,}
-impl DataType{
-    pub fn value(&self) -> u8{
+pub enum DataType{ Integer = 1, Float = 2,}
+impl DataType {
+    pub fn value(&self) -> u8 {
        *self as u8
     }
 }
@@ -70,10 +91,10 @@ pub struct Database {
 }
 
 impl Database {
-    pub fn new_database(database_name: &str) -> Database{
-        Database{name: database_name.to_string()}
+    pub fn new_database(database_name: &str) -> Database {
+        Database{ name: database_name.to_string() }
     }
-    pub fn create_database(&self) -> Result<(),DatabaseError>{
+    pub fn create_database(&self) -> Result<(),DatabaseError> {
         println!("trying to create dir!");
         try!(create_dir(&self.name));
         println!("created dir");
@@ -83,12 +104,26 @@ impl Database {
 
 #[derive(Debug,RustcDecodable, RustcEncodable)]
 pub struct Table {
+    name: String,
     engine_id: u8,
     version_nmbr: u8,
-    magic_nmbr: u8,
     column_nmbr: u16,
     columns: Vec<Column>,
 
+}
+
+impl Default for Table {
+    fn default() -> Table {
+        let mut t: Vec<Column> = Vec::new();
+        t.push(Default::default());
+        Table {
+            name:"default".to_string(),
+            engine_id: 3,
+            version_nmbr: 1,
+            column_nmbr: 1,
+            columns: t
+        }
+    }
 }
 
 impl Table {
@@ -96,31 +131,42 @@ impl Table {
         // TODO: Read the .tbl file from disk and parse it
         let mut file = try!(Self::open_file(database,table,FileMode::LoadDefault));
 
-        let data: Table = decode_from(&mut file, SizeLimit::Infinite).unwrap();
+        let ma_nmbr = try!(file.read_uint::<BigEndian>(MAGIC_NUMBER_BYTES));
+
+        if ma_nmbr != MAGIC_NUMBER {
+            println!("Magic Number not correct");
+            return Err(DatabaseError::MagicNmbr)
+        }
+        let data: Table = try!(decode_from(&mut file, SizeLimit::Infinite));
         println!("{:?}", data);
         Ok(())
     }
 
-    pub fn create_new() -> Table {
-        let mut t: Vec<Column> = Vec::new();
-        t.push(Column::create_new());
-        Table { engine_id: 3 , version_nmbr:  1, magic_nmbr: 170, column_nmbr: 1, columns: t}
+    pub fn create_new(engine: u8, name: &str) -> Table {
+
+        Table {
+            name: name.to_string(),
+            engine_id: engine,
+            version_nmbr: 1,
+            column_nmbr: 0,
+            columns: Vec::new()
+        }
     }
 
     pub fn save(&self,database: &str, table: &str) -> Result<(), DatabaseError> {
-        //call for open file
-        let mut file = try!(Self::open_file(database,table,FileMode::SaveDefault));
+        // call for open file
+        let mut file = try!(Self::open_file(database, table, FileMode::SaveDefault));
+        try!(file.write_u64::<BigEndian>(MAGIC_NUMBER));//MAGIC_NUMBER
+        try!(encode_into(&self, &mut file,SizeLimit::Infinite));
 
-        try!(encode_into(&self,&mut file,SizeLimit::Infinite));
-
-        //debug message all okay
+        // debug message all okay
         println!("I Wrote my File");
         Ok(())
     }
 
     fn open_file(database: &str, table: &str, mode: FileMode) -> Result<File, DatabaseError> {
-        //create new file or open new one
-        let st = String::from(format!("{}/{}",database,table));
+        // create new file or open new one
+        let st = format!("{}/{}",database,table);
         let path = Path::new(&st);
 
 
@@ -139,18 +185,38 @@ impl Table {
         // TODO: Return real columns
         &self.columns
     }
+
+    pub fn add_column(&mut self, name: &str, dtype: DataType) {
+        self.columns.push(Column::create_new(name, dtype));
+    }
+
+    pub fn remove_column(&mut self, name: &str, data_type: DataType) {
+
+    }
 }
 
 /// A table column. Has a name, a type, ...
 #[derive(Debug,RustcDecodable, RustcEncodable,Clone)]
-pub struct Column{
+pub struct Column {
     name: String, //name of column
     data_type: DataType, //name of the data type that is contained in this column
 }
 
-impl Column{
-    pub fn create_new() -> Column{
-        Column{name: "duh".to_string(), data_type: DataType::Integer}
+impl Default for Column {
+    fn default() -> Column {
+        Column {
+            name: "default".to_string(),
+            data_type: DataType::Integer
+        }
+    }
+}
+
+impl Column {
+    pub fn create_new(name: &str, dtype: DataType) -> Column {
+        Column {
+            name: name.to_string(),
+            data_type: dtype.clone()
+        }
     }
 }
 
