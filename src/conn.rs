@@ -23,10 +23,12 @@ pub fn handle(mut stream: TcpStream) {
     loop {
         //get the command from the stream
         let command_res = net::read_commands(&mut stream);
-        println!("{:?}",command_res);
         // TODO !
         match command_res {
-            Ok(Command::Quit) => return,
+            Ok(Command::Quit) => {
+                debug!("Client disconnected");
+                return
+        },
             _ => continue
         }
         // TODO: Dispatch commands (handle easy ones directly, forward others)
