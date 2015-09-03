@@ -1,9 +1,14 @@
-/// Program for testing and playing with the parser
+///  Program for testing and playing with the parser
 ///
 
 extern crate uosql;
 use uosql::parse;
 
+
+
 fn main() {
-    println!("{:?}", parse::parse("hi"));
+
+    let mut p = parse::Parser::create("create table X");
+    println!("{:?}",p.parse());
+
 }
