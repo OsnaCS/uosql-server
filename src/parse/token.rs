@@ -7,14 +7,14 @@ pub struct TokenSpan {
     pub span: Span,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Lit {
 	Str(String),
 	Int(String)
 }
 
 /// A token: Everything the lexer can produce
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Token {
 
     Word(String),

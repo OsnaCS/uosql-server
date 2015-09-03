@@ -1,10 +1,12 @@
 /// Top level type. Is returned by `parse`.
 #[derive(Debug, Clone)]
 pub enum Query {
+	Dummy, // For Compiling
     DefStmt(DefStmt),
     ManipulationStmt(ManipulationStmt)
 }
 
+/// All Data Definition Statements
 #[derive(Debug, Clone)]
 pub enum DefStmt {
     Create(CreateStmt),
@@ -12,6 +14,7 @@ pub enum DefStmt {
     Drop(DropStmt)
 }
 
+/// All Data Manipulation Statements
 #[derive(Debug, Clone)]
 pub enum ManipulationStmt {
 	Update(UpdateStmt),
@@ -20,12 +23,14 @@ pub enum ManipulationStmt {
 	Delete(DeleteStmt)
 }
 
+/// Split between creatable content (only Tables yet)
 #[derive(Debug, Clone)]
 pub enum CreateStmt {
     Table(CreateTableStmt),
     // View
 }
 
+/// Split between alterable content (only Tables yet)
 #[derive(Debug, Clone)]
 pub enum AltStmt {
     Table(AlterTableStmt)
@@ -33,32 +38,36 @@ pub enum AltStmt {
     //View(String)
 }
 
+/// Split between drop-able content (only Tables yet)
 #[derive(Debug, Clone)]
 pub enum DropStmt {
     Table(String)
-    //Column(String)
     //Index(String)
     //Database(String)
 }
 
+/// Information for table creation
 #[derive(Debug, Clone)]
 pub struct CreateTableStmt {
     pub tid: String,
-    pub cols: Option<Vec<CreateColumn>>,
+    pub cols: Vec<CreateColumn>,
 }
 
+/// Information for column creation
 #[derive(Debug, Clone)]
 pub struct CreateColumn {
-    pub id: String,
-    pub datatype: DType,
+    pub cid: String,
+    pub datatype: SqlType,
 }
 
+/// Information for table alteration
 #[derive(Debug, Clone)]
 pub struct AlterTableStmt {
-	pub id: String,
+	pub tid: String,
 	pub op: AlterOp
 }
 
+/// Possible operations for table alterations
 #[derive(Debug, Clone)]
 pub enum AlterOp {
 	Add(CreateColumn),
@@ -66,6 +75,7 @@ pub enum AlterOp {
 	Alter(CreateColumn)
 }
 
+/// Information for table update
 #[derive(Debug, Clone)]
 pub struct UpdateStmt {
 	pub tid: String,
@@ -73,6 +83,7 @@ pub struct UpdateStmt {
 	pub conds: Option<Conditions>
 }
 
+/// Information for data selection
 #[derive(Debug, Clone)]
 pub struct SelectStmt {
 	pub target: Vec<String>,
@@ -81,19 +92,22 @@ pub struct SelectStmt {
 	pub spec_op: Option<SpecOps>
 }
 
+/// Information for data insertion
 #[derive(Debug, Clone)]
 pub struct InsertStmt {
 	pub tid: String,
-	pub col: Option<Vec<String>>,
-	pub val: Vec<DType>
+	pub col: Vec<String>,
+	pub val: Vec<SqlType>
 }
 
+/// Information for data deletion
 #[derive(Debug, Clone)]
 pub struct DeleteStmt {
 	pub tid: String,
 	pub cond: Option<Conditions>
 }
 
+/// Additional operations for ordering and limiting
 #[derive(Debug,Clone)]
 pub enum SpecOps {
 	OrderByAsc(String),
@@ -102,21 +116,24 @@ pub enum SpecOps {
 	Limit(u32)
 }
 
+/// Conditions for managing AND/OR where-clauses
 #[derive(Debug, Clone)]
 pub enum Conditions {
 	Leaf(Condition),
-	And((Box<Conditions>, Box<Conditions>)),
-	Or((Box<Conditions>, Box<Conditions>))
+	And(Box<Conditions>, Box<Conditions>),
+	Or(Box<Conditions>, Box<Conditions>)
 }
 
+/// Information for the where-clause
 #[derive(Debug, Clone)]
 pub struct Condition {
-	pub a : CondType,
+	pub lhs : CondType,
 	pub op: CompType,
-	pub b : CondType
+	pub rhs : CondType
 }
 
-#[derive(Debug, Clone)]
+/// Allowed operators for where-clause
+#[derive(Debug, Clone, Copy)]
 pub enum CompType {
 	Equ,
 	NEqu,
@@ -126,6 +143,7 @@ pub enum CompType {
 	SEThan
 }
 
+/// Allowed data types for where-clause
 #[derive(Debug, Clone)]
 pub enum CondType {
 	Literal(String),
@@ -133,9 +151,9 @@ pub enum CondType {
 	Word(String)
 }
 
-//general enums
+/// General enums in SQL
 #[derive(Debug, Clone, Copy)]
-pub enum DType {
+pub enum SqlType {
     Int,
     Bool,
     Char(u8),
