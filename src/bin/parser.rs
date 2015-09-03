@@ -8,7 +8,7 @@ use uosql::parse;
 
 fn main() {
 
-    let mut p = parse::Parser::create(" create table *");
+    let mut p = parse::Parser::create("create table hallo(name char(16),info varchar(600), alter int)");
     println!("{:?}",p.parse());
 
 }

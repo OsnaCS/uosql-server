@@ -2,7 +2,7 @@
 ///
 
 use std::iter::Iterator;
-use super::ast::{Query, DefStmt, CreateStmt, DropStmt, CreateTableStmt};
+use super::ast::{Query, DefStmt, CreateStmt, DropStmt, CreateTableStmt, ColumnInfo, SqlType};
 use super::token::TokenSpan;
 use super::lex::Lexer;
 use std::mem::swap;
@@ -103,21 +103,74 @@ impl<'a> Parser<'a>{
         self.peek = self.lexiter.next();
     }
 
-    // Parses the tokens for create-syntax
+    // Starts the parsing for tokens in create-syntax
     fn parse_create_stmt(&mut self) -> Result<CreateStmt, ParseError> {
-        self.skip_whitespace();
-
-
+        // Convention: Every method must use skip_whitespace to
+        // put the lexer to the position of the token the method needs
+        try!(self.skip_whitespace());
 
         match try!(self.expect_keyword(&[Keyword::Table])) {
             // Create the table subtree
-            Keyword::Table=> return {try!(self.skip_whitespace());Err(ParseError::DebugError(try!(self.expect_word())))},
+            Keyword::Table=> return return Ok(CreateStmt::Table(try!(self.parse_create_table_stmt()))),
             // Create the view subtree
-            // Create .....
+            // Keyword::View => ...
 
             // Unknown parsing error
             _=> return Err(ParseError::UnknownError),
         };
+    }
+
+    // Parses the tokens fore the create table subtree
+    fn parse_create_table_stmt(&mut self) -> Result<CreateTableStmt, ParseError> {
+        // Convention: Every method must use skip_whitespace to
+        // put the lexer to the position of the token the method needs
+        try!(self.skip_whitespace());
+
+        // create a CreateTableStmt Object with the table id
+        let mut table_info=CreateTableStmt {tid: try!(self.expect_word()), cols: Vec::<ColumnInfo>::new()};
+
+        self.skip_whitespace();
+        // if there is a ParenOp token.....
+        match self.expect_token(&[Token::ParenOp]){
+            Err(error) => return Ok(table_info),
+            Ok(s) => (),
+        }
+        // ...call parse_create_column_vec to generate the column vector subtree
+        table_info.cols=try!(self.parse_create_column_vec());
+        return Ok(table_info);
+
+    }
+
+    // Parses the tokens for the column vector subtree
+    fn parse_create_column_vec(&mut self) -> Result<Vec<ColumnInfo>, ParseError>{
+        // Convention: Every method must use skip_whitespace to
+        // put the lexer to the position of the token the method needs
+        self.skip_whitespace();
+        let mut colsvec = Vec::<ColumnInfo>::new();
+
+        // fill the vector with content until ParenCl is the curr token
+        while(match self.expect_token(&[Token::ParenCl]){
+            Ok(&Token::ParenCl) => false,
+            _ => true,
+        }){
+            // parsing the content for a single ColumnInfo
+            let columnid = try!(self.expect_word());
+            try!(self.skip_whitespace());
+            let dtype=try!(self.expect_datatype());
+            colsvec.push(ColumnInfo {cid: columnid , datatype: dtype});
+            self.skip_whitespace();
+
+            // Check if there is a Comma seperating two columns or a ParenCl ending the vectorparsing
+            match try!(self.expect_token(&[Token::Comma, Token::ParenCl])){
+                &Token::Comma => {self.skip_whitespace();()},
+                _=> (),
+            };
+
+
+        }
+
+        return Ok(colsvec);
+
     }
 
 
@@ -129,6 +182,78 @@ impl<'a> Parser<'a>{
         Ok(DropStmt::Table("TestTable".to_string()))
         // let type = self.expect_keyword(Table);
         // TODO: implement Drop
+
+    }
+
+
+    // checks if the current token is a datatype.
+    // In case of e.g. char(x) checks if ( ,x and ) are the following
+    // token and if x is correct size.
+    fn expect_datatype(&mut self) -> Result<SqlType,ParseError> {
+
+        let mut found_datatype;
+        let mut span_lo;
+        let mut span_hi;
+        let tmp_datatype;
+        {
+            // checks if token non or some
+            let token = match self.curr {
+                None => return Err(ParseError::EofError),
+                // in case of som: return reference to token
+                Some(ref token) => token,
+            };
+
+            span_lo=token.span.lo;
+            span_hi=token.span.hi;
+
+            // checks whether token is a word
+            let word = match token.tok {
+                Token::Word(ref s) => s,
+                _=>return Err(ParseError::NotADatatype(Span {lo: span_lo , hi: span_hi}))
+            };
+            tmp_datatype = word.to_string();
+        }
+            // checks if token is a correct Datatype
+            found_datatype = match &tmp_datatype[..] {
+                "int" => SqlType::Int,
+                "bool" => SqlType::Bool,
+                "boolean" => SqlType::Bool,
+                // checks if char is written in correct sql syntax
+                "char" => {
+                    self.skip_whitespace();
+                    try!(self.expect_token(&[Token::ParenOp]));
+                    self.skip_whitespace();
+                    let length_string=try!(self.expect_number());
+                    self.skip_whitespace();
+                    try!(self.expect_token(&[Token::ParenCl]));
+                    let length = match length_string.parse::<u8>() {
+                            Ok(length) => length,
+                            Err(error) => return Err(ParseError::DatatypeMissmatch(Span {lo: span_lo , hi: span_hi})),
+                        };
+                    ;SqlType::Char(length)
+                },
+
+
+                // checks if char is written in correct sql syntax
+                "varchar" => {
+                    self.skip_whitespace();
+                    try!(self.expect_token(&[Token::ParenOp]));
+                    self.skip_whitespace();
+                    let length_string=try!(self.expect_number());
+                    self.skip_whitespace();
+                    try!(self.expect_token(&[Token::ParenCl]));
+                    let length = match length_string.parse::<u16>() {
+                            Ok(length) => length,
+                            Err(error) => return Err(ParseError::DatatypeMissmatch(Span {lo: span_lo , hi: span_hi})),
+                        };
+                    ;SqlType::VarChar(length)
+                },
+
+                _=>return Err(ParseError::NotADatatype(Span {lo: span_lo , hi: span_hi})),
+
+            };
+
+        return Ok((found_datatype));
 
     }
 
@@ -173,7 +298,7 @@ impl<'a> Parser<'a>{
         }
     }
 
-
+    // checks if the current token is a word
     fn expect_word(&self) -> Result<String, ParseError>{
         let mut found_word;
         let mut span_lo;
@@ -201,10 +326,38 @@ impl<'a> Parser<'a>{
 
     }
 
+    // checks if the current token is a number
+    fn expect_number(&self) -> Result<String, ParseError>{
+        let mut found_num;
+        let mut span_lo;
+        let mut span_hi;
+        {
+            // checks if token non or some
+            let token = match self.curr {
+                None => return Err(ParseError::EofError),
+                // in case of som: return reference to token
+                Some(ref token) => token,
+            };
 
+            span_lo=token.span.lo;
+            span_hi=token.span.hi;
+
+            // checks whether token is a valid number
+            found_num = match token.tok {
+                Token::Num(ref s) => s,
+                _=>return Err(ParseError::NotANumber(Span {lo: span_lo , hi: span_hi}))
+            };
+
+        }
+        return Ok(found_num.to_string());
+
+
+    }
+
+    // checks if current token is an expected token
     fn expect_token(& self,expected_tokens: &[Token]) -> Result<&Token, ParseError>{
 
-
+            // checks if current is none or some
             let token = match self.curr {
                 None => return Err(ParseError::EofError),
                 // in case of some: return reference to token
@@ -219,7 +372,7 @@ impl<'a> Parser<'a>{
         }
     }
 
-
+    // moves current to the next non-whitespace
     fn skip_whitespace(&mut self) -> Result<Token, ParseError>{
         self.lexer_next();
         try!(self.expect_token(&[Token::Whitespace]));
@@ -241,9 +394,12 @@ pub enum ParseError {
     // Syntax errors:
     WrongKeyword(Span),
     WrongToken(Span),
+    DatatypeMissmatch(Span),
     NotAKeyword(Span),
     NotAToken(Span),
     NotAWord(Span),
+    NotADatatype(Span),
+    NotANumber(Span),
 
 
 
