@@ -4,11 +4,13 @@ extern crate term_painter as term;
 extern crate byteorder;
 extern crate rustc_serialize;
 extern crate bincode;
+extern crate docopt;
 
 use rustc_serialize::json;
 use std::fs::File;
 use std::env;
 use std::io::Read;
+use docopt::Docopt;
 
 pub mod auth;
 pub mod conn;
@@ -17,6 +19,21 @@ pub mod net;
 pub mod parse;
 pub mod query;
 pub mod storage;
+
+
+/// For console input, manages flags and arguments
+const USAGE: &'static str = "
+Usage: uosql-server [--cfg=<file>]
+
+Options:
+    --cfg=<file>   Enter a configuration file
+";
+
+#[derive(Debug, RustcDecodable)]
+struct Args {
+    // flag_cfg: bool,
+   flag_cfg: Option<String>
+}
 
 /// Entry point for server. Allow dead_code to supress warnings when
 /// compiled as a library.
@@ -30,24 +47,27 @@ fn main() {
     info!("Starting uoSQL server...");
 
     // Getting the information for a possible configuration
-    let args : Vec <_> = env::args().collect();
+    let args : Args = Docopt::new(USAGE).and_then(|d| d.decode())
+                                        .unwrap_or_else(|e| e.exit());
+    println!("{:?}", args);
+    // If a cfg is entered, use this file name to set configurations
+    let config = read_conf_from_json(args.flag_cfg
+                                .unwrap_or("src/config.json".into()));
 
-    let mut config: Config = read_conf_from_json("src/config.json".to_string());
-
-    println!("{:?}", config);
+    println!("{:?}", config); // for debugging
 
     // Start listening for incoming Tcp connections
     listen(config);
 }
 
+
+/// Listens for incoming TCP streams
 fn listen(config: Config) {
     use std::net::TcpListener;
     use std::thread;
 
     // Collecting information for binding process
-    let mut bind_inf = format!("{}:{}",
-        config.address.unwrap_or("127.0.0.1".to_string()),
-        config.port.unwrap_or("4242".to_string()));
+    let mut bind_inf = format!("{}:{}", config.address, config.port);
 
     let listener = TcpListener::bind("127.0.0.1:4242").unwrap();
     //let listener = TcpListener::bind(bind_inf).unwrap();
@@ -71,29 +91,33 @@ fn listen(config: Config) {
 
 /// Creates a Config struct out of a config file
 fn read_conf_from_json(name: String) -> Config {
-    let mut config = Config::default_Config();
+    /// A struct that contains different configuration details with a
+    /// default setting
+    #[derive(Debug, RustcDecodable, Default)]
+    struct CfgFile {
+        address: Option<String>,
+        port: Option<u16>,
+        dir: Option<String>
+    }
+    let mut config = CfgFile::default();
     if let Ok(mut f) = File::open(name) {
-            let mut s = String::new();
+        let mut s = String::new();
         if let Err(e) = f.read_to_string(&mut s) {
             println!("Error");
         } else {
             config = json::decode(&s).unwrap();
         }
     }
-    config
+    Config {
+        address: config.address.unwrap_or("127.0.0.1".into()),
+        port: config.port.unwrap_or(4242),
+        dir: config.dir.unwrap_or("data".into())
+    }
 }
 
 #[derive(Debug, RustcDecodable)]
 pub struct Config {
-    address: Option<String>,
-    port: Option<String>,
-    dir: Option<String>
-}
-
-impl Config {
-    pub fn default_Config() -> Config {
-        Config { address : Some("127.0.0.1".to_string()),
-        port : Some("4242".to_string()) ,
-        dir : Some("/somewhere".to_string())}
-    }
+    address: String,
+    port: u16,
+    dir: String
 }
