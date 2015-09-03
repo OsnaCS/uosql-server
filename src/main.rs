@@ -5,6 +5,11 @@ extern crate byteorder;
 extern crate rustc_serialize;
 extern crate bincode;
 
+use rustc_serialize::json;
+use std::fs::File;
+use std::env;
+use std::io::Read;
+
 pub mod auth;
 pub mod conn;
 pub mod logger;
@@ -24,15 +29,28 @@ fn main() {
         .enable().unwrap();
     info!("Starting uoSQL server...");
 
+    // Getting the information for a possible configuration
+    let args : Vec <_> = env::args().collect();
+
+    let mut config: Config = read_conf_from_json("src/config.json".to_string());
+
+    println!("{:?}", config);
+
     // Start listening for incoming Tcp connections
-    listen();
+    listen(config);
 }
 
-fn listen() {
+fn listen(config: Config) {
     use std::net::TcpListener;
     use std::thread;
 
+    // Collecting information for binding process
+    let mut bind_inf = format!("{}:{}",
+        config.address.unwrap_or("127.0.0.1".to_string()),
+        config.port.unwrap_or("4242".to_string()));
+
     let listener = TcpListener::bind("127.0.0.1:4242").unwrap();
+    //let listener = TcpListener::bind(bind_inf).unwrap();
 
     // Accept connections and process them
     for stream in listener.incoming() {
@@ -48,5 +66,34 @@ fn listen() {
                 warn!("Failed to accept incoming connection: {:?}", e);
             },
         }
+    }
+}
+
+/// Creates a Config struct out of a config file
+fn read_conf_from_json(name: String) -> Config {
+    let mut config = Config::default_Config();
+    if let Ok(mut f) = File::open(name) {
+            let mut s = String::new();
+        if let Err(e) = f.read_to_string(&mut s) {
+            println!("Error");
+        } else {
+            config = json::decode(&s).unwrap();
+        }
+    }
+    config
+}
+
+#[derive(Debug, RustcDecodable)]
+pub struct Config {
+    address: Option<String>,
+    port: Option<String>,
+    dir: Option<String>
+}
+
+impl Config {
+    pub fn default_Config() -> Config {
+        Config { address : Some("127.0.0.1".to_string()),
+        port : Some("4242".to_string()) ,
+        dir : Some("/somewhere".to_string())}
     }
 }
