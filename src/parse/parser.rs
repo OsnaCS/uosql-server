@@ -7,6 +7,8 @@ use super::token::TokenSpan;
 use super::lex::Lexer;
 use std::mem::swap;
 use super::token::Token;
+use std::any::Any;
+
 
 //TODO: Replace with import!!
 #[derive(Debug, Clone)]
@@ -103,9 +105,7 @@ impl<'a> Parser<'a>{
 
     // Parses the tokens for create-syntax
     fn parse_create_stmt(&mut self) -> Result<CreateStmt, ParseError> {
-        self.lexer_next();
-        try!(self.expect_token(&[Token::Whitespace]));
-        self.lexer_next();
+        self.skip_whitespace();
 
         match try!(self.expect_keyword(&[Keyword::Table])) {
             // Create the table subtree
@@ -125,9 +125,7 @@ impl<'a> Parser<'a>{
 
     // ..
     fn parse_drop_stmt(&mut self)  -> Result<DropStmt, ParseError> {
-        self.lexer_next();
-        try!(self.expect_token(&[Token::Whitespace]));
-        self.lexer_next();
+        self.skip_whitespace();
 
         match try!(self.expect_keyword(&[Keyword::Table])) {
             // Create the table subtree
@@ -142,7 +140,7 @@ impl<'a> Parser<'a>{
 
 
     // matches current token against any keyword and checks if it is one of the expected keywords
-    fn expect_keyword(&mut self,expected_keywords: &[Keyword]) -> Result<Keyword, ParseError> {
+    fn expect_keyword(&self,expected_keywords: &[Keyword]) -> Result<Keyword, ParseError> {
         let mut found_keyword;
         let mut span_lo;
         let mut span_hi;
@@ -181,6 +179,31 @@ impl<'a> Parser<'a>{
         }
     }
 
+    fn expect_keyword(&self,expected_keywords: &[Keyword]) -> Result<Keyword, ParseError> {
+        let mut found_keyword;
+        let mut span_lo;
+        let mut span_hi;
+        {
+            // checks if token non or some
+            let token = match self.curr {
+                None => return Err(ParseError::EofError),
+                // in case of som: return reference to token
+                Some(ref token) => token,
+            };
+
+            span_lo=token.span.lo;
+            span_hi=token.span.hi;
+
+            // checks whether token is a word
+            let word = match token.tok {
+                Token::Word(ref s) => s,
+                _=>return Err(ParseError::NotAKeyword(Span {lo: span_lo , hi: span_hi}))
+            };
+
+
+        }
+    }
+
 
 
 
@@ -200,6 +223,14 @@ impl<'a> Parser<'a>{
         }else{
             return Err(ParseError::WrongToken(Span {lo: token.span.lo, hi: token.span.hi}))
         }
+    }
+
+
+    fn skip_whitespace(&mut self) -> Result<Token, ParseError>{
+        self.lexer_next();
+        try!(self.expect_token(&[Token::Whitespace]));
+        self.lexer_next();
+        return Ok(Token::Whitespace);
     }
 }
 
