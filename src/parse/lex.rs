@@ -3,10 +3,9 @@ use std::str::Chars;
 use super::Span;
 use std::iter::{Iterator};
 
-///A lexer with its associated query, a char iterator, and
-///positions (last, current, next)
+/// A lexer with its associated query, a char iterator, and
+/// positions (last, current, next)
 pub struct Lexer<'a> {
-    query: &'a str,
     chs : Chars<'a>,
     last: Option<char>,
     last_pos: Option<usize>,
@@ -18,92 +17,86 @@ pub struct Lexer<'a> {
 
 impl<'a> Lexer<'a> {
 
-    ///new lexer, everything set to None
+    /// New lexer, everything set to None
     pub fn from_query<'b>(query: &'b str) -> Lexer<'b> {
         let mut lex = Lexer {
-            query: query,
             curr: None,
-            curr_pos: Some(0),
+            curr_pos: None,
             last: None,
-            last_pos: Some(0),
+            last_pos: None,
             next: None,
-            span_start: Some(0),
+            span_start: None,
             chs : query.chars()
         };
         lex.dbump();
         lex
     }
 
-    ///bumper function advances to the next char
+    /// Bumper function advances to the next char
     fn bump(&mut self){
 
-        //advance all pointers to the next char
+        // advance all pointers to the next char
         self.last = self.curr;
         self.curr = self.next;
         self.next = self.chs.next();
 
 
-        //TODO: position-management
-        // advance last_pos to position of current char
+        // Advance last_pos to position of current char
         self.last_pos = self.curr_pos;
 
-        // next position is current position plus the utf8 length
+        // Next position is current position plus the utf8 length
         // of the next character
         match self.next {
             Some(c) => {
-                self.curr_pos = Some(self.curr_pos.unwrap()
-                    + c.len_utf8())
+                self.curr_pos = match self.curr_pos {
+                    Some(n) => Some(n + c.len_utf8()),
+                    None => Some(0 + c.len_utf8()) // Start at pos 0
+                }
             }
             _ => {}
         };
 
     }
 
-    ///double bump
+    /// Double bump
     fn dbump(&mut self) {
         self.bump();
         self.bump();
     }
 
-    ///scan each new WORD from the query string
+    /// Scan each new WORD from the query string
     fn scan_words(&mut self) -> String {
         let mut s = String::new();
-        //loop until the end of a word (only letters and _)
+        // Loop until the end of a word (only letters, numbers and _)
         loop {
-            //take current char
+            // Take current char
             match self.curr.unwrap_or(' ') {
                 c @ 'a' ... 'z' |
                 c @ 'A' ... 'Z' |
                 c @ '0' ... '9' |
                 c @ '_' => {
-                    //push letter into return string
+                    // Push letter into return string
                     s.push(c);
                 },
-                //if no letter, then stop loop
+                // If no letter, then stop loop
                 _ => break
             }
-            //next char
+            // Next char
             self.bump();
         }
         s
     }
 
-    ///scan each new NUMBER from the query string
+    /// Scan each new NUMBER from the query string
     fn scan_nums(&mut self) -> String {
         let mut s = String::new();
         let mut dot = false;
         loop {
             match self.curr.unwrap_or(' ') {
-                c @ '0' ... '9' => {
+                c @ '0' ... '9' |
+                c @ '.' => {
                     s.push(c);
                 }
-                c @ '.' => {
-                    if dot {
-                        println!("This is not a good number, Sir!");
-                    }
-                    dot = true;
-                    s.push(c);
-                },
                 _ => break
             }
             self.bump();
@@ -112,9 +105,8 @@ impl<'a> Lexer<'a> {
     }
 
     fn scan_lit(&mut self) -> String {
-        //liter = everything until " | ' , bump over ' | "
         let mut s = String::new();
-        self.bump(); //to first char of literal
+        self.bump(); // To first char of literal
         loop {
             match self.curr.unwrap_or(' ') {
                 c @ '\'' |
@@ -130,15 +122,15 @@ impl<'a> Lexer<'a> {
         s
     }
 
-    ///skips all the whitespaces
+    /// Skips all the whitespaces
     fn skip_whitespace(&mut self) {
-        while is_whitespace(self.curr.unwrap()){
+        while is_whitespace(self.curr.unwrap_or('x')){
             self.bump();
         }
     }
 }
 
-///checks for whitespace/line break/tab
+/// Checks for whitespace/line break/tab
 fn is_whitespace(c: char) -> bool {
     match c {
         ' ' | '\n' | '\t' => true,
@@ -152,47 +144,48 @@ impl<'a> Iterator for Lexer<'a> {
 
     fn next(&mut self) -> Option<TokenSpan> {
 
-        //for two char ops (e.g. >=), we need to check the next char
-        //if we are at the end of the string, we end
+        // For two char ops (e.g. >=), we need to check the next char
+        // if we are at the end of the string, we end
         let nexchar = self.next.unwrap_or('\x00');
 
-        //saving the first pos of a token
+        // Saving the first pos of a token
         self.span_start = self.curr_pos;
 
-        //if no current char available, return None
-        if self.curr.is_none() {
-            return None;
-        }
+        // Getting current char, else return None
+        let curr = match self.curr {
+            None => return None,
+            Some(c) => c
+        };
 
-        //unwrap current char and decide token class
-        let token = match self.curr.unwrap_or('x') {
+        // Matching current char to respective token
+        let token = match curr {
 
-            //words
+            // Words
             'a' ... 'z' | 'A' ... 'Z' => {
                 let w = self.scan_words();
                 Token::Word(w.to_lowercase())
             },
 
-            //nums
+            // Nums
             '0' ... '9' => {
                 let n = self.scan_nums();
                 Token::Num(n)
 
             },
 
-            //semi
+            // Semicolon
             ';' => {
                 self.bump();
                 Token::Semi
             },
 
-            //dots
+            // Dots
             '.' => {
                 self.bump();
                 Token::Dot
             },
 
-            //commas
+            // Commas
             ',' => {
                 self.bump();
                 Token::Comma
@@ -210,98 +203,98 @@ impl<'a> Iterator for Lexer<'a> {
             //     Token::QMark
             // },
 
-            //ParenOp
+            // ParenOp
             '(' => {
                 self.bump();
                 Token::ParenOp
             },
 
-            //ParenCl
+            // ParenCl
             ')' => {
                 self.bump();
                 Token::ParenCl
             },
 
-            //Literals
+            // Literals
             '\'' | '"' => {
                 let l = self.scan_lit();
                 self.bump();
                 Token::Literal(Lit::Str(l))
             },
 
-            //Equ
+            // Equ
             '=' => {
                 self.bump();
                 Token::Equ
             },
 
-            //GEThan >=
+            // GEThan >=
             '>' if nexchar == '=' => {
                 self.dbump(); //because two chars!
                 Token::GEThan
             },
 
-            //SEThan <=
+            // SEThan <=
             '<' if nexchar == '=' => {
                 self.dbump();
                 Token::SEThan
             },
 
-            //GThan >
+            // GThan >
             '>' => {
                 self.bump();
                 Token::GThan
             },
 
-            //SThan <
+            // NEqu <>
+            '<' if nexchar == '>' => {
+                self.dbump();
+                Token::NEqu
+            },
+
+            // SThan <
             '<' => {
                 self.bump();
                 Token::SThan
             },
 
-            //NEqu !=
-            '!' if nexchar == '=' => {
-                self.dbump();
-                Token::NEqu
-            },
-
-            //Add
+            // Add
             '+' => {
                 self.bump();
                 Token::Add
             },
 
-            //Sub
+            // Sub
             '-' => {
                 self.bump();
                 Token::Sub
             },
 
-            //Div
+            // Div
             '/' => {
                 self.bump();
                 Token::Div
             }
 
-            //Mod
+            // Mod
             '%' => {
                 self.bump();
                 Token::Mod
             }
 
-            //Star
+            // Star
             '*' => {
                 self.bump();
                 Token::Star
             },
 
-            //whitespaces
+            // Whitespaces
             c if is_whitespace(c) => {
                 self.skip_whitespace();
                 Token::Whitespace
             },
 
-            //default: everything else
+            // Default: everything else
             _ => {
                 self.bump();
                 Token::Unknown
@@ -309,10 +302,9 @@ impl<'a> Iterator for Lexer<'a> {
 
         };
 
-        //return Option
+        // Return an Option
         Some(TokenSpan {
             tok: token,
-            //currently 0 TODO
             span: Span { lo: self.span_start.unwrap(), hi: self.curr_pos.unwrap()}
         })
     }

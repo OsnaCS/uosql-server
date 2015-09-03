@@ -125,7 +125,7 @@ impl<'a> Parser<'a>{
 
     // ..
     fn parse_drop_stmt(&mut self)  -> Result<DropStmt, ParseError> {
-        Ok(DropStmt::Drop)
+        Ok(DropStmt::Table("TestTable".to_string()))
         // let type = self.expect_keyword(Table);
         // TODO: implement Drop
 

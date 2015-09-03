@@ -1,6 +1,9 @@
 #[macro_use]
 extern crate log;
 extern crate term_painter as term;
+extern crate byteorder;
+extern crate rustc_serialize;
+extern crate bincode;
 
 pub mod auth;
 pub mod conn;
