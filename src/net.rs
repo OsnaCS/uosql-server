@@ -107,7 +107,7 @@ pub fn read_login<R:Read+Write>(stream: &mut R, login: &mut Login) -> Result<(),
             login.password = log.password; 
             return Ok(())
             },
-        _=> Err(Error::new(ErrorKind::Other, "not again"))
+        _=> Err(Error::new(ErrorKind::Other, "problems while reading username and password data"))
     }
 }
 
@@ -124,12 +124,33 @@ pub fn send_error_package<W:Write>(stream: &mut W, err: ErrorCode) -> io::Result
 /// commands that are not sent as query.
 #[derive(RustcEncodable, RustcDecodable)]
 #[repr(u8)]
+#[derive(PartialEq, Eq, Debug)]
 pub enum Command {
     Quit,
     Ping,
     Query(String),
+    Unknown,
     // Shutdown,
     // Statistics,
+}
+
+/// read sent bytes, extract the kind of command
+pub fn read_commands<R:Read + Write>(stream: &mut R) -> Result<Command, io::Error> {
+    
+    // read the first byte for code numeric value
+    let status = try!(stream.read_u8());
+    if status != Cnv::CommandPkg as u8 {
+        //send error_package
+        try!(send_error_package(stream, ErrorCode::UnexpecPkgErr));
+        return Ok(Command::Unknown)
+    }
+    
+    // second  4 bytes is the kind of command
+    let command_decode = decode_from::<R,Command>(stream, SizeLimit::Bounded(4096));
+    match command_decode {
+        Ok(command) => Ok(command),
+        _=> Err(Error::new(ErrorKind::Other, "problems while reading command data"))
+    }
 }
 
 /// Sent by the server to the client.
@@ -153,20 +174,46 @@ pub struct Response;    // TODO
 //
 
 #[test]
+pub fn test_read_commands(){
+    //test if the commands are correctly decoded
+    use std::io::Cursor;        // stream to read from
+    let mut vec = Vec::new();   // stream to write into
+
+    // write the command into the stream
+    vec.push(Cnv::CommandPkg as u8);
+    let command_encode = encode_into(&Command::Quit, &mut vec, SizeLimit::Bounded(1024));
+
+    // read the command from the stream for Command::Quit
+    let mut command_res = read_commands(&mut Cursor::new(vec));
+    assert_eq!(command_res.is_ok(), true);
+    assert_eq!(command_res.unwrap(), Command::Quit);
+
+    let mut vec2 = Vec::new();
+    // write the command into the stream
+    vec2.push(Cnv::CommandPkg as u8);
+    let command_encode = encode_into(&Command::Query("select".into()), &mut vec2, SizeLimit::Bounded(1024));
+
+    // read the command from the stream for Command::Query("select")  
+    command_res = read_commands(&mut Cursor::new(vec2));
+    assert_eq!(command_res.is_ok(), true);
+    assert_eq!(command_res.unwrap(), Command::Query("select".into()));
+}
+
+#[test]
 pub fn testlogin() {
-    use std::io::Cursor;
-    let mut vec = Vec::new();
-
-    //original 
+    use std::io::Cursor;        // stream to read from
+    let mut vec = Vec::new();   // stream to write into
+    
+    //original struct
     let login = Login { username : "elena".into(), password: "praktikum".into() };
-
-    let mut login_res = Login::new();
-
     vec.push(1u8);
     let login_encode = encode_into(&login,&mut vec,SizeLimit::Bounded(1024));
 
-    
+    // get the function results
+    let mut login_res = Login::new();
     let login_decode = read_login(&mut Cursor::new(vec), &mut login_res);
+
+    // test for equality
     assert_eq!(login_res.username, "elena");
     assert_eq!(login.password, "praktikum");
 }
