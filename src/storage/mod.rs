@@ -5,19 +5,18 @@
 
 use std::path::Path;
 use std::convert::From;
-//use std::io::{Error};
 use byteorder::Error;
 use std::io::prelude::*;
 use std::io;
-use std::fs::{OpenOptions,File,create_dir};
+use std::fs::{ OpenOptions,File,create_dir };
 
-use byteorder::{WriteBytesExt, ReadBytesExt, BigEndian};
+use byteorder::{ WriteBytesExt, ReadBytesExt, BigEndian };
 
 use bincode::SizeLimit;
-use bincode::rustc_serialize::{EncodingError,DecodingError,encode_into,decode_from};
+use bincode::rustc_serialize::{ EncodingError,DecodingError,encode_into,decode_from };
 
 /// constants
- const MAGIC_NUMBER: u64 = 0xAAAAAAAAAAAAAAAA;
+ const MAGIC_NUMBER: u64 = 0x6561742073686974; // secret
  const MAGIC_NUMBER_BYTES: usize = 8;
 
 
@@ -81,7 +80,7 @@ enum FileMode{ LoadDefault, SaveDefault, }
 #[repr(u8)]
 #[derive(Clone,Copy,Debug,RustcDecodable, RustcEncodable)]
 pub enum DataType{ Integer = 1, Float = 2,}
-impl DataType{
+impl DataType {
     pub fn value(&self) -> u8 {
        *self as u8
     }
@@ -93,7 +92,7 @@ pub struct Database {
 
 impl Database {
     pub fn new_database(database_name: &str) -> Database {
-        Database{name: database_name.to_string()}
+        Database{ name: database_name.to_string() }
     }
     pub fn create_database(&self) -> Result<(),DatabaseError> {
         println!("trying to create dir!");
@@ -114,8 +113,7 @@ pub struct Table {
 }
 
 impl Default for Table {
-    fn default() -> Table
-    {
+    fn default() -> Table {
         let mut t: Vec<Column> = Vec::new();
         t.push(Default::default());
         Table { name:"default".to_string(), engine_id: 3, version_nmbr:  1, column_nmbr: 1, columns: t }
