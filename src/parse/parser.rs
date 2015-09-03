@@ -2,7 +2,8 @@
 ///
 
 use std::iter::Iterator;
-use super::ast::{Query, DefStmt, CreateStmt, DropStmt, CreateTableStmt};
+use super::ast::{Query, DefStmt, CreateStmt, DropStmt, CreateTableStmt, AltStmt,
+                 AlterTableStmt, AlterOp, ColumnInfo, SqlType};
 use super::token::TokenSpan;
 use super::lex::Lexer;
 use std::mem::swap;
@@ -36,11 +37,14 @@ pub enum Keyword {
     // 2nd level keywords
     Table,
     View,
+    Column,
 
 
     // 3rd level keywords
     From,
-    Where
+    Where,
+    Modify,
+    Add
 }
 
 
@@ -76,7 +80,7 @@ impl<'a> Parser<'a>{
             _=>(),
         }
         // first token is checked if it's a keyword using expect_keyword()
-        let querytype = self.expect_keyword(&[Keyword::Create,Keyword::Drop])
+        let querytype = self.expect_keyword(&[Keyword::Create,Keyword::Drop, Keyword::Alter])
             .map_err(|e| match e {
                 ParseError::EofError => ParseError::EmptyQueryError,
                 _ => e,
@@ -90,6 +94,8 @@ impl<'a> Parser<'a>{
             Keyword::Create => return Ok(Query::DefStmt(DefStmt::Create(try!(self.parse_create_stmt())))),
             // Drop-Query
             Keyword::Drop => return Ok(Query::DefStmt(DefStmt::Drop(try!(self.parse_drop_stmt())))),
+            // Alter-Query
+            Keyword::Alter => return Ok(Query::DefStmt(DefStmt::Alter(try!(self.parse_alt_stmt())))),
 
             // Unknown Error
             _=> return Err(ParseError::UnknownError)
@@ -109,7 +115,7 @@ impl<'a> Parser<'a>{
 
         match try!(self.expect_keyword(&[Keyword::Table])) {
             // Create the table subtree
-            Keyword::Table=> return Err(ParseError::DebugError("Table Creation needs Implementation".to_string())),
+            Keyword::Table=> return {try!(self.skip_whitespace());Err(ParseError::DebugError(try!(self.expect_word())))},
             // Create the view subtree
             // Create .....
 
@@ -119,24 +125,62 @@ impl<'a> Parser<'a>{
 
     }
 
+    // Parses tokens for alter statement
+    fn parse_alt_stmt(&mut self) -> Result<AltStmt, ParseError> {
+        try!(self.skip_whitespace());
+        
+        match try!(self.expect_keyword(&[Keyword::Table])) {
+            Keyword::Table=> return Ok(AltStmt::Table(try!(self.parse_alter_stmt()))),
+
+            // Unknown parsing error
+            _=> return Err(ParseError::UnknownError),
+        };
+    }
+
+    // Parses table to modify and subsequent operations
+    fn parse_alter_stmt(&mut self) -> Result<AlterTableStmt, ParseError> {
+        try!(self.skip_whitespace());
+
+        let mut alt_table_stmt = AlterTableStmt {tid: try!(self.expect_word()), op: try!(self.parse_alter_op())};
+        Ok(alt_table_stmt)
+
+    }
+
+    // Parses operations applied on selected table including tablename and datatype if necessary
+    fn parse_alter_op(&mut self) -> Result<AlterOp, ParseError> {
+        try!(self.skip_whitespace());
+
+        match try!(self.expect_keyword(&[Keyword::Add, Keyword::Drop, Keyword::Modify])){
+            Keyword::Add => return Ok(AlterOp::Add(try!(self.parse_column_info()))),
+            Keyword::Drop => return Ok(AlterOp::Drop(try!(self.expect_word()))),
+            Keyword::Modify => return Ok(AlterOp::Modify(try!(self.parse_column_info()))),
+            _ => return Err(ParseError::UnknownError),
+        }
+    }
 
 
+    // Utility function to parse metadata of columns
+    fn parse_column_info(&mut self) -> Result<ColumnInfo, ParseError> {
+        try!(self.skip_whitespace());
+        let mut column_id = try!(self.expect_word());
+        try!(self.skip_whitespace());
+        //todo insert expect_datatype fn
+        let mut column_info = ColumnInfo{cid: column_id, datatype: SqlType::Int};
+        Ok(column_info)
+    }
 
 
-    // ..
-    fn parse_drop_stmt(&mut self)  -> Result<DropStmt, ParseError> {
-        self.skip_whitespace();
+    // Parses the tokens for drop statement
+    fn parse_drop_stmt(&mut self) -> Result<DropStmt, ParseError> {
+        try!(self.skip_whitespace());
 
         match try!(self.expect_keyword(&[Keyword::Table])) {
-            // Create the table subtree
-            Keyword::Table=> return Err(ParseError::DebugError("Table drop needs Implementation".to_string())),
-            // Create the view subtree
-            // Create .....
-
-            // Unknown parsing error
+            Keyword::Table => return {try!(self.skip_whitespace()); Ok(DropStmt::Table(try!(self.expect_word())))},
             _=> return Err(ParseError::UnknownError),
         };
     }
+
+
 
 
     // matches current token against any keyword and checks if it is one of the expected keywords
@@ -167,6 +211,14 @@ impl<'a> Parser<'a>{
                 "drop" => Keyword::Drop,
                 "table" => Keyword::Table,
                 "view" => Keyword::View,
+                "alter" => Keyword::Alter,
+                "update" => Keyword::Update,
+                "select" => Keyword::Select,
+                "insert" => Keyword::Insert,
+                "delete" => Keyword::Delete,
+                "modify" => Keyword::Modify,
+                "add" => Keyword::Add,
+                "column" => Keyword::Column,
                 _=>return Err(ParseError::NotAKeyword(Span {lo: span_lo , hi: span_hi})),
 
             };
@@ -179,8 +231,9 @@ impl<'a> Parser<'a>{
         }
     }
 
-    fn expect_keyword(&self,expected_keywords: &[Keyword]) -> Result<Keyword, ParseError> {
-        let mut found_keyword;
+
+    fn expect_word(&self) -> Result<String, ParseError>{
+        let mut found_word;
         let mut span_lo;
         let mut span_hi;
         {
@@ -195,17 +248,16 @@ impl<'a> Parser<'a>{
             span_hi=token.span.hi;
 
             // checks whether token is a word
-            let word = match token.tok {
+            found_word = match token.tok {
                 Token::Word(ref s) => s,
-                _=>return Err(ParseError::NotAKeyword(Span {lo: span_lo , hi: span_hi}))
+                _=>return Err(ParseError::NotAWord(Span {lo: span_lo , hi: span_hi}))
             };
 
-
         }
+        return Ok(found_word.to_string());
+
+
     }
-
-
-
 
 
     fn expect_token(& self,expected_tokens: &[Token]) -> Result<&Token, ParseError>{
@@ -243,13 +295,15 @@ pub enum ParseError {
     EmptyQueryError,
     //End of file, used internal
     EofError,
+    TestError,
+    ToDo,
 
     // Syntax errors:
     WrongKeyword(Span),
     WrongToken(Span),
     NotAKeyword(Span),
     NotAToken(Span),
-
+    NotAWord(Span),
 
 
 

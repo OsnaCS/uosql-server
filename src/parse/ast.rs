@@ -50,12 +50,12 @@ pub enum DropStmt {
 #[derive(Debug, Clone)]
 pub struct CreateTableStmt {
     pub tid: String,
-    pub cols: Vec<CreateColumn>,
+    pub cols: Vec<ColumnInfo>,
 }
 
 /// Information for column creation
 #[derive(Debug, Clone)]
-pub struct CreateColumn {
+pub struct ColumnInfo {
     pub cid: String,
     pub datatype: SqlType,
 }
@@ -70,9 +70,9 @@ pub struct AlterTableStmt {
 /// Possible operations for table alterations
 #[derive(Debug, Clone)]
 pub enum AlterOp {
-	Add(CreateColumn),
+	Add(ColumnInfo),
 	Drop(String),
-	Alter(CreateColumn)
+	Modify(ColumnInfo)
 }
 
 /// Information for table update
