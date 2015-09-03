@@ -116,7 +116,13 @@ impl Default for Table {
     fn default() -> Table {
         let mut t: Vec<Column> = Vec::new();
         t.push(Default::default());
-        Table { name:"default".to_string(), engine_id: 3, version_nmbr:  1, column_nmbr: 1, columns: t }
+        Table {
+            name:"default".to_string(),
+            engine_id: 3,
+            version_nmbr: 1,
+            column_nmbr: 1,
+            columns: t
+        }
     }
 }
 
@@ -138,14 +144,20 @@ impl Table {
 
     pub fn create_new(engine: u8, name: &str) -> Table {
 
-        Table { name: name.to_string(), engine_id: engine, version_nmbr: 1, column_nmbr: 0, columns: Vec::new() }
+        Table {
+            name: name.to_string(),
+            engine_id: engine,
+            version_nmbr: 1,
+            column_nmbr: 0,
+            columns: Vec::new()
+        }
     }
 
     pub fn save(&self,database: &str, table: &str) -> Result<(), DatabaseError> {
         // call for open file
-        let mut file = try!(Self::open_file(database,table,FileMode::SaveDefault));
+        let mut file = try!(Self::open_file(database, table, FileMode::SaveDefault));
         try!(file.write_u64::<BigEndian>(MAGIC_NUMBER));//MAGIC_NUMBER
-        try!(encode_into(&self,&mut file,SizeLimit::Infinite));
+        try!(encode_into(&self, &mut file,SizeLimit::Infinite));
 
         // debug message all okay
         println!("I Wrote my File");
@@ -191,15 +203,20 @@ pub struct Column {
 }
 
 impl Default for Column {
-    fn default() -> Column
-    {
-        Column{name: "default".to_string(), data_type: DataType::Integer}
+    fn default() -> Column {
+        Column {
+            name: "default".to_string(),
+            data_type: DataType::Integer
+        }
     }
 }
 
 impl Column {
     pub fn create_new(name: &str, dtype: DataType) -> Column {
-        Column{ name: name.to_string(), data_type: dtype.clone() }
+        Column {
+            name: name.to_string(),
+            data_type: dtype.clone()
+        }
     }
 }
 
