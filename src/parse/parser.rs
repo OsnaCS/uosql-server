@@ -108,9 +108,10 @@ impl<'a> Parser<'a>{
         self.skip_whitespace();
 
 
+
         match try!(self.expect_keyword(&[Keyword::Table])) {
             // Create the table subtree
-            Keyword::Table=> return Err(ParseError::DebugError("Table Creation needs Implementation".to_string())),
+            Keyword::Table=> return {try!(self.skip_whitespace());Err(ParseError::DebugError(try!(self.expect_word())))},
             // Create the view subtree
             // Create .....
 
@@ -173,7 +174,32 @@ impl<'a> Parser<'a>{
     }
 
 
+    fn expect_word(&self) -> Result<String, ParseError>{
+        let mut found_word;
+        let mut span_lo;
+        let mut span_hi;
+        {
+            // checks if token non or some
+            let token = match self.curr {
+                None => return Err(ParseError::EofError),
+                // in case of som: return reference to token
+                Some(ref token) => token,
+            };
 
+            span_lo=token.span.lo;
+            span_hi=token.span.hi;
+
+            // checks whether token is a word
+            found_word = match token.tok {
+                Token::Word(ref s) => s,
+                _=>return Err(ParseError::NotAWord(Span {lo: span_lo , hi: span_hi}))
+            };
+
+        }
+        return Ok(found_word.to_string());
+
+
+    }
 
 
     fn expect_token(& self,expected_tokens: &[Token]) -> Result<&Token, ParseError>{
@@ -217,7 +243,7 @@ pub enum ParseError {
     WrongToken(Span),
     NotAKeyword(Span),
     NotAToken(Span),
-
+    NotAWord(Span),
 
 
 
