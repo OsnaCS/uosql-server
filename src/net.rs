@@ -33,6 +33,8 @@ pub enum Cnv {
     LoginPkg,
     CommandPkg,
     ErrorPkg,
+    OkPkg,
+    ResponsePkg,
 }
 
 /// Collection of possible errors while communicating with the client
