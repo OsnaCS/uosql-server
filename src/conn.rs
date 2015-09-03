@@ -18,13 +18,21 @@ pub fn handle(mut stream: TcpStream) {
         _ => Err(auth::AuthError::UserNotFound)
     };
 
-    // TODO: Read commands from the client (with help of `net`)
+    // Read commands from the client (with help of `net`) --> done
     loop {
         //get the command from the stream
         let command_res = net::read_commands(&mut stream);
-        println!("{:?}",command_res);
+        
         // TODO: Dispatch commands (handle easy ones directly, forward others)
-
+        match command_res {
+            Ok(cmd) => 
+            match cmd {
+                net::Command::Quit => return, //exit the session and shutdown the connection
+                net::Command::Ping => { net::send_ok_package(&mut stream); } , // send OK-Package
+                _ => continue
+            },
+            Err(e) => continue//error handling
+        }
         // TODO: If query -> Call parser to obtain AST
         // TODO: If query -> Pass AST to query executer
 

@@ -33,6 +33,8 @@ pub enum Cnv {
     LoginPkg,
     CommandPkg,
     ErrorPkg,
+    OkPkg,
+    ResponsePkg,
 }
 
 /// Collection of possible errors while communicating with the client
@@ -153,15 +155,6 @@ pub fn read_login<R: Read+Write>(stream: &mut R)
     }
 }
 
-/// send error package with given error code status
-pub fn send_error_package<W: Write>(mut stream: &mut W, err: NetworkErrors) 
-    -> Result<(), NetworkErrors> 
-{
-    try!(stream.write_u8(Cnv::ErrorPkg as u8));
-    try!(encode_into(&err, &mut stream, SizeLimit::Bounded(1024)));
-    Ok(())
-}
-
 /// Sent by the client to the server.
 ///
 /// Many commands are executed via query, but there are some "special"
@@ -195,6 +188,22 @@ pub fn read_commands<R: Read + Write>(stream: &mut R)
         Ok(command) => Ok(command),
         Err(e) => Err(e.into())
     }
+}
+
+/// send error package with given error code status
+pub fn send_error_package<W: Write>(mut stream: &mut W, err: NetworkErrors) 
+    -> Result<(), NetworkErrors> 
+{
+    try!(stream.write_u8(Cnv::ErrorPkg as u8));
+    try!(encode_into(&err, &mut stream, SizeLimit::Bounded(1024)));
+    Ok(())
+}
+
+pub fn send_ok_package<W: Write> (mut stream: &mut W) 
+    -> Result<(), NetworkErrors> 
+{
+    try!(stream.write_u8(Cnv::OkPkg as u8));
+    Ok(())
 }
 
 /// Sent by the server to the client.
