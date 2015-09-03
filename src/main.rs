@@ -4,7 +4,6 @@ extern crate term_painter as term;
 extern crate byteorder;
 extern crate rustc_serialize;
 extern crate bincode;
-//extern crate serialize;
 
 pub mod auth;
 pub mod conn;

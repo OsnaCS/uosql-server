@@ -17,9 +17,9 @@
 
 // TODO: Remove this line as soon as this module is actually used
 #![allow(dead_code, unused_variables)]
-use std::io::{Write,Read, ErrorKind};
+use std::io::{Write,Read};
 use byteorder::{ReadBytesExt, WriteBytesExt}; // for write_u16()
-use bincode::rustc_serialize::{decode_from, encode_into}; // to encode and decode the structs to the given stream
+use bincode::rustc_serialize::{decode_from, encode_into,EncodingError,DecodingError}; // to encode and decode the structs to the given stream
 use bincode::SizeLimit;
 use rustc_serialize::{Encodable, Encoder}; // to encode the Networkerrors
 use byteorder;
@@ -42,24 +42,38 @@ pub enum NetworkErrors {
     ByteOrder(byteorder::Error),
     UnexpectedPkg(String),
     UnknownCmd(String),
+    EncodeErr(EncodingError),
+    DecodeErr(DecodingError),
 }
 
 impl From<byteorder::Error> for NetworkErrors {
-    fn from(err : byteorder::Error) -> NetworkErrors {
+    fn from(err: byteorder::Error) -> NetworkErrors {
         NetworkErrors::ByteOrder(err)
     }
 }
 
 impl From<io::Error> for NetworkErrors {
-    fn from(err : io::Error) -> NetworkErrors {
+    fn from(err: io::Error) -> NetworkErrors {
         NetworkErrors::IoError(err)
+    }
+}
+
+impl  From<EncodingError> for NetworkErrors {
+    fn from(err: EncodingError) -> NetworkErrors {
+        NetworkErrors::EncodeErr(err)
+    }
+}
+
+impl From<DecodingError> for NetworkErrors {
+    fn from(err: DecodingError) -> NetworkErrors {
+        NetworkErrors::DecodeErr(err)
     }
 }
 
 impl Encodable for NetworkErrors {
     fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
         try!(s.emit_u8(1));
-        return Ok(())
+        Ok(())
         /*
         match *self {
             IoError(err) => s.emit_enum("IoError", 0u, |s| {
@@ -70,14 +84,14 @@ impl Encodable for NetworkErrors {
     }
 }
 
-const PROTOCOL_VERSION : u8 = 1;
+const PROTOCOL_VERSION: u8 = 1;
 
 /// This is the first packet being sent by the server after the TCP connection
 /// is established.
 #[derive(RustcEncodable, RustcDecodable)]
 pub struct Greeting {
-    protocol_version : u8,   // 1 byte
-    message : String,        // n bytes
+    protocol_version: u8,   // 1 byte
+    message: String,        // n bytes
 }
 
 impl Greeting {
@@ -87,17 +101,19 @@ impl Greeting {
 }
 
 /// writes a welcome-message to the given server-client-stream
-pub fn do_handshake<W : Write + Read>(stream : &mut W) -> Result<(String, String), NetworkErrors> {
+pub fn do_handshake<W: Write + Read>(stream: &mut W) 
+    -> Result<(String, String), NetworkErrors> 
+{
     let greet = Greeting::make_greeting(PROTOCOL_VERSION, "Welcome".to_string());
     
     // send handshake package to client
     try!(stream.write_u8(Cnv::GreetPkg as u8)); //kind of message
-    let greet_encode = encode_into(&greet, stream, SizeLimit::Bounded(1024));
+    try!(encode_into(&greet, stream, SizeLimit::Bounded(1024)));
 
     // receive login data from client
-    let mut login = Login::new();
-    match read_login(stream, &mut login) {
-        Ok(something) => Ok((login.username, login.password)),
+    let login = read_login(stream);
+    match login {
+        Ok(sth) => Ok((sth.username, sth.password)),
         Err(msg) => Err(msg)
     }
 }
@@ -106,20 +122,22 @@ pub fn do_handshake<W : Write + Read>(stream : &mut W) -> Result<(String, String
 /// authentication handshake.
 #[derive(RustcEncodable, RustcDecodable)]
 pub struct Login {
-    pub username : String,
-    pub password : String
+    pub username: String,
+    pub password: String
 }
 
 impl Login {
     // default values
     pub fn new() -> Login {
-        Login { username : "".to_string(), password : "".to_string() }
+        Login { username: "".to_string(), password: "".to_string() }
     }
 }
 
 /// reads the data from the response to the handshake,
 /// username and password extracted and authenticated
-pub fn read_login<R : Read+Write>(stream : &mut R, login : &mut Login) -> Result<(), NetworkErrors> {
+pub fn read_login<R: Read+Write>(stream: &mut R) 
+    -> Result<Login, NetworkErrors> 
+{
     
     // read the first byte
     let status = try!(stream.read_u8());
@@ -128,21 +146,19 @@ pub fn read_login<R : Read+Write>(stream : &mut R, login : &mut Login) -> Result
         return Err(NetworkErrors::UnexpectedPkg("package not expected".into()));
     }
 
-    let res = decode_from::<R,Login>(stream, SizeLimit::Bounded(1024));
+    let res = decode_from(stream, SizeLimit::Bounded(1024));
     match res {
-        Ok(log) => { 
-            login.username = log.username; 
-            login.password = log.password; 
-            return Ok(())
-            },
-        _ => Err(NetworkErrors::IoError(io::Error::new(ErrorKind::Other, "problems while reading username and password data")))
+        Ok(log) => Ok(log),
+        Err(e) => Err(e.into())
     }
 }
 
 /// send error package with given error code status
-pub fn send_error_package<W : Write>(mut stream : &mut W, err : NetworkErrors) -> Result<(), NetworkErrors> {
+pub fn send_error_package<W: Write>(mut stream: &mut W, err: NetworkErrors) 
+    -> Result<(), NetworkErrors> 
+{
     try!(stream.write_u8(Cnv::ErrorPkg as u8));
-    let command_encode = encode_into(&err, &mut stream, SizeLimit::Bounded(1024));
+    try!(encode_into(&err, &mut stream, SizeLimit::Bounded(1024)));
     Ok(())
 }
 
@@ -162,7 +178,9 @@ pub enum Command {
 }
 
 /// read sent bytes, extract the kind of command
-pub fn read_commands<R : Read + Write>(stream : &mut R) -> Result<Command, NetworkErrors> {
+pub fn read_commands<R: Read + Write>(stream: &mut R) 
+    -> Result<Command, NetworkErrors> 
+{
     
     // read the first byte for code numeric value
     let status = try!(stream.read_u8());
@@ -175,7 +193,7 @@ pub fn read_commands<R : Read + Write>(stream : &mut R) -> Result<Command, Netwo
     let command_decode = decode_from(stream, SizeLimit::Bounded(4096));
     match command_decode {
         Ok(command) => Ok(command),
-        _ => Err(NetworkErrors::IoError(io::Error::new(ErrorKind::Other, "problems while reading command data")))
+        Err(e) => Err(e.into())
     }
 }
 
@@ -231,15 +249,13 @@ pub fn testlogin() {
     let mut vec = Vec::new();   // stream to write into
     
     //original struct
-    let login = Login { username : "elena".into(), password: "praktikum".into() };
+    let login = Login { username: "elena".into(), password: "praktikum".into() };
     vec.push(1u8);
     let login_encode = encode_into(&login,&mut vec,SizeLimit::Bounded(1024));
 
-    // get the function results
-    let mut login_res = Login::new();
-    let login_decode = read_login(&mut Cursor::new(vec), &mut login_res);
+    let login_res = read_login(&mut Cursor::new(vec)).unwrap();
 
     // test for equality
     assert_eq!(login_res.username, "elena");
-    assert_eq!(login.password, "praktikum");
+    assert_eq!(login_res.password, "praktikum");
 }
