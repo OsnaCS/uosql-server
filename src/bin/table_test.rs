@@ -19,4 +19,5 @@ fn main() {
     let t = db.load_table("storage_team").unwrap();
 
     let mut engine = t.create_engine();
+    engine.create_table(t.columns());
 }
