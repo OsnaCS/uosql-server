@@ -22,12 +22,12 @@ pub fn handle(mut stream: TcpStream) {
     loop {
         //get the command from the stream
         let command_res = net::read_commands(&mut stream);
-        
-    // TODO: Dispatch commands (handle easy ones directly, forward others)
+        println!("{:?}",command_res);
+        // TODO: Dispatch commands (handle easy ones directly, forward others)
 
-    // TODO: If query -> Call parser to obtain AST
-    // TODO: If query -> Pass AST to query executer
+        // TODO: If query -> Call parser to obtain AST
+        // TODO: If query -> Pass AST to query executer
 
-    // TODO: Send results
+        // TODO: Send results
     } 
 }
