@@ -139,7 +139,7 @@ fn send_cmd<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
 }
 
 /// Match received packages to expected packages
-fn receive<R: Read>(s: &mut R, cmd: u8) -> Result<(), NetworkErrors>{
+fn receive<R: Read>(s: &mut R, cmd: u8) -> Result<(), NetworkErrors> {
     let status = s.read_u8();
     let st = match status {
         Ok(st) => st,
