@@ -19,7 +19,8 @@ use byteorder::Error;
 use byteorder::{WriteBytesExt, ReadBytesExt, BigEndian};
 
 use bincode::SizeLimit;
-use bincode::rustc_serialize::{EncodingError, DecodingError, encode_into, decode_from};
+use bincode::rustc_serialize::{EncodingError,
+    DecodingError, encode_into, decode_from};
 
 /// constants
  const MAGIC_NUMBER: u64 = 0x6561742073686974; // secret
@@ -199,7 +200,8 @@ impl<'a> Table<'a> {
             .read(true)
             .open(path_to_table));
         info!("reading file: {:?}", file);
-        let ma_nmbr = try!(file.read_uint::<BigEndian>(mem::size_of_val(&MAGIC_NUMBER)));
+        let n_size(mem::size_of_val(&MAGIC_NUMBER));
+        let ma_nmbr = try!(file.read_uint::<BigEndian>(n_size));
 
         info!("checking magic number: {:?}",ma_nmbr);
         if ma_nmbr != MAGIC_NUMBER {
