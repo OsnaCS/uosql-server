@@ -21,6 +21,7 @@ fn main() {
     logger::with_loglevel(log::LogLevelFilter::Trace)
         .with_logfile(std::path::Path::new("log.txt"))
         .enable().unwrap();
+
     // connect to server
     let stream = TcpStream::connect("127.0.0.1:4242");
     let mut s = match stream {
@@ -132,7 +133,7 @@ fn send_cmd<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
             }
         },
         ":exit" => {
-            return true
+            return true // maybe send quit signal
         }
         ":help" => {
             display_readme();
