@@ -14,7 +14,9 @@ pub fn handle(mut stream: TcpStream) {
     // Perform handshake, check user login --> done
     let res = net::do_handshake(&mut stream);
     let auth_res = match res {
-        Ok((user, pw)) => auth::find_user(&user, &pw),
+        Ok((user, pw)) => {
+            info!("Connection established. Handshake sent");
+            auth::find_user(&user, &pw)},
         _ => Err(auth::AuthError::UserNotFound)
     };
 
@@ -28,15 +30,28 @@ pub fn handle(mut stream: TcpStream) {
             Ok(cmd) => 
             match cmd {
                 //exit the session and shutdown the connection
-                net::Command::Quit => { net::send_ok_packet(&mut stream); return }, 
+                net::Command::Quit => { 
+                    match net::send_ok_packet(&mut stream) {
+                        Ok(res) => {
+                            debug!("Client disconnected properly.");
+                            return
+                        }, 
+                        Err(_) => {
+                            warn!("Failed to send packet. Connection close.");
+                        }
+                    }
+                }, 
                 // send OK-Package, unused value can be checked to try again and 
                 // eventually close to connection as timeout issue
-                net::Command::Ping => { net::send_ok_packet(&mut stream); } , 
+                net::Command::Ping => { net::send_ok_packet(&mut stream); }, 
                 // send the query string for parsing
                 // TODO: If query -> Call parser to obtain AST
                 // TODO: If query -> Pass AST to query executer
                 // TODO: Send results
-                net::Command::Query(query) => continue
+                net::Command::Query(query) => {
+                    debug!("Query received, dispatch query to parser.");
+                    continue
+                }
             },
             Err(e) => continue//error handling
         }

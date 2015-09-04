@@ -50,11 +50,11 @@ pub struct ClientErrMsg {
 impl From<NetworkErrors> for ClientErrMsg {
     fn from(error: NetworkErrors) -> ClientErrMsg {
         match error {
-            NetworkErrors::IoError(err) => ClientErrMsg { code: 0, msg: "IO error".into() } ,
-            NetworkErrors::ByteOrder(err) => ClientErrMsg { code: 1, msg: "Byteorder error".into() } ,
-            NetworkErrors::UnexpectedPkg(err) => ClientErrMsg { code: 2, msg: "unexpected packet".into() } ,
-            NetworkErrors::UnknownCmd(err) => ClientErrMsg { code: 3, msg: "unknown command: ".into() } ,
-            NetworkErrors::EncodeErr(err) => ClientErrMsg { code: 4, msg: "encoding error".into() } ,
+            NetworkErrors::IoError(err) => ClientErrMsg { code: 0, msg: "IO error".into() },
+            NetworkErrors::ByteOrder(err) => ClientErrMsg { code: 1, msg: "Byteorder error".into() },
+            NetworkErrors::UnexpectedPkg(err) => ClientErrMsg { code: 2, msg: "unexpected packet".into() },
+            NetworkErrors::UnknownCmd(err) => ClientErrMsg { code: 3, msg: "unknown command: ".into() },
+            NetworkErrors::EncodeErr(err) => ClientErrMsg { code: 4, msg: "encoding error".into() },
             NetworkErrors::DecodeErr(err) => ClientErrMsg { code: 5, msg: "decoding error".into() }
         }
     }
