@@ -20,5 +20,4 @@ fn main() {
 
     let mut engine = t.create_engine();
     let _e  = engine.create_table();
-    let t = engine.get_table();
 }
