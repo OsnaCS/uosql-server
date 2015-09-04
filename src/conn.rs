@@ -54,6 +54,10 @@ pub fn handle(mut stream: TcpStream) {
                 // TODO: Send results
                 Command::Query(_) => {
                     debug!("Query received, dispatch query to parser.");
+                    match net::send_ok_packet(&mut stream) {
+                        Ok(_) => { },
+                        Err(_) => warn!("Failed to send packet.")
+                    }
                     continue
                 }
             },

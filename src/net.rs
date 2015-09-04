@@ -226,7 +226,9 @@ pub fn send_ok_packet<W: Write> (mut stream: &mut W)
 }
 
 /// Sent by the server to the client.
-pub struct Response;    // TODO
+pub struct Response; 
+
+   // TODO
 
 
 // # Some information for the `net` working group:

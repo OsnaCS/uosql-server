@@ -131,9 +131,12 @@ fn send_cmd<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
                 }
             }
         },
+        "exit" => {
+            return true
+        }
         _ => {
-            let cmd_encode = encode_into(&input, &mut s,
-                SizeLimit::Bounded(1024));
+            let cmd_encode = encode_into(&Command::Query(input.to_string()), 
+                &mut s, SizeLimit::Bounded(1024));
             let _ = match cmd_encode {
                 Ok(_) => {},
                 Err(_) => {
@@ -144,7 +147,7 @@ fn send_cmd<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
             let status = s.read_u8();
             match status {
                 Ok(st) => {
-                    if st == Cnv::ResponsePkg as u8 {
+                    if st == Cnv::OkPkg as u8 {
                         // decode Response
                     } else {
                         error!("Unexpected return");
