@@ -8,6 +8,7 @@ extern crate byteorder;
 
 use std::io::{self, stdout, Write, Read};
 use std::net::TcpStream;
+use std::fs::File;
 use uosql::logger;
 use uosql::net::{Cnv, Greeting, Login, Command, NetworkErrors};
 use bincode::SizeLimit;
@@ -20,6 +21,7 @@ fn main() {
     logger::with_loglevel(log::LogLevelFilter::Trace)
         .with_logfile(std::path::Path::new("log.txt"))
         .enable().unwrap();
+
     // connect to server
     let stream = TcpStream::connect("127.0.0.1:4242");
     let mut s = match stream {
@@ -116,7 +118,10 @@ fn send_cmd<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
             }
         },
         ":exit" => {
-            return true
+            return true // maybe send quit signal
+        },
+        ":help" => {
+            display_readme();
         },
         _ => {
             let cmd_encode = encode_into(&Command::Query(input.to_string()),
@@ -205,4 +210,18 @@ fn send_login<W: Write>(buf: &mut W) -> bool {
             return false
         }
     }
+}
+
+/// Display client_readme.txt for user information
+fn display_readme() {
+    let _ = match File::open("client_readme.txt") {
+        Ok(mut file) => {
+            let mut output = String::new();
+            let _ = match file.read_to_string(&mut output) {
+                Ok(_) => println!("{}", output),
+                Err(_) => info!("cannot read client_readme.txt")
+            };
+        },
+        Err(_) => info!("client_readme.txt is missing")
+    };
 }
