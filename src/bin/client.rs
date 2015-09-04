@@ -235,7 +235,7 @@ fn display_readme() {
                     println!("{}", output);
                 }
                 Err(_) => {
-                    info!("client_readme.txt is missing");
+                    info!("cannot read client_readme.txt");
                 }
             };
         },
