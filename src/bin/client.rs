@@ -37,10 +37,7 @@ fn main() {
     }
 
     // try to send login-data as long as it didn't succeed
-    let mut sl = false;
-    while !sl {
-        sl = send_login(&mut s);
-    }
+    while !send_login(&mut s) {}
 
     // read commands
     loop {
@@ -66,14 +63,11 @@ fn main() {
 fn read_line() -> String {
     let mut input = String::new();
     loop {
-
-    match io::stdin().read_line(&mut input) {
-        Ok(_) => { return input.trim().into() },
-        _ => { }
+        match io::stdin().read_line(&mut input) {
+            Ok(_) => { return input.trim().into() },
+            _ => { }
+        }
     }
-
-    }
-
 }
 
 /// Send command-package to server.
@@ -94,18 +88,17 @@ fn send_cmd<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
             match cmd_encode {
                 Ok(_) => {
                     let status = s.read_u8();
-                    match status {
-                        Ok(st) => {
-                            if st == Cnv::OkPkg as u8 {
-                                info!("Connection closed");
-                            }
-                            return true
-                        },
+                    let st = match status {
+                        Ok(st) => st,
                         Err(_) => {
                             warn!("Failed to receive close-confirmation");
                             return true
                         }
+                    };
+                    if st == Cnv::OkPkg as u8 {
+                        info!("Connection closed");
                     }
+                    return true
                 },
                 Err(_) => {
                     error!("Sending quit-message failed");
@@ -179,8 +172,7 @@ fn receive_greeting<R: Read>(buf: &mut R) -> bool {
         return false;
     }
     // read greeting
-    let greet = decode_from::<R, Greeting>(buf,
-        SizeLimit::Bounded(1024));
+    let greet = decode_from::<R, Greeting>(buf, SizeLimit::Bounded(1024));
     let gr = match greet {
         Ok(gr) => gr,
         _ => {
@@ -190,8 +182,7 @@ fn receive_greeting<R: Read>(buf: &mut R) -> bool {
     };
     let greeting = Greeting::make_greeting(gr.protocol_version, gr.message);
     if PROTOCOL_VERSION != greeting.protocol_version {
-        info!("Cannot communicate with server -
-                    different versions");
+        info!("Cannot communicate with server - different versions");
         return false
     }
     println!("Protocol version: {}\n{}", greeting.protocol_version,
