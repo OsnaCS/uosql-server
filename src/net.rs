@@ -16,7 +16,6 @@
 //!
 
 // TODO: Remove this line as soon as this module is actually used
-// #![allow(dead_code, unused_variables)]
 use std::io::{Write,Read};
 use byteorder::{ReadBytesExt, WriteBytesExt}; // for write_u16()
 use bincode::rustc_serialize::{decode_from, encode_into,EncodingError,DecodingError}; // to encode and decode the structs to the given stream
@@ -37,6 +36,8 @@ pub enum Cnv {
     ErrorPkg,
     OkPkg,
     ResponsePkg,
+    AccDeniedPkg,
+    AccGrantedPkg,
 }
 
 /// Struct to send the kind of error and error message to the client
@@ -50,12 +51,12 @@ pub struct ClientErrMsg {
 impl From<NetworkErrors> for ClientErrMsg {
     fn from(error: NetworkErrors) -> ClientErrMsg {
         match error {
-            NetworkErrors::IoError(_err) => ClientErrMsg { code: 0, msg: "IO error".into() },
-            NetworkErrors::ByteOrder(_err) => ClientErrMsg { code: 1, msg: "Byteorder error".into() },
+            NetworkErrors::IoError(_) => ClientErrMsg { code: 0, msg: "IO error".into() },
+            NetworkErrors::ByteOrder(_) => ClientErrMsg { code: 1, msg: "Byteorder error".into() },
             NetworkErrors::UnexpectedPkg(err) => ClientErrMsg { code: 2, msg: err.into() },
             NetworkErrors::UnknownCmd(err) => ClientErrMsg { code: 3, msg: err.into() },
-            NetworkErrors::EncodeErr(_err) => ClientErrMsg { code: 4, msg: "encoding error".into() },
-            NetworkErrors::DecodeErr(_err) => ClientErrMsg { code: 5, msg: "decoding error".into() }
+            NetworkErrors::EncodeErr(_) => ClientErrMsg { code: 4, msg: "encoding error".into() },
+            NetworkErrors::DecodeErr(_) => ClientErrMsg { code: 5, msg: "decoding error".into() }
         }
     }
 }
