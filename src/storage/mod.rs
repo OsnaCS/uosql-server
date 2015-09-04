@@ -242,7 +242,7 @@ impl<'a> Table<'a> {
     /// Returns DatabaseError on fail if path points to a directory,
     /// if the user lacks permissions to remove the file,
     /// or if some other filesystem-level error occurs.
-    pub fn delete(&self) -> Result<(), DatabaseError>{
+    pub fn delete(&self) -> Result<(), DatabaseError> {
 
         info!("remove meta file: {:?}", self.get_table_metadata_path());
         try!(fs::remove_file(self.get_table_metadata_path()));
