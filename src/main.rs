@@ -23,15 +23,21 @@ pub mod storage;
 
 /// For console input, manages flags and arguments
 const USAGE: &'static str = "
-Usage: uosql-server [--cfg=<file>]
+Usage: uosql-server [--cfg=<file>] [--ip=<address>] [--port=<port>] [--dir=<directory>]
 
 Options:
-    --cfg=<file>   Enter a configuration file
+    --cfg=<file>        Enter a configuration file.
+    --ip=<address>      Change the IP address.
+    --port=<port>       Change the port.
+    --dir=<directory>   Change the path of the database.
 ";
 
 #[derive(Debug, RustcDecodable)]
 struct Args {
-   flag_cfg: Option<String>
+   flag_cfg: Option<String>,
+   flag_ip: Option<String>,
+   flag_port: Option<u16>,
+   flag_dir: Option<String>
 }
 
 /// Entry point for server. Allow dead_code to supress warnings when
@@ -50,8 +56,23 @@ fn main() {
                                         .unwrap_or_else(|e| e.exit());
 
     // If a cfg is entered, use this file name to set configurations
-    let config = read_conf_from_json(args.flag_cfg
+    let mut config = read_conf_from_json(args.flag_cfg
                                 .unwrap_or("src/config.json".into()));
+
+    // Change the IP address if flag is set
+    if let Some(mut s) = args.flag_ip {
+        config.address = string_to_ipv4(s);
+    }
+
+    // Change port if flag is set
+    if let Some(mut s) = args.flag_port {
+        config.port = s;
+    }
+
+    // Change directory is flag is set
+    if let Some(mut s) = args.flag_dir {
+        config.dir = s;
+    }
 
     println!("{:?}", config); // for debugging
 
@@ -112,8 +133,16 @@ fn read_conf_from_json(name: String) -> Config {
         }
     }
 
-    // Parsing types
-    let s = config.address.unwrap_or("127.0.0.1".into());
+    // Return configuration, all None datafields set to default
+    Config {
+        address: string_to_ipv4(config.address.unwrap_or("127.0.0.1".into())),
+        port: config.port.unwrap_or(4242),
+        dir: config.dir.unwrap_or("data".into())
+    }
+}
+
+/// Converts String into Ipv4Addr
+fn string_to_ipv4(s : String) -> Ipv4Addr {
     let ip_parts : Vec<&str> = s.split(".").collect();
 
     let mut part_convert : Vec<u8> = Vec::default();
@@ -123,13 +152,8 @@ fn read_conf_from_json(name: String) -> Config {
             Err(e) => println!("Error")
         };
     }
-    // Return configuration, all None datafields set to default
-    Config {
-        address: Ipv4Addr::new(part_convert[0], part_convert[1],
-                               part_convert[2], part_convert[3]),
-        port: config.port.unwrap_or(4242),
-        dir: config.dir.unwrap_or("data".into())
-    }
+    Ipv4Addr::new(part_convert[0], part_convert[1],
+                  part_convert[2], part_convert[3])
 }
 
 /// A struct for managing configurations
