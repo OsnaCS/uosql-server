@@ -167,6 +167,8 @@ pub enum SqlType {
     VarChar(u16)
 }
 
+/// Defines the size of Sql data types
+/// and returns them
 impl SqlType {
     pub fn size(&self) -> u32 {
         match self {

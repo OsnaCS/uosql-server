@@ -15,7 +15,7 @@ use std::io;
 use std::io::prelude::*;
 
 use std::fs;
-use std::fs::{OpenOptions, create_dir};
+use std::fs::{OpenOptions, create_dir, remove_dir_all};
 
 use std::convert::From;
 
@@ -125,7 +125,13 @@ impl Database {
         info!("created dir");
         Ok(())
     }
-
+    /// Deletes the database folder and all its contents
+    /// do not use RANDOM!!
+    pub fn delete(&self) -> Result<(), DatabaseError> {
+        info!("deleting Database and all its tables");
+        try!(remove_dir_all(&self.name));
+        Ok(())
+    }
     /// Creates a new table in the DB folder
     /// Returns with DatabaseError on fail else Table
     pub fn create_table(&self, name: &str, columns: Vec<Column>, engine_id: u8)
