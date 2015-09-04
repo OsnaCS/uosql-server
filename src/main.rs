@@ -11,6 +11,7 @@ use std::fs::File;
 use std::io::Read;
 use docopt::Docopt;
 use std::net::{Ipv4Addr, SocketAddrV4};
+use std::str::FromStr;
 
 
 pub mod auth;
@@ -23,12 +24,12 @@ pub mod storage;
 
 /// For console input, manages flags and arguments
 const USAGE: &'static str = "
-Usage: uosql-server [--cfg=<file>] [--ip=<address>] [--port=<port>]
+Usage: uosql-server [--cfg=<file>] [--bind=<address>] [--port=<port>]
 [--dir=<directory>]
 
 Options:
     --cfg=<file>        Enter a configuration file.
-    --ip=<address>      Change the IP address.
+    --bind=<address>    Change the bind address.
     --port=<port>       Change the port.
     --dir=<directory>   Change the path of the database.
 ";
@@ -36,7 +37,7 @@ Options:
 #[derive(Debug, RustcDecodable)]
 struct Args {
    flag_cfg: Option<String>,
-   flag_ip: Option<String>,
+   flag_bind: Option<String>,
    flag_port: Option<u16>,
    flag_dir: Option<String>
 }
@@ -60,22 +61,16 @@ fn main() {
     let mut config = read_conf_from_json(args.flag_cfg
                                 .unwrap_or("src/config.json".into()));
 
-    // Change the IP address if flag is set
-    if let Some(s) = args.flag_ip {
-        config.address = string_to_ipv4(s);
-    }
+    // Change the bind address if flag is set
+    config.address = args.flag_bind.and_then(|b| Ipv4Addr::from_str(&b).ok()).unwrap_or(config.address);
 
     // Change port if flag is set
-    if let Some(s) = args.flag_port {
-        config.port = s;
-    }
+    config.port = args.flag_port.unwrap_or(config.port);
 
     // Change directory is flag is set
-    if let Some(s) = args.flag_dir {
-        config.dir = s;
-    }
+    config.dir = args.flag_dir.unwrap_or(config.dir);
 
-    info!("IP: {}  Port: {}  Directory: {}",
+    info!("Bind: {}  Port: {}  Directory: {}",
                         config.address, config.port, config.dir);
 
     // Start listening for incoming Tcp connections
@@ -132,27 +127,21 @@ fn read_conf_from_json(name: String) -> Config {
         }
     }
 
+    let s = config.address.unwrap_or("127.0.0.1".into());
+    let bind = match Ipv4Addr::from_str(&s) {
+        Ok(n) => n,
+        Err(_) => {
+            warn!("Invalid bind address, set to default");
+            Ipv4Addr::new(127,0,0,1)
+        }
+    };
+
     // Return configuration, all None datafields set to default
     Config {
-        address: string_to_ipv4(config.address.unwrap_or("127.0.0.1".into())),
+        address: bind,
         port: config.port.unwrap_or(4242),
         dir: config.dir.unwrap_or("data".into())
     }
-}
-
-/// Converts String into Ipv4Addr
-fn string_to_ipv4(s : String) -> Ipv4Addr {
-    let ip_parts : Vec<&str> = s.split(".").collect();
-
-    let mut part_convert : Vec<u8> = Vec::default();
-    for s in ip_parts {
-        match s.parse::<u8>() {
-            Ok(n) => part_convert.push(n),
-            Err(e) => error!("Parsing error: {:?}", e)
-        };
-    }
-    Ipv4Addr::new(part_convert[0], part_convert[1],
-                  part_convert[2], part_convert[3])
 }
 
 /// A struct for managing configurations
