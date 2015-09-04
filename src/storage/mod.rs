@@ -165,7 +165,7 @@ pub struct  TableMetaData {
 #[derive(Debug)]
 pub struct Table<'a> {
     database: &'a Database,
-    name: String,
+    pub name: String,
     meta_data: TableMetaData,
 }
 
@@ -238,7 +238,20 @@ impl<'a> Table<'a> {
         Ok(())
     }
 
+    /// Deletes the .tbl files
+    /// Returns DatabaseError on fail if path points to a directory,
+    /// if the user lacks permissions to remove the file,
+    /// or if some other filesystem-level error occurs.
+    pub fn delete(&self) -> Result<(), DatabaseError> {
 
+        info!("remove meta file: {:?}", self.get_table_metadata_path());
+        try!(fs::remove_file(self.get_table_metadata_path()));
+
+        info!("remove data file: {:?}",self.get_table_data_path());
+        try!(fs::remove_file(self.get_table_data_path()));
+
+        Ok(())
+    }
 
     /// Returns columns of table as array
     pub fn columns(&self) -> &[Column] {
@@ -336,8 +349,19 @@ impl Column {
 ///
 /// Each table in a database may use a different storage engine.
 pub trait Engine {
+    /// writes the table.dat file
     fn create_table(&mut self) -> Result<(), DatabaseError>;
+    /// returns the table
+    fn table(&self) -> &Table;
 }
+
+#[repr(u8)]
+#[derive(Clone,Copy,Debug,RustcDecodable, RustcEncodable)]
+enum EngineID {
+    FlatFile = 1,
+    InvertedIndex,
+}
+
 
 // # Some information for the `storage` working group:
 //
