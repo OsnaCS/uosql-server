@@ -16,7 +16,6 @@
 //!
 
 // TODO: Remove this line as soon as this module is actually used
-//#![allow(dead_code, unused_variables)]
 use std::io::{Write,Read};
 use byteorder::{ReadBytesExt, WriteBytesExt}; // for write_u16()
 use bincode::rustc_serialize::{decode_from, encode_into,EncodingError,DecodingError}; // to encode and decode the structs to the given stream
