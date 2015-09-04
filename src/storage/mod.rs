@@ -1,9 +1,13 @@
 //! Storage Engine trait and several implementations
 //!
 //!
+
+
 pub mod flatfile;
 
 use self::flatfile::FlatFile;
+
+use super::parse::ast::SqlType;
 
 use std::mem;
 
@@ -244,7 +248,7 @@ impl<'a> Table<'a> {
 
     /// Adds a column to the tabel
     /// Returns name of Column or on fail DatabaseError
-    pub fn add_column(&mut self, name: &str, dtype: DataType) -> Result<(), DatabaseError> {
+    pub fn add_column(&mut self, name: &str, sql_type: SqlType) -> Result<(), DatabaseError> {
         match self.meta_data.columns.iter().find(|x| x.name == name) {
             Some(_) => {
                 warn!("Column {:?} already exists", name);
@@ -254,7 +258,7 @@ impl<'a> Table<'a> {
                 info!("Column {:?} was added", name);
             },
         }
-        self.meta_data.columns.push(Column::create_new(name, dtype));
+        self.meta_data.columns.push(Column::create_new(name, sql_type));
         Ok(())
     }
 
@@ -305,26 +309,17 @@ impl<'a> Table<'a> {
 #[derive(Debug,RustcDecodable, RustcEncodable,Clone)]
 pub struct Column {
     pub name: String, //name of column
-    pub data_type: DataType, //name of the data type that is contained in this column
+    pub sql_type: SqlType, //name of the data type that is contained in this column
 }
 
-impl Default for Column {
-    /// Returns a default Column construct
-    fn default() -> Column {
-        Column {
-            name: "default".to_string(),
-            data_type: DataType::Integer
-        }
-    }
-}
 
 impl Column {
     /// Creates a new column object
     /// Returns with Column
-    pub fn create_new(name: &str, dtype: DataType) -> Column {
+    pub fn create_new(name: &str, sql_type: SqlType) -> Column {
         Column {
             name: name.to_string(),
-            data_type: dtype.clone()
+            sql_type: sql_type.clone()
         }
     }
 }

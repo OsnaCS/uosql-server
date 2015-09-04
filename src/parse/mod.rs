@@ -7,12 +7,14 @@
 pub mod ast;
 pub mod token;
 pub mod lex;
+pub mod parser;
+pub use self::parser::Parser;
 
 /// Represents a substring in the query string in byte indices.
 #[derive(Debug)]
 pub struct Span {
-    lo: usize,
-    hi: usize,
+    pub lo: usize,
+    pub hi: usize,
 }
 
 /// Main function of this module: Takes a sql query as string and returns
