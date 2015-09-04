@@ -3,6 +3,8 @@ rust:
   - stable
   - beta
   - nightly
+before_install:
+  - bash check-style.sh
 after_success:
   - |
         test ${TRAVIS_PULL_REQUEST} == "false" && \
