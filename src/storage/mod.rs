@@ -97,6 +97,7 @@ impl Database {
     pub fn create(name: &str) -> Result<Database, DatabaseError> {
         let d = Database{ name: name.to_string() };
         try!(d.save());
+        info!("created new database {:?}",d);
         Ok(d)
     }
 
@@ -104,17 +105,19 @@ impl Database {
     /// returns DataBase Error when database does not exist else the loaded DB
     pub fn load(name: &str) -> Result<Database, DatabaseError> {
         if try!(fs::metadata(name)).is_dir() {
+            info!("loaded Database {:?}", name.to_string());
             Ok(Database{ name: name.to_string() })
         } else {
+            warn!("could not load database {:?}", name.to_string());
             return Err(DatabaseError::LoadDataBase)
         }
     }
 
     /// Creates a folder for the database
     fn save(&self) -> Result<(), DatabaseError> {
-        println!("trying to create dir!");
+        info!("trying to create dir!");
         try!(create_dir(&self.name));
-        println!("created dir");
+        info!("created dir");
         Ok(())
     }
 
@@ -126,6 +129,7 @@ impl Database {
 
         let t = Table::new(&self, name, columns, engine_id);
         try!(t.save());
+        info!("created new table {:?}", t);
         Ok(t)
     }
 
@@ -153,6 +157,7 @@ pub struct  TableMetaData {
 //---------------------------------------------------------------
 
 /// Table struct that contains the table information
+#[derive(Debug)]
 pub struct Table<'a> {
     database: &'a Database,
     name: String,
@@ -172,7 +177,7 @@ impl<'a> Table<'a> {
             engine_id: engine_id,
             columns: columns,
         };
-
+        info!("created meta data: {:?}", meta_data);
 
         Table {
             name: name.to_string(),
@@ -187,22 +192,25 @@ impl<'a> Table<'a> {
         -> Result<Table<'b>, DatabaseError>
     {
         // TODO: Read the .tbl file from disk and parse it
+
         let path_to_table = Table::get_path(&database.name, name, "tbl");
+        info!("getting path and opening file: {:?}", path_to_table);
         let mut file = try!(OpenOptions::new()
             .read(true)
             .open(path_to_table));
-
+        info!("reading file: {:?}", file);
         let ma_nmbr = try!(file.read_uint::<BigEndian>(mem::size_of_val(&MAGIC_NUMBER)));
 
+        info!("checking magic number: {:?}",ma_nmbr);
         if ma_nmbr != MAGIC_NUMBER {
             println!("Magic Number not correct");
             return Err(DatabaseError::WrongMagicNmbr)
         }
         let meta_data: TableMetaData = try!(decode_from(&mut file, SizeLimit::Infinite));
-        println!("{:?}", meta_data);
+        info!("getting meta data{:?}", meta_data);
 
         let table = Table::new(database, name, meta_data.columns, meta_data.engine_id);
-
+        info!("returning table: {:?}", table);
         Ok(table)
     }
 
@@ -210,16 +218,18 @@ impl<'a> Table<'a> {
     /// Returns DatabaseError on fail else Nothing
     pub fn save(&self) -> Result<(), DatabaseError> {
         // call for open file
+        info!("opening file to write",);
         let mut file = try!(OpenOptions::new()
             .write(true)
             .create(true)
             .open(self.get_table_metadata_path()));
-
+        info!("writing magic number in file: {:?}", file);
         try!(file.write_u64::<BigEndian>(MAGIC_NUMBER));//MAGIC_NUMBER
+        info!("writing meta data in file: {:?}",file);
         try!(encode_into(&self.meta_data, &mut file,SizeLimit::Infinite));
 
         // debug message all okay
-        println!("I Wrote my File");
+        info!("I Wrote my File");
         Ok(())
     }
 
