@@ -10,7 +10,7 @@
 /// Contains information about the user that opened the connection. Is used
 /// for every type of access control.
 pub struct User {
-    name: String,
+    _name: String,
 }
 
 /// Errors that may occur during user authentication
@@ -27,9 +27,9 @@ pub enum AuthError {
 /// # Failures
 /// If the user was not found or the password does not match, an `Err` value
 /// is returned. See `AuthError` for more information.
-pub fn find_user(name: &str, passwd: &str) -> Result<User, AuthError> {
-    debug!("User '{}' was succesfully (pseudo-!) authenticated", name);
+pub fn find_user(_name: &str, _passwd: &str) -> Result<User, AuthError> {
+    debug!("User '{}' was succesfully (pseudo-!) authenticated", _name);
     Ok(User {
-        name: name.into(),
+        _name: _name.into(),
     })
 }
