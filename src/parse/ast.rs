@@ -152,10 +152,11 @@ pub enum CondType {
 }
 
 /// General enums in SQL
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, RustcDecodable, RustcEncodable)]
 pub enum SqlType {
     Int,
     Bool,
     Char(u8),
-    VarChar(u16)
+    VarChar(u16),
+    Decimal(u16, u16)
 }
