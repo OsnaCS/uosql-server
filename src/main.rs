@@ -62,7 +62,8 @@ fn main() {
                                 .unwrap_or("src/config.json".into()));
 
     // Change the bind address if flag is set
-    config.address = args.flag_bind.and_then(|b| Ipv4Addr::from_str(&b).ok()).unwrap_or(config.address);
+    config.address = args.flag_bind.and_then(|b| Ipv4Addr::from_str(&b)
+                                   .ok()).unwrap_or(config.address);
 
     // Change port if flag is set
     config.port = args.flag_port.unwrap_or(config.port);
