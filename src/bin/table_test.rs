@@ -19,8 +19,8 @@ fn main() {
     encode_into(&ty, &mut v, SizeLimit::Infinite);
     println!("{:?}", v);
 
-    //let db = Database::create("storage_team").unwrap();
-    let db = Database::load("storage_team").unwrap();
+    let db = Database::create("storage_team").unwrap();
+    //let db = Database::load("storage_team").unwrap();
 
     let mut cols = Vec::new();
     cols.push(Column { name: "Heiner".into(), sql_type: SqlType::Int });
@@ -40,4 +40,6 @@ fn main() {
     let t = engine.table();
 
     t.delete().unwrap();
+    db.delete().unwrap();
+
 }
