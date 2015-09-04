@@ -5,15 +5,21 @@
 
 pub mod flatfile;
 
+extern crate log;
+
 use self::flatfile::FlatFile;
-use std::fs::{self};
-use std::convert::From;
-use byteorder::Error;
-use std::io::prelude::*;
-use std::io;
-use std::fs::{OpenOptions,create_dir};
+
 use std::mem;
 
+use std::io;
+use std::io::prelude::*;
+
+use std::fs;
+use std::fs::{OpenOptions,create_dir};
+
+use std::convert::From;
+
+use byteorder::Error;
 use byteorder::{WriteBytesExt, ReadBytesExt, BigEndian};
 
 use bincode::SizeLimit;
@@ -50,6 +56,8 @@ pub enum DatabaseError {
     WrongMagicNmbr,
     Engine, //cur not used
     LoadDataBase,
+    RemoveColumn,
+    AddColumn,
 }
 
 impl From<io::Error> for DatabaseError {
@@ -211,12 +219,36 @@ impl Table {
     }
 
     /// Adds a column to the tabel
-    pub fn add_column(&mut self, name: &str, dtype: DataType) {
+    /// Returns name of Column or on fail DatabaseError
+    pub fn add_column(&mut self, name: &str, dtype: DataType) -> Result<String, DatabaseError> {
+        match self.columns.iter().find(|x| x.name == name) {
+            Some(_x) => {
+                info!(target: "Column add event", "Column already exists");
+                return Err(DatabaseError::AddColumn)
+            },
+            None => {
+                info!(target: "Column add event", "Column was added");
+            },
+        }
         self.columns.push(Column::create_new(name, dtype));
+        Ok(name.into())
     }
 
     /// Removes a column from the table
-    pub fn remove_column(&mut self, _name: &str, _data_type: DataType) {
+    /// Returns name of Column or on fail DatabaseError
+    pub fn remove_column(&mut self, name: &str) -> Result<String, DatabaseError> {
+        let index = match self.columns.iter().position(|x| x.name == name) {
+            Some(_x) => {
+                info!("Column {:?} was removed" , self.name);
+                _x
+            },
+            None => {
+                info!("Column {:?} could not be found", self.name);
+                return Err(DatabaseError::RemoveColumn)
+            },
+        };
+        self.columns.remove(index);
+        Ok(name.into())
     }
 
     /// Creates an engine for Table
