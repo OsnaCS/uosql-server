@@ -244,17 +244,23 @@ pub fn test_send_ok_packet() {
 
     let res = send_ok_packet(&mut vec);
     assert_eq!(res.is_ok(), true);
+    assert_eq!(vec, vec![Cnv::OkPkg as u8]);
 }
 
 #[test]
 pub fn test_send_error_packet() {
     let mut vec = Vec::new();   // stream to write into
-
+    let mut vec2 = vec![Cnv::ErrorPkg as u8, //for error packet
+                        0, 2, // for kind of error
+                        0, 0, 0, 0, 0, 0, 0, 17, // for the size of the message string
+                        117, 110, 101, 120, 112, 101, 99, 116, 101, 100, 32, 112, 97, 99, 107, 101, 116];
+                        // string itself
     let err = NetworkErrors::UnexpectedPkg("unexpected packet".into());
 
     //test if the message is sent
     let res = send_error_packet(&mut vec, err.into());
     assert_eq!(res.is_ok(), true);
+    assert_eq!(vec, vec2);
 }
 
 #[test]
@@ -270,10 +276,8 @@ pub fn test_read_commands(){
     // read the command from the stream for Command::Quit
     let mut command_res = read_commands(&mut Cursor::new(vec));
     assert_eq!(command_res.is_ok(), true);
-    match command_res.unwrap() {
-        Command::Quit => assert!(true),
-        _ => assert!(false)
-    };
+    assert_eq!(command_res.unwrap(), Command::Quit);
+   
 
     let mut vec2 = Vec::new();
     // write the command into the stream
@@ -283,10 +287,7 @@ pub fn test_read_commands(){
     // read the command from the stream for Command::Query("select")  
     command_res = read_commands(&mut Cursor::new(vec2));
     assert_eq!(command_res.is_ok(), true);
-    match command_res.unwrap() {
-        Command::Query(query) => assert_eq!(query, "select"),
-        _ => assert!(false)
-    }
+    assert_eq!(command_res.unwrap(), Command::Query("select".into()));
 }
 
 #[test]
@@ -300,7 +301,7 @@ pub fn testlogin() {
     let login_encode = encode_into(&login,&mut vec,SizeLimit::Bounded(1024));
 
     let login_res = read_login(&mut Cursor::new(vec)).unwrap();
-    
+
     // test for equality
     assert_eq!(login_res.username, "elena");
     assert_eq!(login_res.password, "praktikum");
