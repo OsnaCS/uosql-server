@@ -6,11 +6,11 @@ extern crate uosql;
 extern crate bincode;
 extern crate byteorder;
 
-use uosql::logger;
 use std::io::{self, stdout, Write, Read};
 use std::net::TcpStream;
 use std::fs::File;
-use uosql::net::{Cnv, Greeting, Login, Command};
+use uosql::logger;
+use uosql::net::{Cnv, Greeting, Login, Command, NetworkErrors};
 use bincode::SizeLimit;
 use bincode::rustc_serialize::{decode_from, encode_into};
 use byteorder::{ReadBytesExt, WriteBytesExt};
@@ -88,18 +88,13 @@ fn send_cmd<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
                 SizeLimit::Bounded(1024));
             match cmd_encode {
                 Ok(_) => {
-                    let status = s.read_u8();
-                    let st = match status {
-                        Ok(st) => st,
+                    match receive(&mut s, Cnv::OkPkg as u8) {
+                        Ok(_) => { info!("Connection closed"); return true },
                         Err(_) => {
                             warn!("Failed to receive close-confirmation");
                             return true
                         }
-                    };
-                    if st == Cnv::OkPkg as u8 {
-                        info!("Connection closed");
                     }
-                    return true
                 },
                 Err(_) => {
                     error!("Sending quit-message failed");
@@ -117,19 +112,9 @@ fn send_cmd<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
                     return false
                 }
             };
-            let status = s.read_u8();
-            match status {
-                Ok(st) => {
-                    if st == Cnv::OkPkg as u8 {
-                        println!("Server still reachable.");
-                    } else {
-                        info!("Server is responding but INSANE!");
-                        //maybe close connection? -> timeout
-                    }
-                },
-                Err(_) => {
-                    error!("Error reading ping-package");
-                }
+            match receive(&mut s, Cnv::OkPkg as u8) {
+                Ok(_) => println!("Server still reachable."),
+                Err(_) => error!("Error reading ping-package")
             }
         },
         ":exit" => {
@@ -148,35 +133,37 @@ fn send_cmd<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
                     return false
                 }
             };
-            let status = s.read_u8();
-            match status {
-                Ok(st) => {
-                    if st == Cnv::OkPkg as u8 {
-                        // decode Response
-                    } else {
-                        error!("Unexpected return");
-                        // try again
-                    }
-                },
-                Err(_) => {
-                    error!("Error reading response-package");
-                }
+            match receive(&mut s, Cnv::OkPkg as u8) {
+                Ok(_) => warn!("decoding response not implemented yet!"),
+                Err(_) => error!("Error reading response-package")
             }
         }
     }
     false
 }
 
-/// Receive greeting from server
-fn receive_greeting<R: Read>(buf: &mut R) -> bool {
-    let status = buf.read_u8();
+/// Match received packages to expected packages
+fn receive<R: Read>(s: &mut R, cmd: u8) -> Result<(), NetworkErrors> {
+    let status = s.read_u8();
     let st = match status {
         Ok(st) => st,
-        Err(_) => return false
+        Err(a) => { return Err(NetworkErrors::ByteOrder(a)) }
     };
-    if st != Cnv::GreetPkg as u8 {
-        info!("Communication mismatch. Try again later.");
-        return false;
+    if st != cmd {
+        return Err(NetworkErrors::UnexpectedPkg("Received
+            unexpected package".into()))
+    }
+    Ok(())
+}
+
+/// Receive greeting from server
+fn receive_greeting<R: Read>(mut buf: &mut R) -> bool {
+    match receive(&mut buf, Cnv::GreetPkg as u8) {
+        Ok(_) => {},
+        Err(_) => {
+            info!("Communication mismatch. Try again later.");
+            return false
+        }
     }
     // read greeting
     let greet = decode_from::<R, Greeting>(buf, SizeLimit::Bounded(1024));

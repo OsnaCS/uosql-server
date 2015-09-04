@@ -16,7 +16,7 @@
 //!
 
 // TODO: Remove this line as soon as this module is actually used
-#![allow(dead_code, unused_variables)]
+//#![allow(dead_code, unused_variables)]
 use std::io::{Write,Read};
 use byteorder::{ReadBytesExt, WriteBytesExt}; // for write_u16()
 use bincode::rustc_serialize::{decode_from, encode_into,EncodingError,DecodingError}; // to encode and decode the structs to the given stream
@@ -37,6 +37,8 @@ pub enum Cnv {
     ErrorPkg,
     OkPkg,
     ResponsePkg,
+    AccDeniedPkg,
+    AccGrantedPkg,
 }
 
 /// Struct to send the kind of error and error message to the client
@@ -50,12 +52,12 @@ pub struct ClientErrMsg {
 impl From<NetworkErrors> for ClientErrMsg {
     fn from(error: NetworkErrors) -> ClientErrMsg {
         match error {
-            NetworkErrors::IoError(err) => ClientErrMsg { code: 0, msg: "IO error".into() },
-            NetworkErrors::ByteOrder(err) => ClientErrMsg { code: 1, msg: "Byteorder error".into() },
+            NetworkErrors::IoError(_) => ClientErrMsg { code: 0, msg: "IO error".into() },
+            NetworkErrors::ByteOrder(_) => ClientErrMsg { code: 1, msg: "Byteorder error".into() },
             NetworkErrors::UnexpectedPkg(err) => ClientErrMsg { code: 2, msg: err.into() },
             NetworkErrors::UnknownCmd(err) => ClientErrMsg { code: 3, msg: err.into() },
-            NetworkErrors::EncodeErr(err) => ClientErrMsg { code: 4, msg: "encoding error".into() },
-            NetworkErrors::DecodeErr(err) => ClientErrMsg { code: 5, msg: "decoding error".into() }
+            NetworkErrors::EncodeErr(_) => ClientErrMsg { code: 4, msg: "encoding error".into() },
+            NetworkErrors::DecodeErr(_) => ClientErrMsg { code: 5, msg: "decoding error".into() }
         }
     }
 }
@@ -114,11 +116,11 @@ impl Greeting {
 }
 
 /// Write a welcome-message to the given server-client-stream
-pub fn do_handshake<W: Write + Read>(stream: &mut W) 
-    -> Result<(String, String), NetworkErrors> 
+pub fn do_handshake<W: Write + Read>(stream: &mut W)
+    -> Result<(String, String), NetworkErrors>
 {
     let greet = Greeting::make_greeting(PROTOCOL_VERSION, "Welcome".to_string());
-    
+
     // send handshake packet to client
     try!(stream.write_u8(Cnv::GreetPkg as u8)); //kind of message
     try!(encode_into(&greet, stream, SizeLimit::Bounded(1024)));
@@ -190,14 +192,14 @@ pub enum Command {
 }
 
 /// Read the sent bytes, extract the kind of command
-pub fn read_commands<R: Read + Write>(stream: &mut R) 
-    -> Result<Command, NetworkErrors> 
+pub fn read_commands<R: Read + Write>(stream: &mut R)
+    -> Result<Command, NetworkErrors>
 {
     // read the first byte for code numeric value
     let status = try!(stream.read_u8());
     if status != Cnv::CommandPkg as u8 {
         //send error_packet
-        return Err(NetworkErrors::UnknownCmd("command not known".into()))    
+        return Err(NetworkErrors::UnknownCmd("command not known".into()))
     }
 
     // second  4 bytes is the kind of command
@@ -209,8 +211,8 @@ pub fn read_commands<R: Read + Write>(stream: &mut R)
 }
 
 /// Send error packet with given error code status
-pub fn send_error_packet<W: Write>(mut stream: &mut W, err: ClientErrMsg) 
-    -> Result<(), NetworkErrors> 
+pub fn send_error_packet<W: Write>(mut stream: &mut W, err: ClientErrMsg)
+    -> Result<(), NetworkErrors>
 {
     try!(stream.write_u8(Cnv::ErrorPkg as u8));
     try!(encode_into(&err, &mut stream, SizeLimit::Bounded(1024)));
@@ -218,15 +220,15 @@ pub fn send_error_packet<W: Write>(mut stream: &mut W, err: ClientErrMsg)
 }
 
 /// Send ok packet
-pub fn send_ok_packet<W: Write> (mut stream: &mut W) 
-    -> Result<(), NetworkErrors> 
+pub fn send_ok_packet<W: Write> (mut stream: &mut W)
+    -> Result<(), NetworkErrors>
 {
     try!(stream.write_u8(Cnv::OkPkg as u8));
     Ok(())
 }
 
 /// Sent by the server to the client.
-pub struct Response; 
+pub struct Response;
 
    // TODO
 
@@ -247,7 +249,7 @@ pub struct Response;
 //   receiving commands, sending answers, ...)
 //
 
-#[test] 
+#[test]
 pub fn test_send_ok_packet() {
     let mut vec = Vec::new();
 
@@ -286,7 +288,7 @@ pub fn test_read_commands(){
     let mut command_res = read_commands(&mut Cursor::new(vec));
     assert_eq!(command_res.is_ok(), true);
     assert_eq!(command_res.unwrap(), Command::Quit);
-   
+
 
     let mut vec2 = Vec::new();
     // write the command into the stream
