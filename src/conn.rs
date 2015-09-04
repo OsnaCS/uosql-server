@@ -2,6 +2,7 @@
 //!
 use std::net::TcpStream;
 use net;
+use net::Command;
 use auth;
 
 pub fn handle(mut stream: TcpStream) {
@@ -22,12 +23,19 @@ pub fn handle(mut stream: TcpStream) {
     loop {
         //get the command from the stream
         let command_res = net::read_commands(&mut stream);
-        println!("{:?}",command_res);
+        // TODO !
+        match command_res {
+            Ok(Command::Quit) => {
+                debug!("Client disconnected");
+                return
+        },
+            _ => continue
+        }
         // TODO: Dispatch commands (handle easy ones directly, forward others)
 
         // TODO: If query -> Call parser to obtain AST
         // TODO: If query -> Pass AST to query executer
 
         // TODO: Send results
-    } 
+    }
 }
