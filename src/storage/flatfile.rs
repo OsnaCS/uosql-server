@@ -1,30 +1,29 @@
-use super::{Engine, DatabaseError, Column};
-
+use super::{Engine, DatabaseError, Table};
 use std::fs::OpenOptions;
 
-pub struct FlatFile {
-    table_path: String,
+pub struct FlatFile<'a> {
+    table: Table<'a>,
 }
 
-impl FlatFile {
-    pub fn new(path_to_table: String) -> FlatFile {
+impl<'a> FlatFile<'a> {
+    pub fn new<'b>(table: Table<'b>) -> FlatFile<'b> {
         println!("Hallo");
-        FlatFile { table_path: path_to_table }
+        FlatFile { table: table }
     }
 }
 
-impl Drop for FlatFile {
+impl<'a> Drop for FlatFile<'a> {
     fn drop(&mut self) {
         println!("Tschüss");
     }
 }
 
-impl Engine for FlatFile {
-    fn create_table(&mut self, _cols: &[Column]) -> Result<(), DatabaseError> {
+impl<'a> Engine for FlatFile<'a> {
+    fn create_table(&mut self) -> Result<(), DatabaseError> {
         let mut _file = try!(OpenOptions::new()
             .write(true)
             .create(true)
-            .open(&self.table_path));
+            .open(&self.table.get_table_data_path()));
         Ok(())
     }
 }
