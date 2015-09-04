@@ -4,8 +4,9 @@
 //! by calling the appropriate `storage` and `auth` methods.
 //!
 
-use parse::ast;
+use parse::{ast, parser};
 
 fn execute_from_ast(query: ast::Query) {
+
     info!("Not implemented! :-(");
 }

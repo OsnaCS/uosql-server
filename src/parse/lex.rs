@@ -50,7 +50,7 @@ impl<'a> Lexer<'a> {
             Some(c) => {
                 self.curr_pos = match self.curr_pos {
                     Some(n) => Some(n + c.len_utf8()),
-                    None => Some(0 + c.len_utf8()) // Start at pos 0
+                    None => Some(c.len_utf8()) // Start at pos 0
                 }
             }
             _ => {}
@@ -90,7 +90,7 @@ impl<'a> Lexer<'a> {
     /// Scan each new NUMBER from the query string
     fn scan_nums(&mut self) -> String {
         let mut s = String::new();
-        let mut dot = false;
+        let dot = false;
         loop {
             match self.curr.unwrap_or(' ') {
                 c @ '0' ... '9' |

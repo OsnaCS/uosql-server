@@ -1,9 +1,13 @@
 //! Storage Engine trait and several implementations
 //!
 //!
+
+
 pub mod flatfile;
 
 use self::flatfile::FlatFile;
+
+use super::parse::ast::SqlType;
 
 use std::mem;
 
@@ -19,23 +23,13 @@ use byteorder::Error;
 use byteorder::{WriteBytesExt, ReadBytesExt, BigEndian};
 
 use bincode::SizeLimit;
-use bincode::rustc_serialize::{EncodingError, DecodingError, encode_into, decode_from};
+use bincode::rustc_serialize::{EncodingError,
+    DecodingError, encode_into, decode_from};
 
 /// constants
  const MAGIC_NUMBER: u64 = 0x6561742073686974; // secret
  const VERSION_NO: u8 = 1;
 
-
-/// Storage Engine Interface.
-///
-/// A storage engine, like MyISAM and InnoDB, is responsible for reading and
-/// writing data to disk, maintain and use indices, check for data corruption
-/// and repair corrupt files.
-///
-/// Each table in a database may use a different storage engine.
-pub trait Engine {
-    fn create_table(&mut self, cols: &[Column]) -> Result<(), DatabaseError>;
-}
 
 /// A database table
 ///
@@ -80,10 +74,13 @@ impl From< ::byteorder::Error> for DatabaseError {
     }
 }
 
+//---------------------------------------------------------------
+// DataType
+//---------------------------------------------------------------
 /// A Enum for Datatypes (will be removed later)
 #[repr(u8)]
 #[derive(Clone,Copy,Debug,RustcDecodable, RustcEncodable)]
-pub enum DataType{ Integer = 1, Float = 2, }
+pub enum DataType { Integer = 1, Float = 2, }
 
 impl DataType {
     pub fn value(&self) -> u8 {
@@ -91,6 +88,10 @@ impl DataType {
     }
 }
 
+//---------------------------------------------------------------
+// Database
+//---------------------------------------------------------------
+#[derive(Debug)]
 pub struct Database {
     name: String,
 }
@@ -98,120 +99,156 @@ pub struct Database {
 impl Database {
     /// Starts the process of creating a new Database
     /// Returns database or on fail DatabaseError
-    pub fn new_database(database_name: &str) -> Result<Database, DatabaseError> {
-        let d = Database{ name: database_name.to_string() };
-        try!(d.create_database());
+    pub fn create(name: &str) -> Result<Database, DatabaseError> {
+        let d = Database{ name: name.to_string() };
+        try!(d.save());
+        info!("created new database {:?}",d);
         Ok(d)
     }
 
     /// Loads already existing Database
     /// returns DataBase Error when database does not exist else the loaded DB
-    pub fn load_database(database_name: &str) -> Result<Database, DatabaseError> {
-        if try!(fs::metadata(database_name)).is_dir() {
-            Ok(Database{ name: database_name.to_string() })
+    pub fn load(name: &str) -> Result<Database, DatabaseError> {
+        if try!(fs::metadata(name)).is_dir() {
+            info!("loaded Database {:?}", name.to_string());
+            Ok(Database{ name: name.to_string() })
         } else {
+            warn!("could not load database {:?}", name.to_string());
             return Err(DatabaseError::LoadDataBase)
         }
     }
 
     /// Creates a folder for the database
-    fn create_database(&self) -> Result<(), DatabaseError> {
-        println!("trying to create dir!");
+    fn save(&self) -> Result<(), DatabaseError> {
+        info!("trying to create dir!");
         try!(create_dir(&self.name));
-        println!("created dir");
+        info!("created dir");
         Ok(())
     }
 
     /// Creates a new table in the DB folder
     /// Returns with DatabaseError on fail else Table
-    pub fn create_table(&self, engine_id: u8, cols: Vec<Column>, table_name: &str)
-        -> Result<Table, DatabaseError> {
+    pub fn create_table(&self, name: &str, columns: Vec<Column>, engine_id: u8)
+        -> Result<Table, DatabaseError>
+    {
 
-        let t = Table::new(engine_id, &self.name, table_name, cols);
+        let t = Table::new(&self, name, columns, engine_id);
         try!(t.save());
+        info!("created new table {:?}", t);
         Ok(t)
     }
 
     /// calls load for table with the database path
     /// Returns with DatabaseError on fail else Table
-    pub fn load_table(&self, table_name: &str) -> Result<Table, DatabaseError> {
-        Self::load(&self.name, table_name)
+    pub fn load_table(&self, name: &str) -> Result<Table, DatabaseError> {
+        Table::load(&self, name)
+    }
+}
+
+
+//---------------------------------------------------------------
+// TableMetaData
+//---------------------------------------------------------------
+
+#[derive(Debug, RustcDecodable, RustcEncodable)]
+pub struct  TableMetaData {
+    version_nmbr: u8,
+    engine_id: u8,
+    columns: Vec<Column>,
+}
+
+//---------------------------------------------------------------
+// Table
+//---------------------------------------------------------------
+
+/// Table struct that contains the table information
+#[derive(Debug)]
+pub struct Table<'a> {
+    database: &'a Database,
+    name: String,
+    meta_data: TableMetaData,
+}
+
+impl<'a> Table<'a> {
+    /// Creates new table object
+    /// Returns Table
+    pub fn new<'b>(database: &'b Database, name: &str,
+                   columns: Vec<Column>, engine_id: u8)
+        -> Table<'b>
+    {
+
+        let meta_data = TableMetaData {
+            version_nmbr: VERSION_NO,
+            engine_id: engine_id,
+            columns: columns,
+        };
+        info!("created meta data: {:?}", meta_data);
+
+        Table {
+            name: name.to_string(),
+            database: database,
+            meta_data: meta_data,
+        }
     }
 
     /// Loads the table from the DB
     /// Returns with DatabaseError on fail else Table
-    fn load(database: &str, table: &str) -> Result<Table, DatabaseError> {
+    fn load<'b>(database: &'b Database, name: &str)
+        -> Result<Table<'b>, DatabaseError>
+    {
         // TODO: Read the .tbl file from disk and parse it
-        let path_to_table = Table::get_path(database, table, "tbl");
+
+        let path_to_table = Table::get_path(&database.name, name, "tbl");
+        info!("getting path and opening file: {:?}", path_to_table);
         let mut file = try!(OpenOptions::new()
             .read(true)
             .open(path_to_table));
+        info!("reading file: {:?}", file);
+        let ma_nmbr = try!(file.read_uint::<BigEndian>(mem::size_of_val(&MAGIC_NUMBER)));
 
-        let ma_nmbr = try!(file.read_uint::<BigEndian>( mem::size_of_val(&MAGIC_NUMBER)));
-
+        info!("checking magic number: {:?}",ma_nmbr);
         if ma_nmbr != MAGIC_NUMBER {
             println!("Magic Number not correct");
             return Err(DatabaseError::WrongMagicNmbr)
         }
-        let table: Table = try!(decode_from(&mut file, SizeLimit::Infinite));
-        println!("{:?}", table);
+        let meta_data: TableMetaData = try!(decode_from(&mut file, SizeLimit::Infinite));
+        info!("getting meta data{:?}", meta_data);
 
+        let table = Table::new(database, name, meta_data.columns, meta_data.engine_id);
+        info!("returning table: {:?}", table);
         Ok(table)
-    }
-}
-
-/// Table struct that contains the table information
-#[derive(Debug, RustcDecodable, RustcEncodable)]
-pub struct Table {
-    version_nmbr: u8,
-    engine_id: u8,
-    columns: Vec<Column>,
-    name: String,
-    name_of_database: String,
-}
-
-
-
-impl Table {
-    /// Creates new table object
-    /// Returns Table
-    pub fn new(engine: u8, database: &str, table_name: &str, cols: Vec<Column>) -> Table {
-        Table {
-            version_nmbr: VERSION_NO,
-            engine_id: engine,
-            columns: cols,
-            name: table_name.to_string(),
-            name_of_database: database.to_string(),
-        }
     }
 
     /// Saves the table with a identification number in table file
     /// Returns DatabaseError on fail else Nothing
     pub fn save(&self) -> Result<(), DatabaseError> {
         // call for open file
+        info!("opening file to write",);
         let mut file = try!(OpenOptions::new()
             .write(true)
             .create(true)
             .open(self.get_table_metadata_path()));
-
+        info!("writing magic number in file: {:?}", file);
         try!(file.write_u64::<BigEndian>(MAGIC_NUMBER));//MAGIC_NUMBER
-        try!(encode_into(&self, &mut file,SizeLimit::Infinite));
+        info!("writing meta data in file: {:?}",file);
+        try!(encode_into(&self.meta_data, &mut file,SizeLimit::Infinite));
 
         // debug message all okay
-        println!("I Wrote my File");
+        info!("I Wrote my File");
         Ok(())
     }
 
+
+
     /// Returns columns of table as array
     pub fn columns(&self) -> &[Column] {
-        // TODO: Return real columns
-        &self.columns
+        &self.meta_data.columns
     }
 
     /// Adds a column to the tabel
     /// Returns name of Column or on fail DatabaseError
-    pub fn add_column(&mut self, name: &str, dtype: DataType) -> Result<(), DatabaseError> {
-        match self.columns.iter().find(|x| x.name == name) {
+    pub fn add_column(&mut self, name: &str, sql_type: SqlType) -> Result<(), DatabaseError> {
+        match self.meta_data.columns.iter().find(|x| x.name == name) {
             Some(_) => {
                 warn!("Column {:?} already exists", name);
                 return Err(DatabaseError::AddColumn)
@@ -220,14 +257,14 @@ impl Table {
                 info!("Column {:?} was added", name);
             },
         }
-        self.columns.push(Column::create_new(name, dtype));
+        self.meta_data.columns.push(Column::create_new(name, sql_type));
         Ok(())
     }
 
     /// Removes a column from the table
     /// Returns name of Column or on fail DatabaseError
     pub fn remove_column(&mut self, name: &str) -> Result<(), DatabaseError> {
-        let index = match self.columns.iter().position(|x| x.name == name) {
+        let index = match self.meta_data.columns.iter().position(|x| x.name == name) {
             Some(x) => {
                 info!("Column {:?} was removed" , self.name);
                 x
@@ -237,24 +274,24 @@ impl Table {
                 return Err(DatabaseError::RemoveColumn)
             },
         };
-        self.columns.swap_remove(index);
+        self.meta_data.columns.swap_remove(index);
         Ok(())
     }
 
     /// Creates an engine for Table
     /// Returns Box<Engine>
-    pub fn create_engine(&self) -> Box<Engine> {
-        Box::new(FlatFile::new(self.get_table_data_path()))
+    pub fn create_engine(self) -> Box<Engine + 'a> {
+        Box::new(FlatFile::new(self))
     }
 
     /// Returns the path for the metadata files
     fn get_table_metadata_path(&self) -> String {
-        Self::get_path(&self.name_of_database, &self.name, "tbl")
+        Self::get_path(&self.database.name, &self.name, "tbl")
     }
 
     /// Returns the path for the data files
     fn get_table_data_path(&self) -> String {
-        Self::get_path(&self.name_of_database, &self.name, "dat")
+        Self::get_path(&self.database.name, &self.name, "dat")
     }
 
     /// Returns the path of the table
@@ -263,32 +300,43 @@ impl Table {
     }
 }
 
+//---------------------------------------------------------------
+// Column
+//---------------------------------------------------------------
+
 /// A table column. Has a name, a type, ...
 #[derive(Debug,RustcDecodable, RustcEncodable,Clone)]
 pub struct Column {
     pub name: String, //name of column
-    pub data_type: DataType, //name of the data type that is contained in this column
+    pub sql_type: SqlType, //name of the data type that is contained in this column
 }
 
-impl Default for Column {
-    /// Returns a default Column construct
-    fn default() -> Column {
-        Column {
-            name: "default".to_string(),
-            data_type: DataType::Integer
-        }
-    }
-}
 
 impl Column {
     /// Creates a new column object
     /// Returns with Column
-    pub fn create_new(name: &str, dtype: DataType) -> Column {
+    pub fn create_new(name: &str, sql_type: SqlType) -> Column {
         Column {
             name: name.to_string(),
-            data_type: dtype.clone()
+            sql_type: sql_type.clone()
         }
     }
+}
+
+
+//---------------------------------------------------------------
+// Engine
+//---------------------------------------------------------------
+
+/// Storage Engine Interface.
+///
+/// A storage engine, like MyISAM and InnoDB, is responsible for reading and
+/// writing data to disk, maintain and use indices, check for data corruption
+/// and repair corrupt files.
+///
+/// Each table in a database may use a different storage engine.
+pub trait Engine {
+    fn create_table(&mut self) -> Result<(), DatabaseError>;
 }
 
 // # Some information for the `storage` working group:

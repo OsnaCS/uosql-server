@@ -4,7 +4,6 @@
 extern crate log;
 extern crate uosql;
 extern crate bincode;
-extern crate bufstream;
 extern crate byteorder;
 
 use uosql::logger;
