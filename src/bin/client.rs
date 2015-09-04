@@ -119,10 +119,10 @@ fn send_cmd<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
         },
         ":exit" => {
             return true // maybe send quit signal
-        }
+        },
         ":help" => {
             display_readme();
-        }
+        },
         _ => {
             let cmd_encode = encode_into(&Command::Query(input.to_string()),
                 &mut s, SizeLimit::Bounded(1024));
@@ -218,16 +218,10 @@ fn display_readme() {
         Ok(mut file) => {
             let mut output = String::new();
             let _ = match file.read_to_string(&mut output) {
-                Ok(_) => {
-                    println!("{}", output);
-                }
-                Err(_) => {
-                    info!("cannot read client_readme.txt");
-                }
+                Ok(_) => println!("{}", output),
+                Err(_) => info!("cannot read client_readme.txt")
             };
         },
-        Err(_) => {
-            info!("client_readme.txt is missing");
-        }
+        Err(_) => info!("client_readme.txt is missing")
     };
 }
