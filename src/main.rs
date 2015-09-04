@@ -11,6 +11,7 @@ use std::fs::File;
 use std::env;
 use std::io::Read;
 use docopt::Docopt;
+use std::net::{Ipv4Addr, SocketAddrV4};
 
 pub mod auth;
 pub mod conn;
@@ -19,7 +20,6 @@ pub mod net;
 pub mod parse;
 pub mod query;
 pub mod storage;
-
 
 /// For console input, manages flags and arguments
 const USAGE: &'static str = "
@@ -31,7 +31,6 @@ Options:
 
 #[derive(Debug, RustcDecodable)]
 struct Args {
-    // flag_cfg: bool,
    flag_cfg: Option<String>
 }
 
@@ -49,7 +48,7 @@ fn main() {
     // Getting the information for a possible configuration
     let args : Args = Docopt::new(USAGE).and_then(|d| d.decode())
                                         .unwrap_or_else(|e| e.exit());
-    println!("{:?}", args);
+
     // If a cfg is entered, use this file name to set configurations
     let config = read_conf_from_json(args.flag_cfg
                                 .unwrap_or("src/config.json".into()));
@@ -69,8 +68,9 @@ fn listen(config: Config) {
     // Collecting information for binding process
     let mut bind_inf = format!("{}:{}", config.address, config.port);
 
-    let listener = TcpListener::bind("127.0.0.1:4242").unwrap();
-    //let listener = TcpListener::bind(bind_inf).unwrap();
+    // Converting configurations to a valid socket address
+    let sock_addr = SocketAddrV4::new(config.address, config.port);
+    let listener = TcpListener::bind(sock_addr).unwrap();
 
     // Accept connections and process them
     for stream in listener.incoming() {
@@ -90,15 +90,18 @@ fn listen(config: Config) {
 }
 
 /// Creates a Config struct out of a config file
+/// returns default values for everything that is
+/// not entered manually
 fn read_conf_from_json(name: String) -> Config {
-    /// A struct that contains different configuration details with a
-    /// default setting
+
     #[derive(Debug, RustcDecodable, Default)]
     struct CfgFile {
         address: Option<String>,
         port: Option<u16>,
         dir: Option<String>
     }
+
+    // Read from JSON file and decode to CfgFile
     let mut config = CfgFile::default();
     if let Ok(mut f) = File::open(name) {
         let mut s = String::new();
@@ -108,16 +111,31 @@ fn read_conf_from_json(name: String) -> Config {
             config = json::decode(&s).unwrap();
         }
     }
+
+    // Parsing types
+    let s = config.address.unwrap_or("127.0.0.1".into());
+    let ip_parts : Vec<&str> = s.split(".").collect();
+
+    let mut part_convert : Vec<u8> = Vec::default();
+    for s in ip_parts {
+        match s.parse::<u8>() {
+            Ok(n) => part_convert.push(n),
+            Err(e) => println!("Error")
+        };
+    }
+    // Return configuration, all None datafields set to default
     Config {
-        address: config.address.unwrap_or("127.0.0.1".into()),
+        address: Ipv4Addr::new(part_convert[0], part_convert[1],
+                               part_convert[2], part_convert[3]),
         port: config.port.unwrap_or(4242),
         dir: config.dir.unwrap_or("data".into())
     }
 }
 
-#[derive(Debug, RustcDecodable)]
+/// A struct for managing configurations
+#[derive(Debug)]
 pub struct Config {
-    address: String,
+    address: Ipv4Addr,
     port: u16,
     dir: String
 }
