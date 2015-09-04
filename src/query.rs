@@ -1,6 +1,6 @@
 //! Query excecution module
 //!
-//! This module takes the output of the SQL parser and executed that query
+//! This module takes the output of the SQL parser and executes that query
 //! by calling the appropriate `storage` and `auth` methods.
 //!
 

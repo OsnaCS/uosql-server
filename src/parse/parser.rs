@@ -3,12 +3,12 @@
 
 use std::iter::Iterator;
 use super::ast::{Query, DefStmt, ManipulationStmt, CreateStmt, DropStmt, AltStmt, CreateTableStmt,
- AlterTableStmt, AlterOp, ColumnInfo, SqlType, UseStmt};
- use super::token::TokenSpan;
- use super::lex::Lexer;
- use std::mem::swap;
- use super::token::Token;
- use super::Span;
+   AlterTableStmt, AlterOp, ColumnInfo, SqlType, UseStmt, InsertStmt};
+   use super::token::TokenSpan;
+   use super::lex::Lexer;
+   use std::mem::swap;
+   use super::token::Token;
+   use super::Span;
 
 /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #Parser public functions
@@ -46,7 +46,7 @@ impl<'a> Parser<'a> {
             _=>(),
         }
         // first token is checked if it's a keyword using expect_keyword()
-        let querytype = self.expect_keyword(&[Keyword::Create,Keyword::Drop, Keyword::Alter])
+        let querytype = self.expect_keyword(&[Keyword::Create,Keyword::Drop, Keyword::Alter, Keyword::Insert, Keyword::Use])
         .map_err(|e| match e {
             ParseError::UnexpectedEoq => ParseError::EmptyQueryError,
             _ => e,
@@ -59,30 +59,38 @@ impl<'a> Parser<'a> {
             // Create-Query
             Keyword::Create => {
                 let query = Query::DefStmt(DefStmt::Create(try!(self.parse_create_stmt())));
-                return Ok(try!(self.return_query_ast(query)));
+                Ok(try!(self.return_query_ast(query)))
             },
 
             // Alter-Query
             Keyword::Alter => {
                 let query = Query::DefStmt(DefStmt::Alter(try!(self.parse_alt_stmt())));
-                return Ok(try!(self.return_query_ast(query)));
+                Ok(try!(self.return_query_ast(query)))
             },
 
             // Drop-Query
             Keyword::Drop => {
                 let query = Query::DefStmt(DefStmt::Drop(try!(self.parse_drop_stmt())));
-                return Ok(try!(self.return_query_ast(query)));
+                Ok(try!(self.return_query_ast(query)))
             },
 
             // Use-Query
             Keyword::Use => {
                 let query = Query::ManipulationStmt(ManipulationStmt::Use(try!(self.parse_use_stmt())));
-                return Ok(try!(self.return_query_ast(query)));
+                Ok(try!(self.return_query_ast(query)))
             }
+
+            // Insert-Query
+            Keyword::Insert => {
+                let query = Query::ManipulationStmt(ManipulationStmt::Insert(try!(self.parse_insert_stmt())));
+                Ok(try!(self.return_query_ast(query)))
+            }
+
             // Unknown Error
             _ => return Err(ParseError::UnknownError)
         }
     }
+
 
 
 
@@ -103,8 +111,8 @@ impl<'a> Parser<'a> {
             Keyword::Table => return Ok(CreateStmt::Table(try!(self.parse_create_table_stmt()))),
             // Create Database subtree
             Keyword::Database => { self.bump();
-             return Ok(CreateStmt::Database(try!(self.expect_word())));
-         },
+               return Ok(CreateStmt::Database(try!(self.expect_word())));
+           },
             // Create the view subtree
             // Keyword::View => ...
 
@@ -156,7 +164,7 @@ impl<'a> Parser<'a> {
             self.bump();
             // Check if there is a Comma seperating two columns or a ParenCl ending the vectorparsing
             match try!(self.expect_token(&[Token::Comma, Token::ParenCl])) {
-                &Token::Comma => {self.bump();() },
+                &Token::Comma => { self.bump(); () },
                 _ => (),
             };
         }
@@ -206,24 +214,83 @@ impl<'a> Parser<'a> {
         self.bump();
 
         match try!(self.expect_keyword(&[Keyword::Table,Keyword::Database])) {
-            Keyword::Table => return { self.bump();
-                Ok(DropStmt::Table(try!(self.expect_word())))},
-                Keyword::Database => return { self.bump();
-                    Ok(DropStmt::Database(try!(self.expect_word()))) },
-                    _ => return Err(ParseError::UnknownError),
-                };
-            }
+            Keyword::Table => return { self.bump(); Ok(DropStmt::Table(try!(self.expect_word())))},
+            Keyword::Database => return { self.bump(); Ok(DropStmt::Database(try!(self.expect_word()))) },
+            _ => return Err(ParseError::UnknownError),
+        };
+    }
 
     // Parses the tokens for use statement
     fn parse_use_stmt(&mut self) -> Result<UseStmt, ParseError> {
         self.bump();
-        match try!(self.expect_keyword(&[Keyword::Table,Keyword::Database])) {
-            Keyword::Database => return { self.bump();
-             return Ok(UseStmt::Database(try!(self.expect_word())))
-         },
-         _ => return Err(ParseError::UnknownError),
-     };
- }
+
+
+        match try!(self.expect_keyword(&[Keyword::Database])) {
+            Keyword::Database => return { self.bump(); Ok(UseStmt::Database(try!(self.expect_word()))) },
+            _ => return Err(ParseError::UnknownError),
+        }
+    }
+
+    fn parse_insert_stmt(&mut self) -> Result<InsertStmt, ParseError> {
+        self.bump();
+
+        match try!(self.expect_keyword(&[Keyword::Into])) {
+            Keyword::Into => (),
+            _ => return Err(ParseError::UnknownError),
+        }
+        let mut filler_vec = Vec::<SqlType>::new();
+        filler_vec.push(SqlType::Int);
+
+
+        self.bump();
+        let insert_table_stmt = InsertStmt { 
+            tid: try!(self.expect_word()), 
+            col: try!(self.parse_insert_stmt_detail()   ), 
+            val: filler_vec
+        };
+        Ok(insert_table_stmt)
+    }
+
+    fn parse_insert_stmt_detail(&mut self) -> Result<Vec<String>, ParseError> {
+        self.bump();
+
+        let mut res_vec = Vec::<String>::new();
+
+        res_vec = match self.expect_token(&[Token::ParenOp]) {
+            Ok(&Token::ParenOp) => try!(self.parse_insert_stmt_detail_column()),
+            _ => return Err(ParseError::Filler2),//try!(self.parse_insert_stmt_detail_no_column()),
+        };
+
+        Ok(res_vec)
+    }
+
+    fn parse_insert_stmt_detail_column(&mut self) -> Result<Vec<String>, ParseError> {
+        self.bump();
+
+        let mut res_vec = Vec::<String>::new();
+
+        // fill the vector with content until ParenCl is the curr token
+        while match self.expect_token(&[Token::ParenCl]) {
+            Ok(&Token::ParenCl) => false,
+            _ => true,
+        } {
+            // parsing the content for a single column
+            res_vec.push(try!(self.expect_word()));
+            self.bump();
+            // Check if there is a Comma seperating two columns or a ParenCl ending the vectorparsing
+            match try!(self.expect_token(&[Token::Comma, Token::ParenCl])) {
+                &Token::Comma => { self.bump(); () },
+                _ => (),
+            };
+        }
+        Ok(res_vec)
+    }
+
+    fn parse_insert_stmt_detail_no_column(&mut self) -> Result<InsertStmt, ParseError> {
+        Err(ParseError::Filler2)
+       // _ => Err(ParseError::DebugError("Expected ( sign.".to_string())),
+    }
+
 
 
 
@@ -253,11 +320,11 @@ impl<'a> Parser<'a> {
     fn return_query_ast(&mut self, query: Query) -> Result<Query, ParseError> {
         self.bump();
         if self.curr.is_none() {
-           Ok(query)
-       } else {
-           Err(ParseError::InvalidEoq)
-       }
-   }
+         Ok(query)
+     } else {
+         Err(ParseError::InvalidEoq)
+     }
+ }
 
 
 
@@ -404,7 +471,7 @@ impl<'a> Parser<'a> {
             } else {
                 Err(ParseError::WrongToken(Span { lo: token.span.lo, hi: token.span.hi } ))
             }
-    }
+        }
 
     // matches current token against any keyword and checks if it is one of the expected keywords
     fn expect_keyword(&self,expected_keywords: &[Keyword]) -> Result<Keyword, ParseError> {
@@ -419,8 +486,8 @@ impl<'a> Parser<'a> {
                 Some(ref token) => token,
             };
 
-            span_lo=token.span.lo;
-            span_hi=token.span.hi;
+            span_lo = token.span.lo;
+            span_hi = token.span.hi;
 
             // checks whether token is a word
             let word = match token.tok {
@@ -443,6 +510,8 @@ impl<'a> Parser<'a> {
                 "add" => Keyword::Add,
                 "column" => Keyword::Column,
                 "database" => Keyword::Database,
+                "into" => Keyword::Into,
+                "use" => Keyword::Use,
                 _ => return Err(ParseError::NotAKeyword(Span { lo: span_lo , hi: span_hi } )),
 
             };
@@ -489,7 +558,8 @@ pub enum Keyword {
     From,
     Where,
     Modify,
-    Add
+    Add,
+    Into
 }
 
 #[derive(Debug)]
@@ -502,6 +572,8 @@ pub enum ParseError {
     //End of file,
     UnexpectedEoq,
     InvalidEoq,
+    Filler1,
+    Filler2,
 
     //Token errors
     WrongKeyword(Span),
@@ -512,7 +584,6 @@ pub enum ParseError {
     NotAWord(Span),
     NotADatatype(Span),
     NotANumber(Span),
-
 
 
 
