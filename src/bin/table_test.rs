@@ -5,7 +5,7 @@ use uosql::storage::*;
 fn main() {
 
     //let db = Database::new_database("storage_team").unwrap();
-    let db = Database::load_database("storage_team").unwrap();
+    let db = Database::load("storage_team").unwrap();
 
     let mut cols = Vec::new();
     cols.push(Column { name: "Heiner".into(), data_type: DataType::Integer });
@@ -14,10 +14,10 @@ fn main() {
     cols.push(Column { name: "Jana".into(), data_type: DataType::Integer });
 
 
-    let _storage_team = db.create_table(1, cols, "storage_team").unwrap();
+    let _storage_team = db.create_table("storage_team", cols, 1).unwrap();
 
     let t = db.load_table("storage_team").unwrap();
 
     let mut engine = t.create_engine();
-    let _e  = engine.create_table(t.columns());
+    let _e  = engine.create_table();
 }
