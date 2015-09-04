@@ -122,7 +122,6 @@ fn send_cmd<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
         ":help" => {
             let help = include_str!("../client_readme.txt");
             println!("{}", help);
-            return false
         },
         _ => {
             let cmd_encode = encode_into(&Command::Query(input.to_string()),
