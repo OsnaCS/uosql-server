@@ -6,22 +6,21 @@
 pub mod flatfile;
 
 use self::flatfile::FlatFile;
-use std::path::Path;
-use std::fs::{self, DirEntry};
+use std::fs::{self};
 use std::convert::From;
 use byteorder::Error;
 use std::io::prelude::*;
 use std::io;
-use std::fs::{ OpenOptions,File,create_dir };
+use std::fs::{OpenOptions,create_dir};
+use std::mem;
 
-use byteorder::{ WriteBytesExt, ReadBytesExt, BigEndian };
+use byteorder::{WriteBytesExt, ReadBytesExt, BigEndian};
 
 use bincode::SizeLimit;
-use bincode::rustc_serialize::{ EncodingError,DecodingError,encode_into,decode_from };
+use bincode::rustc_serialize::{EncodingError,DecodingError,encode_into,decode_from};
 
 /// constants
  const MAGIC_NUMBER: u64 = 0x6561742073686974; // secret
- const MAGIC_NUMBER_BYTES: usize = 8;
  const VERSION_NO: u8 = 1;
 
 
@@ -48,9 +47,9 @@ pub enum DatabaseError {
     BinEn(EncodingError),
     BinDe(DecodingError),
     Byteorder(::byteorder::Error),
-    MagicNmbr,
-    Engine,
-    DataBase,
+    WrongMagicNmbr,
+    Engine, //cur not used
+    LoadDataBase,
 }
 
 impl From<io::Error> for DatabaseError {
@@ -81,12 +80,12 @@ impl From< ::byteorder::Error> for DatabaseError {
 ///
 /// Can be used to define the save and load configuration of open_file
 #[derive(Debug)]
-enum FileMode{ LoadDefault, SaveDefault, }
+enum _FileMode{ LoadDefault, SaveDefault, }
 
 /// A Enum for Datatypes (will be removed later)
 #[repr(u8)]
 #[derive(Clone,Copy,Debug,RustcDecodable, RustcEncodable)]
-pub enum DataType{ Integer = 1, Float = 2,}
+pub enum DataType{ Integer = 1, Float = 2, }
 
 impl DataType {
     pub fn value(&self) -> u8 {
@@ -113,12 +112,12 @@ impl Database {
         if try!(fs::metadata(database_name)).is_dir() {
             Ok(Database{ name: database_name.to_string() })
         } else {
-            return Err(DatabaseError::DataBase)
+            return Err(DatabaseError::LoadDataBase)
         }
     }
 
     /// Creates a folder for the database
-    fn create_database(&self) -> Result<(),DatabaseError> {
+    fn create_database(&self) -> Result<(), DatabaseError> {
         println!("trying to create dir!");
         try!(create_dir(&self.name));
         println!("created dir");
@@ -127,9 +126,11 @@ impl Database {
 
     /// Creates a new table in the DB folder
     /// Returns with DatabaseError on fail else Table
-    pub fn create_table(&self, engine_id: u8, cols: Vec<Column>, table_name: &str) -> Result<Table, DatabaseError> {
+    pub fn create_table(&self, engine_id: u8, cols: Vec<Column>, table_name: &str)
+        -> Result<Table, DatabaseError> {
+
         let t = Table::new(engine_id, &self.name, table_name, cols);
-        t.save();
+        try!(t.save());
         Ok(t)
     }
 
@@ -148,11 +149,11 @@ impl Database {
             .read(true)
             .open(path_to_table));
 
-        let ma_nmbr = try!(file.read_uint::<BigEndian>(MAGIC_NUMBER_BYTES));
+        let ma_nmbr = try!(file.read_uint::<BigEndian>( mem::size_of_val(&MAGIC_NUMBER)));
 
         if ma_nmbr != MAGIC_NUMBER {
             println!("Magic Number not correct");
-            return Err(DatabaseError::MagicNmbr)
+            return Err(DatabaseError::WrongMagicNmbr)
         }
         let table: Table = try!(decode_from(&mut file, SizeLimit::Infinite));
         println!("{:?}", table);
@@ -215,7 +216,7 @@ impl Table {
     }
 
     /// Removes a column from the table
-    pub fn remove_column(&mut self, name: &str, data_type: DataType) {
+    pub fn remove_column(&mut self, _name: &str, _data_type: DataType) {
     }
 
     /// Creates an engine for Table

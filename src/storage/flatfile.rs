@@ -1,7 +1,6 @@
 use super::{Engine, DatabaseError, Column};
 
-use std::io;
-use std::fs::{ OpenOptions,File,create_dir };
+use std::fs::OpenOptions;
 
 pub struct FlatFile {
     table_path: String,
@@ -21,8 +20,8 @@ impl Drop for FlatFile {
 }
 
 impl Engine for FlatFile {
-    fn create_table(&mut self, cols: &[Column]) -> Result<(), DatabaseError> {
-        let mut file = try!(OpenOptions::new()
+    fn create_table(&mut self, _cols: &[Column]) -> Result<(), DatabaseError> {
+        let mut _file = try!(OpenOptions::new()
             .write(true)
             .create(true)
             .open(&self.table_path));
