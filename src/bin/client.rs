@@ -1,11 +1,13 @@
 //! Simple client program
 //! Establishes connection to server and sends login information
-
+#[macro_use]
+extern crate log;
 extern crate uosql;
 extern crate bincode;
 extern crate bufstream;
 extern crate byteorder;
 
+use uosql::logger;
 use std::io::{self, stdout, Write, Read};
 use std::net::TcpStream;
 use uosql::net::{Cnv, Greeting, Login, Command};
@@ -16,18 +18,21 @@ use byteorder::{ReadBytesExt, WriteBytesExt};
 const PROTOCOL_VERSION : u8 = 1;
 
 fn main() {
+    logger::with_loglevel(log::LogLevelFilter::Trace)
+        .with_logfile(std::path::Path::new("log.txt"))
+        .enable().unwrap();
     // connect to server
     let stream = TcpStream::connect("127.0.0.1:4242");
     let mut s = match stream {
         Ok(s) => s,
-        Err(_) => { println!("Could not connect to server."); return }
+        Err(_) => { info!("Could not connect to server."); return }
     };
-    println!("Connected");
+    info!("Connected");
 
     // receive welcome message from server
     let rg = receive_greeting(&mut s);
     if !rg {
-        println!("Connection closed.");
+        info!("Connection closed.");
         return;
     }
 
@@ -43,12 +48,12 @@ fn main() {
         let e = stdout().flush();
         match e {
             Ok(_) => {},
-            Err(_) => println!("")
+            Err(_) => info!("")
         }
         let input = read_line();
 
         // send code for command-package
-        let cs = cmd_send(&mut s, &input);
+        let cs = send_cmd(&mut s, &input);
         match cs {
             true => return, // end client
             false => continue, // next iteration
@@ -60,42 +65,25 @@ fn main() {
 /// If an error occurs reading from stdin loop until a valid String was read
 fn read_line() -> String {
     let mut input = String::new();
-
-    /*
     loop {
-        match io::stdin().read_line(&mut input) {
-            Ok(_) => {
-                input.trim().to_string();
-                println!("{:?}", input.to_string());
-                break;
-            },
-            Err(_) => { ""; continue;}
-        }.into();
-    }
-    input
-    */
 
-    /*
-    loop {
-    */
     match io::stdin().read_line(&mut input) {
-        Ok(_) => { input.trim().to_string() },
-        _ => { "".to_string() }
+        Ok(_) => { return input.trim().into() },
+        _ => { }
     }
-    /*
+
     }
-    input
-    */
+
 }
 
-// send command-package
-fn cmd_send<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
+/// Send command-package to server.
+fn send_cmd<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
     let input_low = input.to_lowercase();
     let status = s.write_u8(Cnv::CommandPkg as u8);
     let _ = match status {
         Ok(_) => {},
         Err(_) => {
-            println!("Sending command-header failed");
+            info!("Sending command-header failed");
             return false
         }
     };
@@ -104,9 +92,23 @@ fn cmd_send<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
             let cmd_encode = encode_into(&Command::Quit, &mut s,
                 SizeLimit::Bounded(1024));
             match cmd_encode {
-                Ok(_) => return true,
+                Ok(_) => {
+                    let status = s.read_u8();
+                    match status {
+                        Ok(st) => {
+                            if st == Cnv::OkPkg as u8 {
+                                info!("Connection closed");
+                            }
+                            return true
+                        },
+                        Err(_) => {
+                            info!("Failed to reveive close-confirmation");
+                            return false
+                        }
+                    }
+                },
                 Err(_) => {
-                    println!("Sending quit-message failed");
+                    info!("Sending quit-message failed");
                     return false
                 }
             }
@@ -117,7 +119,7 @@ fn cmd_send<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
             let _ = match cmd_encode {
                 Ok(_) => {},
                 Err(_) => {
-                    println!("Sending ping-message failed");
+                    info!("Sending ping-message failed");
                     return false
                 }
             };
@@ -125,14 +127,14 @@ fn cmd_send<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
             match status {
                 Ok(st) => {
                     if st == Cnv::OkPkg as u8 {
-                        println!("Server still reachable.");
+                        info!("Server still reachable.");
                     } else {
-                        println!("Server is responding but INSANE!");
+                        info!("Server is responding but INSANE!");
                         //maybe close connection? -> timeout
                     }
                 },
                 Err(_) => {
-                    println!("Error reading ping-package");
+                    info!("Error reading ping-package");
                 }
             }
         },
@@ -142,7 +144,7 @@ fn cmd_send<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
             let _ = match cmd_encode {
                 Ok(_) => {},
                 Err(_) => {
-                    println!("Sending command-package failed. Try again.");
+                    info!("Sending command-package failed. Try again.");
                     return false
                 }
             };
@@ -152,12 +154,12 @@ fn cmd_send<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
                     if st == Cnv::ResponsePkg as u8 {
                         // decode Response
                     } else {
-                        println!("Unexpected return");
+                        info!("Unexpected return");
                         // try again
                     }
                 },
                 Err(_) => {
-                    println!("Error reading response-package");
+                    info!("Error reading response-package");
                 }
             }
         }
@@ -173,7 +175,7 @@ fn receive_greeting<R: Read>(buf: &mut R) -> bool {
         Err(_) => return false
     };
     if st != Cnv::GreetPkg as u8 {
-        println!("Communication mismatch. Try again later.");
+        info!("Communication mismatch. Try again later.");
         return false;
     }
     // read greeting
@@ -182,13 +184,13 @@ fn receive_greeting<R: Read>(buf: &mut R) -> bool {
     let gr = match greet {
         Ok(gr) => gr,
         _ => {
-            println!("Could not decode greet-package");
+            info!("Could not decode greet-package");
             return false
         }
     };
     let greeting = Greeting::make_greeting(gr.protocol_version, gr.message);
     if PROTOCOL_VERSION != greeting.protocol_version {
-        println!("Cannot communicate with server -
+        info!("Cannot communicate with server -
                     different versions");
         return false
     }
@@ -203,7 +205,7 @@ fn send_login<W: Write>(buf: &mut W) -> bool {
     println!("Username: ");
     login.username = read_line();
 
-    println!("\nPassword: ");
+    println!("Password: ");
     login.password = read_line();
 
     //send Login package to server
@@ -211,7 +213,7 @@ fn send_login<W: Write>(buf: &mut W) -> bool {
     let _ = match status {
         Ok(_) => {},
         Err(_) => {
-            println!("Sending package header failed");
+            info!("Sending package header failed");
             return false
         }
     };
@@ -219,7 +221,7 @@ fn send_login<W: Write>(buf: &mut W) -> bool {
     match encode {
         Ok(_) => return true,
         Err(_) => {
-            println!("Sending login-data failed");
+            info!("Sending login-data failed");
             return false
         }
     }
