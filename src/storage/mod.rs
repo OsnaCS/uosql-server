@@ -359,7 +359,7 @@ pub trait Engine {
 #[derive(Clone,Copy,Debug,RustcDecodable, RustcEncodable)]
 enum EngineID {
     FlatFile = 1,
-    InvertedIndex = 2,
+    InvertedIndex,
 }
 
 
