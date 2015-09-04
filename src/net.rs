@@ -52,8 +52,8 @@ impl From<NetworkErrors> for ClientErrMsg {
         match error {
             NetworkErrors::IoError(err) => ClientErrMsg { code: 0, msg: "IO error".into() },
             NetworkErrors::ByteOrder(err) => ClientErrMsg { code: 1, msg: "Byteorder error".into() },
-            NetworkErrors::UnexpectedPkg(err) => ClientErrMsg { code: 2, msg: "unexpected packet".into() },
-            NetworkErrors::UnknownCmd(err) => ClientErrMsg { code: 3, msg: "unknown command: ".into() },
+            NetworkErrors::UnexpectedPkg(err) => ClientErrMsg { code: 2, msg: err.into() },
+            NetworkErrors::UnknownCmd(err) => ClientErrMsg { code: 3, msg: err.into() },
             NetworkErrors::EncodeErr(err) => ClientErrMsg { code: 4, msg: "encoding error".into() },
             NetworkErrors::DecodeErr(err) => ClientErrMsg { code: 5, msg: "decoding error".into() }
         }
