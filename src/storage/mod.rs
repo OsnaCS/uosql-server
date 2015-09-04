@@ -1,11 +1,7 @@
 //! Storage Engine trait and several implementations
 //!
 //!
-
-
 pub mod flatfile;
-
-extern crate log;
 
 use self::flatfile::FlatFile;
 
@@ -15,7 +11,7 @@ use std::io;
 use std::io::prelude::*;
 
 use std::fs;
-use std::fs::{OpenOptions,create_dir};
+use std::fs::{OpenOptions, create_dir};
 
 use std::convert::From;
 
@@ -23,7 +19,7 @@ use byteorder::Error;
 use byteorder::{WriteBytesExt, ReadBytesExt, BigEndian};
 
 use bincode::SizeLimit;
-use bincode::rustc_serialize::{EncodingError,DecodingError,encode_into,decode_from};
+use bincode::rustc_serialize::{EncodingError, DecodingError, encode_into, decode_from};
 
 /// constants
  const MAGIC_NUMBER: u64 = 0x6561742073686974; // secret
@@ -83,12 +79,6 @@ impl From< ::byteorder::Error> for DatabaseError {
         DatabaseError::Byteorder(err)
     }
 }
-
-/// A Enum for File Modes
-///
-/// Can be used to define the save and load configuration of open_file
-#[derive(Debug)]
-enum _FileMode{ LoadDefault, SaveDefault, }
 
 /// A Enum for Datatypes (will be removed later)
 #[repr(u8)]
@@ -220,35 +210,35 @@ impl Table {
 
     /// Adds a column to the tabel
     /// Returns name of Column or on fail DatabaseError
-    pub fn add_column(&mut self, name: &str, dtype: DataType) -> Result<String, DatabaseError> {
+    pub fn add_column(&mut self, name: &str, dtype: DataType) -> Result<(), DatabaseError> {
         match self.columns.iter().find(|x| x.name == name) {
-            Some(_x) => {
-                info!(target: "Column add event", "Column already exists");
+            Some(_) => {
+                warn!("Column {:?} already exists", name);
                 return Err(DatabaseError::AddColumn)
             },
             None => {
-                info!(target: "Column add event", "Column was added");
+                info!("Column {:?} was added", name);
             },
         }
         self.columns.push(Column::create_new(name, dtype));
-        Ok(name.into())
+        Ok(())
     }
 
     /// Removes a column from the table
     /// Returns name of Column or on fail DatabaseError
-    pub fn remove_column(&mut self, name: &str) -> Result<String, DatabaseError> {
+    pub fn remove_column(&mut self, name: &str) -> Result<(), DatabaseError> {
         let index = match self.columns.iter().position(|x| x.name == name) {
-            Some(_x) => {
+            Some(x) => {
                 info!("Column {:?} was removed" , self.name);
-                _x
+                x
             },
             None => {
-                info!("Column {:?} could not be found", self.name);
+                warn!("Column {:?} could not be found", self.name);
                 return Err(DatabaseError::RemoveColumn)
             },
         };
-        self.columns.remove(index);
-        Ok(name.into())
+        self.columns.swap_remove(index);
+        Ok(())
     }
 
     /// Creates an engine for Table
