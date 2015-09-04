@@ -28,7 +28,7 @@ pub fn handle(mut stream: TcpStream) {
             Ok(cmd) => 
             match cmd {
                 //exit the session and shutdown the connection
-                net::Command::Quit => return, 
+                net::Command::Quit => { net::send_ok_packet(&mut stream); return }, 
                 // send OK-Package, unused value can be checked to try again and 
                 // eventually close to connection as timeout issue
                 net::Command::Ping => { net::send_ok_packet(&mut stream); } , 

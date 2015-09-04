@@ -300,7 +300,7 @@ pub fn testlogin() {
     let login_encode = encode_into(&login,&mut vec,SizeLimit::Bounded(1024));
 
     let login_res = read_login(&mut Cursor::new(vec)).unwrap();
-
+    
     // test for equality
     assert_eq!(login_res.username, "elena");
     assert_eq!(login_res.password, "praktikum");
