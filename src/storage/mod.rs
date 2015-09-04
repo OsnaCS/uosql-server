@@ -204,8 +204,7 @@ impl<'a> Table<'a> {
             .read(true)
             .open(path_to_table));
         info!("reading file: {:?}", file);
-        let n_size(mem::size_of_val(&MAGIC_NUMBER));
-        let ma_nmbr = try!(file.read_uint::<BigEndian>(n_size));
+        let ma_nmbr = try!(file.read_uint::<BigEndian>(mem::size_of_val(&MAGIC_NUMBER)));
 
         info!("checking magic number: {:?}",ma_nmbr);
         if ma_nmbr != MAGIC_NUMBER {
