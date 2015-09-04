@@ -1,25 +1,25 @@
 //! Storage Engine trait and several implementations
 //!
 //!
-
-
 pub mod flatfile;
 
 use self::flatfile::FlatFile;
-use std::fs;
-use std::convert::From;
-use byteorder::Error;
-use std::io::prelude::*;
-use std::io;
-use std::fs::{OpenOptions,create_dir};
+
 use std::mem;
 
+use std::io;
+use std::io::prelude::*;
+
+use std::fs;
+use std::fs::{OpenOptions, create_dir};
+
+use std::convert::From;
+
+use byteorder::Error;
 use byteorder::{WriteBytesExt, ReadBytesExt, BigEndian};
 
 use bincode::SizeLimit;
-use bincode::rustc_serialize::{EncodingError,DecodingError,encode_into,decode_from};
-
-use std::ops::Deref;
+use bincode::rustc_serialize::{EncodingError, DecodingError, encode_into, decode_from};
 
 /// constants
  const MAGIC_NUMBER: u64 = 0x6561742073686974; // secret
@@ -41,6 +41,8 @@ pub enum DatabaseError {
     WrongMagicNmbr,
     Engine, //cur not used
     LoadDataBase,
+    RemoveColumn,
+    AddColumn,
 }
 
 impl From<io::Error> for DatabaseError {
@@ -68,23 +70,12 @@ impl From< ::byteorder::Error> for DatabaseError {
 }
 
 //---------------------------------------------------------------
-// _FileMode
-//---------------------------------------------------------------
-
-/// A Enum for File Modes
-///
-/// Can be used to define the save and load configuration of open_file
-#[derive(Debug)]
-enum _FileMode{ LoadDefault, SaveDefault, }
-
-//---------------------------------------------------------------
 // DataType
 //---------------------------------------------------------------
-
 /// A Enum for Datatypes (will be removed later)
 #[repr(u8)]
 #[derive(Clone,Copy,Debug,RustcDecodable, RustcEncodable)]
-pub enum DataType{ Integer = 1, Float = 2, }
+pub enum DataType { Integer = 1, Float = 2, }
 
 impl DataType {
     pub fn value(&self) -> u8 {
@@ -103,7 +94,7 @@ pub struct Database {
 impl Database {
     /// Starts the process of creating a new Database
     /// Returns database or on fail DatabaseError
-    pub fn new(name: &str) -> Result<Database, DatabaseError> {
+    pub fn create(name: &str) -> Result<Database, DatabaseError> {
         let d = Database{ name: name.to_string() };
         try!(d.save());
         Ok(d)
@@ -130,7 +121,8 @@ impl Database {
     /// Creates a new table in the DB folder
     /// Returns with DatabaseError on fail else Table
     pub fn create_table(&self, name: &str, columns: Vec<Column>, engine_id: u8)
-        -> Result<Table, DatabaseError> {
+        -> Result<Table, DatabaseError>
+    {
 
         let t = Table::new(&self, name, columns, engine_id);
         try!(t.save());
@@ -170,7 +162,10 @@ pub struct Table<'a> {
 impl<'a> Table<'a> {
     /// Creates new table object
     /// Returns Table
-    pub fn new<'b>(database: &'b Database, name: &str, columns: Vec<Column>, engine_id: u8) -> Table<'b> {
+    pub fn new<'b>(database: &'b Database, name: &str,
+                   columns: Vec<Column>, engine_id: u8)
+        -> Table<'b>
+    {
 
         let meta_data = TableMetaData {
             version_nmbr: VERSION_NO,
@@ -188,14 +183,16 @@ impl<'a> Table<'a> {
 
     /// Loads the table from the DB
     /// Returns with DatabaseError on fail else Table
-    fn load<'b>(database: &'b Database, name: &str) -> Result<Table<'b>, DatabaseError> {
+    fn load<'b>(database: &'b Database, name: &str)
+        -> Result<Table<'b>, DatabaseError>
+    {
         // TODO: Read the .tbl file from disk and parse it
         let path_to_table = Table::get_path(&database.name, name, "tbl");
         let mut file = try!(OpenOptions::new()
             .read(true)
             .open(path_to_table));
 
-        let ma_nmbr = try!(file.read_uint::<BigEndian>( mem::size_of_val(&MAGIC_NUMBER)));
+        let ma_nmbr = try!(file.read_uint::<BigEndian>(mem::size_of_val(&MAGIC_NUMBER)));
 
         if ma_nmbr != MAGIC_NUMBER {
             println!("Magic Number not correct");
@@ -234,12 +231,36 @@ impl<'a> Table<'a> {
     }
 
     /// Adds a column to the tabel
-    pub fn add_column(&mut self, name: &str, dtype: DataType) {
+    /// Returns name of Column or on fail DatabaseError
+    pub fn add_column(&mut self, name: &str, dtype: DataType) -> Result<(), DatabaseError> {
+        match self.meta_data.columns.iter().find(|x| x.name == name) {
+            Some(_) => {
+                warn!("Column {:?} already exists", name);
+                return Err(DatabaseError::AddColumn)
+            },
+            None => {
+                info!("Column {:?} was added", name);
+            },
+        }
         self.meta_data.columns.push(Column::create_new(name, dtype));
+        Ok(())
     }
 
     /// Removes a column from the table
-    pub fn remove_column(&mut self, _name: &str, _data_type: DataType) {
+    /// Returns name of Column or on fail DatabaseError
+    pub fn remove_column(&mut self, name: &str) -> Result<(), DatabaseError> {
+        let index = match self.meta_data.columns.iter().position(|x| x.name == name) {
+            Some(x) => {
+                info!("Column {:?} was removed" , self.name);
+                x
+            },
+            None => {
+                warn!("Column {:?} could not be found", self.name);
+                return Err(DatabaseError::RemoveColumn)
+            },
+        };
+        self.meta_data.columns.swap_remove(index);
+        Ok(())
     }
 
     /// Creates an engine for Table

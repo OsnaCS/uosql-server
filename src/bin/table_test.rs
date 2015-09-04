@@ -4,7 +4,7 @@ use uosql::storage::*;
 
 fn main() {
 
-    //let db = Database::new_database("storage_team").unwrap();
+    //let db = Database::create("storage_team").unwrap();
     let db = Database::load("storage_team").unwrap();
 
     let mut cols = Vec::new();
@@ -20,4 +20,5 @@ fn main() {
 
     let mut engine = t.create_engine();
     let _e  = engine.create_table();
+    let t = engine.get_table();
 }
