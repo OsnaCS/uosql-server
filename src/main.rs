@@ -8,7 +8,6 @@ extern crate docopt;
 
 use rustc_serialize::json;
 use std::fs::File;
-use std::env;
 use std::io::Read;
 use docopt::Docopt;
 use std::net::{Ipv4Addr, SocketAddrV4};
@@ -23,7 +22,8 @@ pub mod storage;
 
 /// For console input, manages flags and arguments
 const USAGE: &'static str = "
-Usage: uosql-server [--cfg=<file>] [--ip=<address>] [--port=<port>] [--dir=<directory>]
+Usage: uosql-server [--cfg=<file>] [--ip=<address>] [--port=<port>]
+[--dir=<directory>]
 
 Options:
     --cfg=<file>        Enter a configuration file.
@@ -60,21 +60,22 @@ fn main() {
                                 .unwrap_or("src/config.json".into()));
 
     // Change the IP address if flag is set
-    if let Some(mut s) = args.flag_ip {
+    if let Some(s) = args.flag_ip {
         config.address = string_to_ipv4(s);
     }
 
     // Change port if flag is set
-    if let Some(mut s) = args.flag_port {
+    if let Some(s) = args.flag_port {
         config.port = s;
     }
 
     // Change directory is flag is set
-    if let Some(mut s) = args.flag_dir {
+    if let Some(s) = args.flag_dir {
         config.dir = s;
     }
 
-    println!("{:?}", config); // for debugging
+    info!("IP: {}  Port: {}  Directory: {}",
+                        config.address, config.port, config.dir);
 
     // Start listening for incoming Tcp connections
     listen(config);
@@ -85,9 +86,6 @@ fn main() {
 fn listen(config: Config) {
     use std::net::TcpListener;
     use std::thread;
-
-    // Collecting information for binding process
-    let mut bind_inf = format!("{}:{}", config.address, config.port);
 
     // Converting configurations to a valid socket address
     let sock_addr = SocketAddrV4::new(config.address, config.port);
@@ -127,7 +125,7 @@ fn read_conf_from_json(name: String) -> Config {
     if let Ok(mut f) = File::open(name) {
         let mut s = String::new();
         if let Err(e) = f.read_to_string(&mut s) {
-            println!("Error");
+            error!("Could not read JSON-file: {:?}", e)
         } else {
             config = json::decode(&s).unwrap();
         }
@@ -149,7 +147,7 @@ fn string_to_ipv4(s : String) -> Ipv4Addr {
     for s in ip_parts {
         match s.parse::<u8>() {
             Ok(n) => part_convert.push(n),
-            Err(e) => println!("Error")
+            Err(e) => error!("Parsing error: {:?}", e)
         };
     }
     Ipv4Addr::new(part_convert[0], part_convert[1],
