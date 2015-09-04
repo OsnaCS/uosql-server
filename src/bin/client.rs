@@ -10,6 +10,7 @@ extern crate byteorder;
 use uosql::logger;
 use std::io::{self, stdout, Write, Read};
 use std::net::TcpStream;
+use std::fs::File;
 use uosql::net::{Cnv, Greeting, Login, Command};
 use bincode::SizeLimit;
 use bincode::rustc_serialize::{decode_from, encode_into};
@@ -82,7 +83,7 @@ fn send_cmd<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
         }
     };
     match &*input_low {
-        "quit" => {
+        ":quit" => {
             let cmd_encode = encode_into(&Command::Quit, &mut s,
                 SizeLimit::Bounded(1024));
             match cmd_encode {
@@ -106,7 +107,7 @@ fn send_cmd<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
                 }
             }
         },
-        "ping" => {
+        ":ping" => {
             let cmd_encode = encode_into(&Command::Ping, &mut s,
                 SizeLimit::Bounded(1024));
             let _ = match cmd_encode {
@@ -131,11 +132,14 @@ fn send_cmd<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
                 }
             }
         },
-        "exit" => {
+        ":exit" => {
             return true
         }
+        ":help" => {
+            display_readme();
+        }
         _ => {
-            let cmd_encode = encode_into(&Command::Query(input.to_string()), 
+            let cmd_encode = encode_into(&Command::Query(input.to_string()),
                 &mut s, SizeLimit::Bounded(1024));
             let _ = match cmd_encode {
                 Ok(_) => {},
@@ -219,4 +223,24 @@ fn send_login<W: Write>(buf: &mut W) -> bool {
             return false
         }
     }
+}
+
+/// Display client_readme.txt for user information
+fn display_readme() {
+    let _ = match File::open("client_readme.txt") {
+        Ok(mut file) => {
+            let mut output = String::new();
+            let _ = match file.read_to_string(&mut output) {
+                Ok(_) => {
+                    println!("{}", output);
+                }
+                Err(_) => {
+                    info!("client_readme.txt is missing");
+                }
+            };
+        },
+        Err(_) => {
+            info!("client_readme.txt is missing");
+        }
+    };
 }
