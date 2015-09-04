@@ -134,7 +134,7 @@ pub enum Conditions {
 /// Information for the where-clause
 #[derive(Debug, Clone)]
 pub struct Condition {
-    pub lhs : CondType,
+    pub col : String,
     pub op: CompType,
     pub rhs : CondType
 }

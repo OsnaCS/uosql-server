@@ -4,6 +4,8 @@ use std::net::TcpStream;
 use net;
 use net::Command;
 use auth;
+use parse::parser;
+use super::query;
 
 pub fn handle(mut stream: TcpStream) {
     // Logging about the new connection
@@ -25,35 +27,48 @@ pub fn handle(mut stream: TcpStream) {
     loop {
         //get the command from the stream
         let command_res = net::read_commands(&mut stream);
-        
+
         // TODO: Dispatch commands (handle easy ones directly, forward others)
         match command_res {
-            Ok(cmd) => 
+            Ok(cmd) =>
             match cmd {
                 //exit the session and shutdown the connection
-                Command::Quit => { 
+                Command::Quit => {
                     match net::send_ok_packet(&mut stream) {
                         Ok(_) => {
                             debug!("Client disconnected properly.");
                             return
-                        }, 
+                        },
                         Err(_) => warn!("Failed to send packet. Connection close.")
                     }
-                }, 
-                // send OK-Package, unused value can be checked to try again and 
+                },
+                // send OK-Package, unused value can be checked to try again and
                 // eventually close to connection as timeout issue
-                Command::Ping => { 
+                Command::Ping => {
                     match net::send_ok_packet(&mut stream) {
                         Ok(_) => { },
                         Err(_) => warn!("Failed to send packet.")
                     }
-                }, 
+                },
                 // send the query string for parsing
                 // TODO: If query -> Call parser to obtain AST
                 // TODO: If query -> Pass AST to query executer
                 // TODO: Send results
-                Command::Query(_) => {
+                Command::Query(q) => {
+
                     debug!("Query received, dispatch query to parser.");
+
+                    let mut p = parser::Parser::create(&q);
+                    let ast = p.parse();
+
+                    match ast {
+                    Ok(tree) => {
+                            println!("{:?}", tree);
+                            query::execute_from_ast(tree, Some("testbase".into()));
+                        },
+                        Err(error) => println!("{:?}", error),
+                    }
+
                     match net::send_ok_packet(&mut stream) {
                         Ok(_) => { },
                         Err(_) => warn!("Failed to send packet.")
@@ -63,5 +78,5 @@ pub fn handle(mut stream: TcpStream) {
             },
             Err(_) => continue//error handling
         }
-    } 
+    }
 }

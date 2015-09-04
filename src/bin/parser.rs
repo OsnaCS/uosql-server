@@ -8,7 +8,7 @@ use uosql::parse;
 
 fn main() {
 
-    let mut p = parse::Parser::create("delete from qtran where");
+    let mut p = parse::Parser::create("create table test");
 
     println!("{:?}",p.parse());
 

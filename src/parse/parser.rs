@@ -314,13 +314,21 @@ impl<'a> Parser<'a> {
    fn parse_where_part(&mut self) -> Result<Conditions, ParseError > {
         self.bump();
         //TODO: further implementation
-        Ok(Conditions::Leaf( Condition { lhs: CondType::Word("TEST".to_string()), op: CompType::Equ, rhs: CondType::Word("TEST".to_string()) } ))
+        Ok(Conditions::Leaf( Condition { col: "TEST".to_string(), op: CompType::Equ, rhs: CondType::Word("TEST".to_string()) } ))
    }
 
    // aprses a single condition
-   fn parse_condition(&self) -> Result<Condition, ParseError> {
+   fn parse_condition(&mut self) -> Result<Condition, ParseError> {
     //TODO: implement
-        Ok( Condition { lhs: CondType::Word("TEST".to_string()), op: CompType::Equ, rhs: CondType::Word("TEST".to_string()) } )
+        self.bump();
+        let columnname = try!(self.expect_word());
+        self.bump();
+        let operation = try!(self.expect_token(&[Token::Equ, Token::GThan,
+                                                 Token::SThan, Token::GEThan,
+                                                 Token::NEqu]));
+      
+
+        Ok( Condition { col: "TEST".to_string(), op: CompType::Equ, rhs: CondType::Word("TEST".to_string()) } )
    }
 
 
