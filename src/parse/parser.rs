@@ -2,8 +2,8 @@
 ///
 
 use std::iter::Iterator;
-use super::ast::{Query, DefStmt, CreateStmt, DropStmt, CreateTableStmt, AltStmt,
- AlterTableStmt, AlterOp, ColumnInfo, SqlType};               
+use super::ast::{Query, DefStmt, ManipulationStmt, CreateStmt, DropStmt, AltStmt, CreateTableStmt,
+ AlterTableStmt, AlterOp, ColumnInfo, SqlType, UseStmt};
  use super::token::TokenSpan;
  use super::lex::Lexer;
  use std::mem::swap;
@@ -61,7 +61,7 @@ impl<'a> Parser<'a>{
                 let query = Query::DefStmt(DefStmt::Create(try!(self.parse_create_stmt())));
                 return Ok(try!(self.return_query_ast(query)));
             },
-            
+
             // Alter-Query
             Keyword::Alter => {
                 let query = Query::DefStmt(DefStmt::Alter(try!(self.parse_alt_stmt())));
@@ -74,6 +74,11 @@ impl<'a> Parser<'a>{
                 return Ok(try!(self.return_query_ast(query)));
             },
 
+            // Use-Query
+            Keyword::Use => {
+                let query = Query::ManipulationStmt(ManipulationStmt::Use(try!(self.parse_use_stmt())));
+                return Ok(try!(self.return_query_ast(query)));
+            }
             // Unknown Error
             _=> return Err(ParseError::UnknownError)
         }
@@ -93,9 +98,12 @@ impl<'a> Parser<'a>{
         // put the lexer to the position of the token the method needs
         try!(self.skip_whitespace());
 
-        match try!(self.expect_keyword(&[Keyword::Table])) {
+        match try!(self.expect_keyword(&[Keyword::Table,Keyword::Database])) {
             // Create the table subtree
-            Keyword::Table=> return return Ok(CreateStmt::Table(try!(self.parse_create_table_stmt()))),
+            Keyword::Table=> return Ok(CreateStmt::Table(try!(self.parse_create_table_stmt()))),
+            // Create Database subtree
+            Keyword::Database => {try!(self.skip_whitespace());
+                             return Ok(CreateStmt::Database(try!(self.expect_word())))},
             // Create the view subtree
             // Keyword::View => ...
 
@@ -143,7 +151,7 @@ impl<'a> Parser<'a>{
             _ => true,
         }){
             // parsing the content for a single ColumnInfo
-            colsvec.push(try!(self.parse_column_info()));
+            colsvec.push(try!(self.expect_column_info()));
             self.skip_whitespace();
             // Check if there is a Comma seperating two columns or a ParenCl ending the vectorparsing
             match try!(self.expect_token(&[Token::Comma, Token::ParenCl])){
@@ -162,7 +170,7 @@ impl<'a> Parser<'a>{
     // Parses tokens for alter statement
     fn parse_alt_stmt(&mut self) -> Result<AltStmt, ParseError> {
         try!(self.skip_whitespace());
-        
+
         match try!(self.expect_keyword(&[Keyword::Table])) {
             Keyword::Table=> return Ok(AltStmt::Table(try!(self.parse_alter_table_stmt()))),
 
@@ -186,9 +194,9 @@ impl<'a> Parser<'a>{
         try!(self.skip_whitespace());
 
         match try!(self.expect_keyword(&[Keyword::Add, Keyword::Drop, Keyword::Modify])){
-            Keyword::Add => return {try!(self.skip_whitespace());Ok(AlterOp::Add(try!(self.parse_column_info())))},
+            Keyword::Add => return {try!(self.skip_whitespace());Ok(AlterOp::Add(try!(self.expect_column_info())))},
             Keyword::Drop => return {try!(self.skip_whitespace());Ok(AlterOp::Drop(try!(self.expect_word())))},
-            Keyword::Modify => return {try!(self.skip_whitespace());Ok(AlterOp::Modify(try!(self.parse_column_info())))},
+            Keyword::Modify => return {try!(self.skip_whitespace());Ok(AlterOp::Modify(try!(self.expect_column_info())))},
             _ => return Err(ParseError::UnknownError),
         }
     }
@@ -197,8 +205,22 @@ impl<'a> Parser<'a>{
     fn parse_drop_stmt(&mut self) -> Result<DropStmt, ParseError> {
         try!(self.skip_whitespace());
 
-        match try!(self.expect_keyword(&[Keyword::Table])) {
-            Keyword::Table => return {try!(self.skip_whitespace()); Ok(DropStmt::Table(try!(self.expect_word())))},
+        match try!(self.expect_keyword(&[Keyword::Table,Keyword::Database])) {
+            Keyword::Table => return {try!(self.skip_whitespace());
+                                     Ok(DropStmt::Table(try!(self.expect_word())))},
+            Keyword::Database => return {try!(self.skip_whitespace());
+                             return Ok(DropStmt::Database(try!(self.expect_word())))},
+            _=> return Err(ParseError::UnknownError),
+        };
+    }
+
+    // Parses the tokens for use statement
+    fn parse_use_stmt(&mut self) -> Result<UseStmt, ParseError> {
+        try!(self.skip_whitespace());
+
+        match try!(self.expect_keyword(&[Keyword::Table,Keyword::Database])) {
+            Keyword::Database => return {try!(self.skip_whitespace());
+                             return Ok(UseStmt::Database(try!(self.expect_word())))},
             _=> return Err(ParseError::UnknownError),
         };
     }
@@ -235,18 +257,17 @@ impl<'a> Parser<'a>{
         }
     }
 
+
+
+
+
         // Utility function to parse metadata of columns
-        fn parse_column_info(&mut self) -> Result<ColumnInfo, ParseError> {
-        //try!(self.skip_whitespace());   ------- supposed to work, in progress for later, changed l.209-211
+        fn expect_column_info(&mut self) -> Result<ColumnInfo, ParseError> {
         let column_id = try!(self.expect_word());
         try!(self.skip_whitespace());
         let dtype = try!(self.expect_datatype());
         return Ok(ColumnInfo{cid: column_id, datatype: dtype})
     }
-
-
-
-
 
         // checks if the current token is a datatype.
     // In case of e.g. char(x) checks if ( ,x and ) are the following
@@ -428,6 +449,7 @@ impl<'a> Parser<'a>{
                 "modify" => Keyword::Modify,
                 "add" => Keyword::Add,
                 "column" => Keyword::Column,
+                "database" => Keyword::Database,
                 _=>return Err(ParseError::NotAKeyword(Span {lo: span_lo , hi: span_hi})),
 
             };
@@ -456,6 +478,7 @@ pub enum Keyword {
     Create,
     Drop,
     Alter,
+    Use,
 
     // data manipulation keywords
     Select,
@@ -465,6 +488,7 @@ pub enum Keyword {
 
     // 2nd level keywords
     Table,
+    Database,
     View,
     Column,
 
@@ -503,5 +527,3 @@ pub enum ParseError {
     DebugError(String)
 // TODO: introduce good errors and think more about it
 }
-
-

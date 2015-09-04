@@ -20,7 +20,8 @@ pub enum ManipulationStmt {
 	Update(UpdateStmt),
 	Select(SelectStmt),
 	Insert(InsertStmt),
-	Delete(DeleteStmt)
+	Delete(DeleteStmt),
+    Use(UseStmt)
 }
 
 /// Split between creatable content (only Tables yet)
@@ -28,6 +29,7 @@ pub enum ManipulationStmt {
 pub enum CreateStmt {
     Table(CreateTableStmt),
     // View
+    Database(String),
 }
 
 /// Split between alterable content (only Tables yet)
@@ -41,9 +43,14 @@ pub enum AltStmt {
 /// Split between drop-able content (only Tables yet)
 #[derive(Debug, Clone)]
 pub enum DropStmt {
-    Table(String)
+    Table(String),
     //Index(String)
-    //Database(String)
+    Database(String)
+}
+
+#[derive(Debug, Clone)]
+pub enum UseStmt {
+    Database(String)
 }
 
 /// Information for table creation
