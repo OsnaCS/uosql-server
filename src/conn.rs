@@ -14,28 +14,50 @@ pub fn handle(mut stream: TcpStream) {
 
     // Perform handshake, check user login --> done
     let res = net::do_handshake(&mut stream);
-    let auth_res = match res {
-        Ok((user, pw)) => auth::find_user(&user, &pw),
+    let _ = match res {
+        Ok((user, pw)) => {
+            info!("Connection established. Handshake sent");
+            auth::find_user(&user, &pw)},
         _ => Err(auth::AuthError::UserNotFound)
     };
 
-    // TODO: Read commands from the client (with help of `net`)
+    // Read commands from the client (with help of `net`) --> done
     loop {
         //get the command from the stream
         let command_res = net::read_commands(&mut stream);
-        // TODO !
-        match command_res {
-            Ok(Command::Quit) => {
-                debug!("Client disconnected");
-                return
-        },
-            _ => continue
-        }
+        
         // TODO: Dispatch commands (handle easy ones directly, forward others)
-
-        // TODO: If query -> Call parser to obtain AST
-        // TODO: If query -> Pass AST to query executer
-
-        // TODO: Send results
-    }
+        match command_res {
+            Ok(cmd) => 
+            match cmd {
+                //exit the session and shutdown the connection
+                Command::Quit => { 
+                    match net::send_ok_packet(&mut stream) {
+                        Ok(_) => {
+                            debug!("Client disconnected properly.");
+                            return
+                        }, 
+                        Err(_) => warn!("Failed to send packet. Connection close.")
+                    }
+                }, 
+                // send OK-Package, unused value can be checked to try again and 
+                // eventually close to connection as timeout issue
+                Command::Ping => { 
+                    match net::send_ok_packet(&mut stream) {
+                        Ok(_) => { },
+                        Err(_) => warn!("Failed to send packet.")
+                    }
+                }, 
+                // send the query string for parsing
+                // TODO: If query -> Call parser to obtain AST
+                // TODO: If query -> Pass AST to query executer
+                // TODO: Send results
+                Command::Query(_) => {
+                    debug!("Query received, dispatch query to parser.");
+                    continue
+                }
+            },
+            Err(_) => continue//error handling
+        }
+    } 
 }
