@@ -25,7 +25,7 @@ fn main() {
     let stream = TcpStream::connect("127.0.0.1:4242");
     let mut s = match stream {
         Ok(s) => s,
-        Err(_) => { info!("Could not connect to server."); return }
+        Err(_) => { error!("Could not connect to server."); return }
     };
     info!("Connected");
 
@@ -83,7 +83,7 @@ fn send_cmd<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
     let _ = match status {
         Ok(_) => {},
         Err(_) => {
-            info!("Sending command-header failed");
+            error!("Sending command-header failed");
             return false
         }
     };
@@ -102,13 +102,13 @@ fn send_cmd<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
                             return true
                         },
                         Err(_) => {
-                            info!("Failed to reveive close-confirmation");
-                            return false
+                            warn!("Failed to receive close-confirmation");
+                            return true
                         }
                     }
                 },
                 Err(_) => {
-                    info!("Sending quit-message failed");
+                    error!("Sending quit-message failed");
                     return false
                 }
             }
@@ -119,7 +119,7 @@ fn send_cmd<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
             let _ = match cmd_encode {
                 Ok(_) => {},
                 Err(_) => {
-                    info!("Sending ping-message failed");
+                    error!("Sending ping-message failed");
                     return false
                 }
             };
@@ -127,14 +127,14 @@ fn send_cmd<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
             match status {
                 Ok(st) => {
                     if st == Cnv::OkPkg as u8 {
-                        info!("Server still reachable.");
+                        println!("Server still reachable.");
                     } else {
                         info!("Server is responding but INSANE!");
                         //maybe close connection? -> timeout
                     }
                 },
                 Err(_) => {
-                    info!("Error reading ping-package");
+                    error!("Error reading ping-package");
                 }
             }
         },
@@ -144,7 +144,7 @@ fn send_cmd<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
             let _ = match cmd_encode {
                 Ok(_) => {},
                 Err(_) => {
-                    info!("Sending command-package failed. Try again.");
+                    error!("Sending command-package failed. Try again.");
                     return false
                 }
             };
@@ -154,12 +154,12 @@ fn send_cmd<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
                     if st == Cnv::ResponsePkg as u8 {
                         // decode Response
                     } else {
-                        info!("Unexpected return");
+                        error!("Unexpected return");
                         // try again
                     }
                 },
                 Err(_) => {
-                    info!("Error reading response-package");
+                    error!("Error reading response-package");
                 }
             }
         }
