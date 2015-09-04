@@ -2,6 +2,7 @@
 //!
 use std::net::TcpStream;
 use net;
+use net::Command;
 use auth;
 
 pub fn handle(mut stream: TcpStream) {
@@ -13,7 +14,7 @@ pub fn handle(mut stream: TcpStream) {
 
     // Perform handshake, check user login --> done
     let res = net::do_handshake(&mut stream);
-    let auth_res = match res {
+    let _ = match res {
         Ok((user, pw)) => {
             info!("Connection established. Handshake sent");
             auth::find_user(&user, &pw)},
@@ -30,30 +31,33 @@ pub fn handle(mut stream: TcpStream) {
             Ok(cmd) => 
             match cmd {
                 //exit the session and shutdown the connection
-                net::Command::Quit => { 
+                Command::Quit => { 
                     match net::send_ok_packet(&mut stream) {
-                        Ok(res) => {
+                        Ok(_) => {
                             debug!("Client disconnected properly.");
                             return
                         }, 
-                        Err(_) => {
-                            warn!("Failed to send packet. Connection close.");
-                        }
+                        Err(_) => warn!("Failed to send packet. Connection close.")
                     }
                 }, 
                 // send OK-Package, unused value can be checked to try again and 
                 // eventually close to connection as timeout issue
-                net::Command::Ping => { net::send_ok_packet(&mut stream); }, 
+                Command::Ping => { 
+                    match net::send_ok_packet(&mut stream) {
+                        Ok(_) => { },
+                        Err(_) => warn!("Failed to send packet.")
+                    }
+                }, 
                 // send the query string for parsing
                 // TODO: If query -> Call parser to obtain AST
                 // TODO: If query -> Pass AST to query executer
                 // TODO: Send results
-                net::Command::Query(query) => {
+                Command::Query(_) => {
                     debug!("Query received, dispatch query to parser.");
                     continue
                 }
             },
-            Err(e) => continue//error handling
+            Err(_) => continue//error handling
         }
     } 
 }

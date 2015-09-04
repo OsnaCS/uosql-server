@@ -15,6 +15,6 @@ fn main() {
     let err = net::NetworkErrors::UnexpectedPkg("unexpected".into());
 
     //test if the message is sent
-    let res = net::send_error_packet(&mut vec, err.into());
+    let _ = net::send_error_packet(&mut vec, err.into());
     println!("{:?}", vec );
 }
