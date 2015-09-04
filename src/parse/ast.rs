@@ -164,6 +164,16 @@ pub enum SqlType {
     Int,
     Bool,
     Char(u8),
-    VarChar(u16),
-    Decimal(u16, u16)
+    VarChar(u16)
+}
+
+impl SqlType {
+    pub fn size(&self) -> u32 {
+        match self {
+            &SqlType::Int => 4 as u32,
+            &SqlType::Bool => 1 as u32,
+            &SqlType::Char(len) => (len + 1) as u32,
+            &SqlType::VarChar(len) => (len + 1) as u32
+        }
+    }
 }
