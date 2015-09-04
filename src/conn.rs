@@ -27,15 +27,18 @@ pub fn handle(mut stream: TcpStream) {
         match command_res {
             Ok(cmd) => 
             match cmd {
-                net::Command::Quit => return, //exit the session and shutdown the connection
-                net::Command::Ping => { net::send_ok_package(&mut stream); } , // send OK-Package
-                _ => continue
+                //exit the session and shutdown the connection
+                net::Command::Quit => return, 
+                // send OK-Package, unused value can be checked to try again and 
+                // eventually close to connection as timeout issue
+                net::Command::Ping => { net::send_ok_packet(&mut stream); } , 
+                // send the query string for parsing
+                // TODO: If query -> Call parser to obtain AST
+                // TODO: If query -> Pass AST to query executer
+                // TODO: Send results
+                net::Command::Query(query) => continue
             },
             Err(e) => continue//error handling
         }
-        // TODO: If query -> Call parser to obtain AST
-        // TODO: If query -> Pass AST to query executer
-
-        // TODO: Send results
     } 
 }
