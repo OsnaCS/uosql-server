@@ -23,7 +23,8 @@ use byteorder::Error;
 use byteorder::{WriteBytesExt, ReadBytesExt, BigEndian};
 
 use bincode::SizeLimit;
-use bincode::rustc_serialize::{EncodingError, DecodingError, encode_into, decode_from};
+use bincode::rustc_serialize::{EncodingError,
+    DecodingError, encode_into, decode_from};
 
 /// constants
  const MAGIC_NUMBER: u64 = 0x6561742073686974; // secret
