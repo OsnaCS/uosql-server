@@ -4,7 +4,6 @@
 extern crate log;
 extern crate uosql;
 extern crate bincode;
-extern crate bufstream;
 extern crate byteorder;
 
 use uosql::logger;
@@ -135,7 +134,7 @@ fn send_cmd<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
             return true
         }
         _ => {
-            let cmd_encode = encode_into(&Command::Query(input.to_string()), 
+            let cmd_encode = encode_into(&Command::Query(input.to_string()),
                 &mut s, SizeLimit::Bounded(1024));
             let _ = match cmd_encode {
                 Ok(_) => {},

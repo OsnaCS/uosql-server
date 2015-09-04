@@ -50,7 +50,7 @@ impl<'a> Lexer<'a> {
             Some(c) => {
                 self.curr_pos = match self.curr_pos {
                     Some(n) => Some(n + c.len_utf8()),
-                    None => Some(0 + c.len_utf8()) // Start at pos 0
+                    None => Some(c.len_utf8()) // Start at pos 0
                 }
             }
             _ => {}
