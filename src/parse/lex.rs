@@ -90,7 +90,7 @@ impl<'a> Lexer<'a> {
     /// Scan each new NUMBER from the query string
     fn scan_nums(&mut self) -> String {
         let mut s = String::new();
-        let mut dot = false;
+        let dot = false;
         loop {
             match self.curr.unwrap_or(' ') {
                 c @ '0' ... '9' |
