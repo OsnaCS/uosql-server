@@ -9,7 +9,6 @@ use uosql::parse::ast::SqlType;
 fn main() {
 
     let ty = SqlType::Int;
-    // let ty = uosql::parse::ast::SqlType::Decimal(6, 3);
     let mut v = Vec::new();
     encode_into(&ty, &mut v, SizeLimit::Infinite);
     println!("{:?}", v);
@@ -21,7 +20,7 @@ fn main() {
     cols.push(Column { name: "Heiner".into(), sql_type: SqlType::Int });
     cols.push(Column { name: "Mathias".into(), sql_type: SqlType::Bool });
     cols.push(Column { name: "Dennis".into(), sql_type: SqlType::Char(6) });
-    cols.push(Column { name: "Jana".into(), sql_type: SqlType::Decimal(6, 178) });
+    cols.push(Column { name: "Jana".into(), sql_type: SqlType::VarChar(178) });
 
 
     let _storage_team = db.create_table("storage_team", cols, 1).unwrap();
@@ -30,4 +29,8 @@ fn main() {
 
     let mut engine = t.create_engine();
     let _e  = engine.create_table();
+    // println!("{:?}", t.name);
+    let f = engine.table();
+    println!("{:?}", f.name);
+    println!("{:?}", f);
 }

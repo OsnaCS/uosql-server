@@ -165,7 +165,7 @@ pub struct  TableMetaData {
 #[derive(Debug)]
 pub struct Table<'a> {
     database: &'a Database,
-    name: String,
+    pub name: String,
     meta_data: TableMetaData,
 }
 
@@ -349,7 +349,10 @@ impl Column {
 ///
 /// Each table in a database may use a different storage engine.
 pub trait Engine {
+    /// writes the table.dat file
     fn create_table(&mut self) -> Result<(), DatabaseError>;
+    /// returns the table
+    fn table(&self) -> &Table;
 }
 
 #[repr(u8)]

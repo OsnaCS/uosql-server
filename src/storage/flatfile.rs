@@ -26,4 +26,8 @@ impl<'a> Engine for FlatFile<'a> {
             .open(&self.table.get_table_data_path()));
         Ok(())
     }
+
+    fn table(&self) -> &Table{
+        &self.table
+    }
 }
