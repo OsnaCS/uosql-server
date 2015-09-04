@@ -18,7 +18,10 @@
 // TODO: Remove this line as soon as this module is actually used
 use std::io::{Write,Read};
 use byteorder::{ReadBytesExt, WriteBytesExt}; // for write_u16()
-use bincode::rustc_serialize::{decode_from, encode_into,EncodingError,DecodingError}; // to encode and decode the structs to the given stream
+// to encode and decode the structs to the given stream
+use bincode::rustc_serialize::{
+    decode_from, encode_into,EncodingError,DecodingError
+};
 use bincode::SizeLimit;
 use rustc_serialize::{Encodable, Encoder}; // to encode the Networkerrors
 use byteorder;
@@ -51,12 +54,18 @@ pub struct ClientErrMsg {
 impl From<NetworkErrors> for ClientErrMsg {
     fn from(error: NetworkErrors) -> ClientErrMsg {
         match error {
-            NetworkErrors::IoError(_) => ClientErrMsg { code: 0, msg: "IO error".into() },
-            NetworkErrors::ByteOrder(_) => ClientErrMsg { code: 1, msg: "Byteorder error".into() },
-            NetworkErrors::UnexpectedPkg(err) => ClientErrMsg { code: 2, msg: err.into() },
-            NetworkErrors::UnknownCmd(err) => ClientErrMsg { code: 3, msg: err.into() },
-            NetworkErrors::EncodeErr(_) => ClientErrMsg { code: 4, msg: "encoding error".into() },
-            NetworkErrors::DecodeErr(_) => ClientErrMsg { code: 5, msg: "decoding error".into() }
+            NetworkErrors::IoError(_) =>
+                ClientErrMsg { code: 0, msg: "IO error".into() },
+            NetworkErrors::ByteOrder(_) =>
+                ClientErrMsg { code: 1, msg: "Byteorder error".into() },
+            NetworkErrors::UnexpectedPkg(err) =>
+                ClientErrMsg { code: 2, msg: err.into() },
+            NetworkErrors::UnknownCmd(err) =>
+                ClientErrMsg { code: 3, msg: err.into() },
+            NetworkErrors::EncodeErr(_) =>
+                ClientErrMsg { code: 4, msg: "encoding error".into() },
+            NetworkErrors::DecodeErr(_) =>
+                ClientErrMsg { code: 5, msg: "decoding error".into() }
         }
     }
 }
@@ -261,10 +270,10 @@ pub fn test_send_ok_packet() {
 pub fn test_send_error_packet() {
     let mut vec = Vec::new();   // stream to write into
     let vec2 = vec![Cnv::ErrorPkg as u8, //for error packet
-                        0, 2, // for kind of error
-                        0, 0, 0, 0, 0, 0, 0, 17, // for the size of the message string
-                        117, 110, 101, 120, 112, 101, 99, 116, 101, 100, 32, 112, 97, 99, 107, 101, 116];
-                        // string itself
+        0, 2, // for kind of error
+        0, 0, 0, 0, 0, 0, 0, 17, // for the size of the message string
+        117, 110, 101, 120, 112, 101, 99, 116, 101, 100, 32, 112, 97, 99, 107, 101, 116];
+        // string itself
     let err = NetworkErrors::UnexpectedPkg("unexpected packet".into());
 
     //test if the message is sent
@@ -292,7 +301,9 @@ pub fn test_read_commands(){
     let mut vec2 = Vec::new();
     // write the command into the stream
     vec2.push(Cnv::CommandPkg as u8);
-    let command_encode = encode_into(&Command::Query("select".into()), &mut vec2, SizeLimit::Bounded(1024));
+    let command_encode = encode_into(&Command::Query("select".into()),
+                                     &mut vec2,
+                                     SizeLimit::Bounded(1024));
 
     // read the command from the stream for Command::Query("select")
     command_res = read_commands(&mut Cursor::new(vec2));

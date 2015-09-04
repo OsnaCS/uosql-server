@@ -10,7 +10,7 @@ use uosql::net;
 /// test of some functions and structs by net
 fn main() {
     let mut vec = Vec::new();   // stream to write into
-   
+
 
     let err = net::NetworkErrors::UnexpectedPkg("unexpected".into());
 

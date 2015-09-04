@@ -2,17 +2,16 @@
 ///
 
 use std::iter::Iterator;
-use super::ast::{Query, DefStmt, ManipulationStmt, CreateStmt, DropStmt, AltStmt, CreateTableStmt,
-AlterTableStmt, AlterOp, ColumnInfo, SqlType, UseStmt, DeleteStmt, Conditions, Condition, CondType, CompType};
+use super::ast::*;
 use super::token::TokenSpan;
 use super::lex::Lexer;
 use std::mem::swap;
 use super::token::Token;
 use super::Span;
 
-/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#Parser public functions
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
+// ===========================================================================
+// Parser public functions
+// ===========================================================================
 
 
 // the parser needs a Lexer that iterates through the query
@@ -66,25 +65,33 @@ impl<'a> Parser<'a> {
 
             // Alter-Query
             Keyword::Alter => {
-                let query = Query::DefStmt(DefStmt::Alter(try!(self.parse_alt_stmt())));
+                let query = Query::DefStmt(DefStmt::Alter(
+                    try!(self.parse_alt_stmt())
+                ));
                 Ok(try!(self.return_query_ast(query)))
             },
 
             // Drop-Query
             Keyword::Drop => {
-                let query = Query::DefStmt(DefStmt::Drop(try!(self.parse_drop_stmt())));
+                let query = Query::DefStmt(DefStmt::Drop(
+                    try!(self.parse_drop_stmt())
+                ));
                 Ok(try!(self.return_query_ast(query)))
             },
 
             // Use-Query
             Keyword::Use => {
-                let query = Query::ManipulationStmt(ManipulationStmt::Use(try!(self.parse_use_stmt())));
+                let query = Query::ManipulationStmt(ManipulationStmt::Use(
+                    try!(self.parse_use_stmt())
+                ));
                 Ok(try!(self.return_query_ast(query)))
             }
 
             // Delete-Query
             Keyword::Delete => {
-                let query = Query::ManipulationStmt(ManipulationStmt::Delete(try!(self.parse_delete_stmt())));
+                let query = Query::ManipulationStmt(ManipulationStmt::Delete(
+                    try!(self.parse_delete_stmt())
+                ));
                 Ok(try!(self.return_query_ast(query)))
             }
 
@@ -95,10 +102,9 @@ impl<'a> Parser<'a> {
 
 
 
-/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#Parser Functions
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-
+// ===========================================================================
+// Parser Functions
+// ===========================================================================
 
 
     // Starts the parsing for tokens in create-syntax
@@ -168,7 +174,8 @@ impl<'a> Parser<'a> {
             // parsing the content for a single ColumnInfo
             colsvec.push(try!(self.expect_column_info()));
             self.bump();
-            // Check if there is a Comma seperating two columns or a ParenCl ending the vectorparsing
+            // Check if there is a Comma seperating two columns or a ParenCl
+            // ending the vectorparsing
             match try!(self.expect_token(&[Token::Comma, Token::ParenCl])) {
                 &Token::Comma => { self.bump();() },
                 _ => (),
@@ -188,11 +195,11 @@ impl<'a> Parser<'a> {
         self.bump();
 
         match try!(self.expect_keyword(&[Keyword::Table])) {
-            Keyword::Table => return Ok(AltStmt::Table(try!(self.parse_alter_table_stmt()))),
+            Keyword::Table => Ok(AltStmt::Table(try!(self.parse_alter_table_stmt()))),
 
             // Unknown parsing error
-            _=> return Err(ParseError::UnknownError),
-        };
+            _=> Err(ParseError::UnknownError),
+        }
     }
 
 
@@ -209,7 +216,8 @@ impl<'a> Parser<'a> {
 
     }
 
-    // Parses operations applied on selected table including tablename and datatype if necessary
+    // Parses operations applied on selected table including tablename and
+    // datatype if necessary
     fn parse_alter_op(&mut self) -> Result<AlterOp, ParseError> {
         self.bump();
         match try!(self.expect_keyword(&[Keyword::Add, Keyword::Drop, Keyword::Modify])) {
@@ -253,10 +261,10 @@ impl<'a> Parser<'a> {
             Keyword::Database => {
                 self.bump();
                 Ok(UseStmt::Database(try!(self.expect_word())))
-         },
-         _ => Err(ParseError::UnknownError),
-     }
- }
+            },
+            _ => Err(ParseError::UnknownError),
+        }
+    }
 
      // Parses the tokens for delete statement
     fn parse_delete_stmt(&mut self) -> Result<DeleteStmt, ParseError> {
@@ -277,12 +285,9 @@ impl<'a> Parser<'a> {
 
 
 
-
-/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#Utility Functions
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-
-
+// ===========================================================================
+// Utility Functions
+// ===========================================================================
 
     // moves current to the next non-whitespace
     fn bump(&mut self) {
@@ -314,7 +319,11 @@ impl<'a> Parser<'a> {
    fn parse_where_part(&mut self) -> Result<Conditions, ParseError > {
         self.bump();
         //TODO: further implementation
-        Ok(Conditions::Leaf( Condition { col: "TEST".to_string(), op: CompType::Equ, rhs: CondType::Word("TEST".to_string()) } ))
+        Ok(Conditions::Leaf( Condition {
+            col: "TEST".to_string(),
+            op: CompType::Equ,
+            rhs: CondType::Word("TEST".to_string())
+        } ))
    }
 
    // aprses a single condition
@@ -326,9 +335,13 @@ impl<'a> Parser<'a> {
         let operation = try!(self.expect_token(&[Token::Equ, Token::GThan,
                                                  Token::SThan, Token::GEThan,
                                                  Token::NEqu]));
-      
 
-        Ok( Condition { col: "TEST".to_string(), op: CompType::Equ, rhs: CondType::Word("TEST".to_string()) } )
+
+        Ok( Condition {
+            col: "TEST".to_string(),
+            op: CompType::Equ,
+            rhs: CondType::Word("TEST".to_string())
+        } )
    }
 
 
@@ -367,47 +380,47 @@ impl<'a> Parser<'a> {
             };
             tmp_datatype = word.to_string();
         }
-            // checks if token is a correct Datatype
-            found_datatype = match &tmp_datatype[..] {
-                "int" => SqlType::Int,
-                "bool" => SqlType::Bool,
-                "boolean" => SqlType::Bool,
-                // checks if char is written in correct sql syntax
-                "char" => {
-                    self.bump();
-                    try!(self.expect_token(&[Token::ParenOp]));
-                    self.bump();
-                    let length_string = try!(self.expect_number());
-                    self.bump();
-                    try!(self.expect_token(&[Token::ParenCl]));
-                    let length = match length_string.parse::<u8>() {
-                        Ok(length) => length,
-                        Err(error) => return Err(ParseError::DatatypeMissmatch(
-                            Span { lo: span_lo , hi: span_hi } )),
-                    };
-                    SqlType::Char(length)
-                },
-                // checks if char is written in correct sql syntax
-                "varchar" => {
-                    self.bump();
-                    try!(self.expect_token(&[Token::ParenOp]));
-                    self.bump();
-                    let length_string = try!(self.expect_number());
-                    self.bump();
-                    try!(self.expect_token(&[Token::ParenCl]));
-                    let length = match length_string.parse::<u16>() {
-                        Ok(length) => length,
-                        Err(error) => return Err(ParseError::DatatypeMissmatch(
-                                        Span { lo: span_lo , hi: span_hi} )),
-                    };
-                    ;SqlType::VarChar(length)
-                },
+        // checks if token is a correct Datatype
+        found_datatype = match &tmp_datatype[..] {
+            "int" => SqlType::Int,
+            "bool" => SqlType::Bool,
+            "boolean" => SqlType::Bool,
+            // checks if char is written in correct sql syntax
+            "char" => {
+                self.bump();
+                try!(self.expect_token(&[Token::ParenOp]));
+                self.bump();
+                let length_string = try!(self.expect_number());
+                self.bump();
+                try!(self.expect_token(&[Token::ParenCl]));
+                let length = match length_string.parse::<u8>() {
+                    Ok(length) => length,
+                    Err(error) => return Err(ParseError::DatatypeMissmatch(
+                        Span { lo: span_lo , hi: span_hi } )),
+                };
+                SqlType::Char(length)
+            },
+            // checks if char is written in correct sql syntax
+            "varchar" => {
+                self.bump();
+                try!(self.expect_token(&[Token::ParenOp]));
+                self.bump();
+                let length_string = try!(self.expect_number());
+                self.bump();
+                try!(self.expect_token(&[Token::ParenCl]));
+                let length = match length_string.parse::<u16>() {
+                    Ok(length) => length,
+                    Err(error) => return Err(ParseError::DatatypeMissmatch(
+                                    Span { lo: span_lo , hi: span_hi} )),
+                };
+                SqlType::VarChar(length)
+            },
 
-                _ => return Err(ParseError::NotADatatype(
-                        Span { lo: span_lo , hi: span_hi })),
-            };
-            Ok((found_datatype))
-        }
+            _ => return Err(ParseError::NotADatatype(
+                    Span { lo: span_lo , hi: span_hi })),
+        };
+        Ok((found_datatype))
+    }
 
 
     // checks if the current token is a word
@@ -462,7 +475,9 @@ impl<'a> Parser<'a> {
     }
 
     // checks if current token is an expected token
-    fn expect_token(& self,expected_tokens: &[Token]) -> Result<&Token, ParseError> {
+    fn expect_token(& self,expected_tokens: &[Token])
+        -> Result<&Token, ParseError>
+    {
 
             // checks if current is none or some
             let token = match self.curr {
@@ -478,8 +493,11 @@ impl<'a> Parser<'a> {
             }
     }
 
-    // matches current token against any keyword and checks if it is one of the expected keywords
-    fn expect_keyword(&self,expected_keywords: &[Keyword]) -> Result<Keyword, ParseError> {
+    // matches current token against any keyword and checks if it is one of
+    // the expected keywords
+    fn expect_keyword(&self,expected_keywords: &[Keyword])
+        -> Result<Keyword, ParseError>
+    {
         let mut found_keyword;
         let mut span_lo;
         let mut span_hi;
@@ -533,10 +551,9 @@ impl<'a> Parser<'a> {
 }
 
 
-/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#Enums
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-
+// ===========================================================================
+// Enums
+// ===========================================================================
 
 
 #[derive(PartialEq)]
