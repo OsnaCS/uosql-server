@@ -1,12 +1,18 @@
 extern crate uosql;
 extern crate bincode;
-
+extern crate log;
 use uosql::storage::*;
 use bincode::rustc_serialize::{encode_into};
 use bincode::SizeLimit;
 use uosql::parse::ast::SqlType;
+use uosql::logger;
+
 
 fn main() {
+
+    logger::with_loglevel(::log::LogLevelFilter::Trace)
+        .with_logfile(std::path::Path::new("log.txt"))
+        .enable().unwrap();
 
     let ty = SqlType::Int;
     let mut v = Vec::new();
@@ -25,12 +31,13 @@ fn main() {
 
     let _storage_team = db.create_table("storage_team", cols, 1).unwrap();
 
-    let t = db.load_table("storage_team").unwrap();
+    let mut t = db.load_table("storage_team").unwrap();
+
 
     let mut engine = t.create_engine();
+
     let _e  = engine.create_table();
-    // println!("{:?}", t.name);
-    let f = engine.table();
-    println!("{:?}", f.name);
-    println!("{:?}", f);
+    let t = engine.table();
+
+    t.delete().unwrap();
 }
