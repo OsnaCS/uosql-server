@@ -39,19 +39,20 @@ impl<'a> Parser<'a> {
 
     /// Parses the given query into an AST
     pub fn parse(&mut self) -> Result<Query, ParseError> {
-        //deletes Whitespaces in the beginning of Query
+        // deletes Whitespaces in the beginning of Query
         match self.expect_token(&[Token::Whitespace]) {
             Ok(&Token::Whitespace) => self.lexer_next(),
-            _=>(),
+            _ => (),
         }
+
         // first token is checked if it's a keyword using expect_keyword()
-        let querytype = self.expect_keyword(&[Keyword::Create,Keyword::Drop,
-                                              Keyword::Alter, Keyword::Use,
-                                              Keyword::Delete])
-        .map_err(|e| match e {
+        let keywords = &[Keyword::Create, Keyword::Drop, Keyword::Alter,
+                         Keyword::Use, Keyword::Delete];
+        let querytype = self.expect_keyword(keywords).map_err(|e| match e {
             ParseError::UnexpectedEoq => ParseError::EmptyQueryError,
             _ => e,
         });
+
         // returns high-level AST or Error
         match try!(querytype) {
 
@@ -112,13 +113,14 @@ impl<'a> Parser<'a> {
         // Convention: Every method must use bump to
         // put the lexer to the position of the token the method needs
         self.bump();
-        match try!(self.expect_keyword(&[Keyword::Table,Keyword::Database])) {
+        match try!(self.expect_keyword(&[Keyword::Table, Keyword::Database])) {
             // Create the table subtree
             Keyword::Table => Ok(CreateStmt::Table(try!(self.parse_create_table_stmt()))),
             // Create Database subtree
-            Keyword::Database => { self.bump();
-            Ok(CreateStmt::Database(try!(self.expect_word())))
-         },
+            Keyword::Database => {
+                self.bump();
+                Ok(CreateStmt::Database(try!(self.expect_word())))
+            },
             // Create the view subtree
             // Keyword::View => ...
 
@@ -170,14 +172,13 @@ impl<'a> Parser<'a> {
             _ => true,
         }
         {
-
             // parsing the content for a single ColumnInfo
             colsvec.push(try!(self.expect_column_info()));
             self.bump();
             // Check if there is a Comma seperating two columns or a ParenCl
             // ending the vectorparsing
             match try!(self.expect_token(&[Token::Comma, Token::ParenCl])) {
-                &Token::Comma => { self.bump();() },
+                &Token::Comma => self.bump(),
                 _ => (),
             };
         }
@@ -198,7 +199,7 @@ impl<'a> Parser<'a> {
             Keyword::Table => Ok(AltStmt::Table(try!(self.parse_alter_table_stmt()))),
 
             // Unknown parsing error
-            _=> Err(ParseError::UnknownError),
+            _ => Err(ParseError::UnknownError),
         }
     }
 
@@ -241,7 +242,7 @@ impl<'a> Parser<'a> {
     fn parse_drop_stmt(&mut self) -> Result<DropStmt, ParseError> {
         self.bump();
 
-        match try!(self.expect_keyword(&[Keyword::Table,Keyword::Database])) {
+        match try!(self.expect_keyword(&[Keyword::Table, Keyword::Database])) {
             Keyword::Table => {
                 self.bump();
                 Ok(DropStmt::Table(try!(self.expect_word())))
@@ -299,7 +300,7 @@ impl<'a> Parser<'a> {
     }
 
      // sets next position for the lexer
-     fn lexer_next(&mut self){
+     fn lexer_next(&mut self) {
         swap(&mut self.last, &mut self.curr);  //  last = curr
         swap(&mut self.curr, &mut self.peek);  //  curr = peek
         self.peek = self.lexiter.next();
@@ -316,14 +317,14 @@ impl<'a> Parser<'a> {
    }
 
    // parses the where part into Conditions type
-   fn parse_where_part(&mut self) -> Result<Conditions, ParseError > {
+   fn parse_where_part(&mut self) -> Result<Conditions, ParseError> {
         self.bump();
         //TODO: further implementation
         Ok(Conditions::Leaf( Condition {
             col: "TEST".to_string(),
             op: CompType::Equ,
             rhs: CondType::Word("TEST".to_string())
-        } ))
+        }))
    }
 
    // aprses a single condition
@@ -337,11 +338,11 @@ impl<'a> Parser<'a> {
                                                  Token::NEqu]));
 
 
-        Ok( Condition {
+        Ok(Condition {
             col: "TEST".to_string(),
             op: CompType::Equ,
             rhs: CondType::Word("TEST".to_string())
-        } )
+        })
    }
 
 
@@ -350,7 +351,7 @@ impl<'a> Parser<'a> {
         let column_id = try!(self.expect_word());
         self.bump();
         let dtype = try!(self.expect_datatype());
-        Ok(ColumnInfo { cid: column_id, datatype: dtype } )
+        Ok(ColumnInfo { cid: column_id, datatype: dtype })
     }
 
     // checks if the current token is a datatype.
@@ -396,7 +397,8 @@ impl<'a> Parser<'a> {
                 let length = match length_string.parse::<u8>() {
                     Ok(length) => length,
                     Err(error) => return Err(ParseError::DatatypeMissmatch(
-                        Span { lo: span_lo , hi: span_hi } )),
+                                       Span { lo: span_lo , hi: span_hi }
+                                   )),
                 };
                 SqlType::Char(length)
             },
@@ -411,13 +413,15 @@ impl<'a> Parser<'a> {
                 let length = match length_string.parse::<u16>() {
                     Ok(length) => length,
                     Err(error) => return Err(ParseError::DatatypeMissmatch(
-                                    Span { lo: span_lo , hi: span_hi} )),
+                                      Span { lo: span_lo , hi: span_hi}
+                                  )),
                 };
                 SqlType::VarChar(length)
             },
 
             _ => return Err(ParseError::NotADatatype(
-                    Span { lo: span_lo , hi: span_hi })),
+                     Span { lo: span_lo , hi: span_hi }
+                 )),
         };
         Ok((found_datatype))
     }
@@ -443,7 +447,8 @@ impl<'a> Parser<'a> {
             found_word = match token.tok {
                 Token::Word(ref s) => s,
                 _ => return Err(ParseError::NotAWord(
-                        Span { lo: span_lo , hi: span_hi } ))
+                         Span { lo: span_lo , hi: span_hi }
+                     ))
             };
         }
         Ok(found_word.to_string())
@@ -475,7 +480,7 @@ impl<'a> Parser<'a> {
     }
 
     // checks if current token is an expected token
-    fn expect_token(& self,expected_tokens: &[Token])
+    fn expect_token(&self,expected_tokens: &[Token])
         -> Result<&Token, ParseError>
     {
 
@@ -509,8 +514,8 @@ impl<'a> Parser<'a> {
                 Some(ref token) => token,
             };
 
-            span_lo=token.span.lo;
-            span_hi=token.span.hi;
+            span_lo = token.span.lo;
+            span_hi = token.span.hi;
 
             // checks whether token is a word
             let word = match token.tok {

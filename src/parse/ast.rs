@@ -134,9 +134,9 @@ pub enum Conditions {
 /// Information for the where-clause
 #[derive(Debug, Clone)]
 pub struct Condition {
-    pub col : String,
+    pub col: String,
     pub op: CompType,
-    pub rhs : CondType
+    pub rhs: CondType
 }
 
 /// Allowed operators for where-clause

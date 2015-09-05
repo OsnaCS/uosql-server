@@ -8,6 +8,7 @@ pub mod ast;
 pub mod token;
 pub mod lex;
 pub mod parser;
+
 pub use self::parser::Parser;
 
 /// Represents a substring in the query string in byte indices.

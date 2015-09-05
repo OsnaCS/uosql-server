@@ -27,8 +27,8 @@ use bincode::rustc_serialize::{EncodingError,
     DecodingError, encode_into, decode_from};
 
 /// constants
- const MAGIC_NUMBER: u64 = 0x6561742073686974; // secret
- const VERSION_NO: u8 = 1;
+const MAGIC_NUMBER: u64 = 0x6561742073686974; // secret
+const VERSION_NO: u8 = 1;
 
 
 /// A database table
@@ -44,7 +44,7 @@ pub enum DatabaseError {
     BinDe(DecodingError),
     Byteorder(::byteorder::Error),
     WrongMagicNmbr,
-    Engine, //cur not used
+    Engine, // cur not used
     LoadDataBase,
     RemoveColumn,
     AddColumn,
@@ -68,7 +68,7 @@ impl From<DecodingError> for DatabaseError {
     }
 }
 
-impl From< ::byteorder::Error> for DatabaseError {
+impl From<::byteorder::Error> for DatabaseError {
     fn from(err: ::byteorder::Error) -> DatabaseError {
         DatabaseError::Byteorder(err)
     }
@@ -79,7 +79,7 @@ impl From< ::byteorder::Error> for DatabaseError {
 //---------------------------------------------------------------
 /// A Enum for Datatypes (will be removed later)
 #[repr(u8)]
-#[derive(Clone,Copy,Debug,RustcDecodable, RustcEncodable)]
+#[derive(Clone, Copy, Debug, RustcDecodable, RustcEncodable)]
 pub enum DataType { Integer = 1, Float = 2, }
 
 impl DataType {
@@ -102,7 +102,7 @@ impl Database {
     pub fn create(name: &str) -> Result<Database, DatabaseError> {
         let d = Database{ name: name.to_string() };
         try!(d.save());
-        info!("created new database {:?}",d);
+        info!("created new database {:?}", d);
         Ok(d)
     }
 
@@ -157,7 +157,7 @@ impl Database {
 //---------------------------------------------------------------
 
 #[derive(Debug, RustcDecodable, RustcEncodable)]
-pub struct  TableMetaData {
+pub struct TableMetaData {
     version_nmbr: u8,
     engine_id: u8,
     columns: Vec<Column>,
@@ -212,7 +212,7 @@ impl<'a> Table<'a> {
         info!("reading file: {:?}", file);
         let ma_nmbr = try!(file.read_uint::<BigEndian>(mem::size_of_val(&MAGIC_NUMBER)));
 
-        info!("checking magic number: {:?}",ma_nmbr);
+        info!("checking magic number: {:?}", ma_nmbr);
         if ma_nmbr != MAGIC_NUMBER {
             println!("Magic Number not correct");
             return Err(DatabaseError::WrongMagicNmbr)
@@ -229,15 +229,15 @@ impl<'a> Table<'a> {
     /// Returns DatabaseError on fail else Nothing
     pub fn save(&self) -> Result<(), DatabaseError> {
         // call for open file
-        info!("opening file to write",);
+        info!("opening file to write");
         let mut file = try!(OpenOptions::new()
             .write(true)
             .create(true)
             .open(self.get_table_metadata_path()));
         info!("writing magic number in file: {:?}", file);
         try!(file.write_u64::<BigEndian>(MAGIC_NUMBER));//MAGIC_NUMBER
-        info!("writing meta data in file: {:?}",file);
-        try!(encode_into(&self.meta_data, &mut file,SizeLimit::Infinite));
+        info!("writing meta data in file: {:?}", file);
+        try!(encode_into(&self.meta_data, &mut file, SizeLimit::Infinite));
 
         // debug message all okay
         info!("I Wrote my File");
@@ -253,7 +253,7 @@ impl<'a> Table<'a> {
         info!("remove meta file: {:?}", self.get_table_metadata_path());
         try!(fs::remove_file(self.get_table_metadata_path()));
 
-        info!("remove data file: {:?}",self.get_table_data_path());
+        info!("remove data file: {:?}", self.get_table_data_path());
         try!(fs::remove_file(self.get_table_data_path()));
 
         Ok(())
@@ -285,7 +285,7 @@ impl<'a> Table<'a> {
     pub fn remove_column(&mut self, name: &str) -> Result<(), DatabaseError> {
         let index = match self.meta_data.columns.iter().position(|x| x.name == name) {
             Some(x) => {
-                info!("Column {:?} was removed" , self.name);
+                info!("Column {:?} was removed", self.name);
                 x
             },
             None => {

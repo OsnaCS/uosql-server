@@ -15,12 +15,11 @@
 //! ...
 //!
 
-// TODO: Remove this line as soon as this module is actually used
-use std::io::{Write,Read};
+use std::io::{Write, Read};
 use byteorder::{ReadBytesExt, WriteBytesExt}; // for write_u16()
 // to encode and decode the structs to the given stream
 use bincode::rustc_serialize::{
-    decode_from, encode_into,EncodingError,DecodingError
+    decode_from, encode_into, EncodingError, DecodingError
 };
 use bincode::SizeLimit;
 use rustc_serialize::{Encodable, Encoder}; // to encode the Networkerrors
@@ -54,18 +53,30 @@ pub struct ClientErrMsg {
 impl From<NetworkErrors> for ClientErrMsg {
     fn from(error: NetworkErrors) -> ClientErrMsg {
         match error {
-            NetworkErrors::IoError(_) =>
-                ClientErrMsg { code: 0, msg: "IO error".into() },
-            NetworkErrors::ByteOrder(_) =>
-                ClientErrMsg { code: 1, msg: "Byteorder error".into() },
-            NetworkErrors::UnexpectedPkg(err) =>
-                ClientErrMsg { code: 2, msg: err.into() },
-            NetworkErrors::UnknownCmd(err) =>
-                ClientErrMsg { code: 3, msg: err.into() },
-            NetworkErrors::EncodeErr(_) =>
-                ClientErrMsg { code: 4, msg: "encoding error".into() },
-            NetworkErrors::DecodeErr(_) =>
-                ClientErrMsg { code: 5, msg: "decoding error".into() }
+            NetworkErrors::IoError(_) => ClientErrMsg {
+                code: 0,
+                msg: "IO error".into()
+            },
+            NetworkErrors::ByteOrder(_) => ClientErrMsg {
+                code: 1,
+                msg: "Byteorder error".into()
+            },
+            NetworkErrors::UnexpectedPkg(err) => ClientErrMsg {
+                code: 2,
+                msg: err.into()
+            },
+            NetworkErrors::UnknownCmd(err) => ClientErrMsg {
+                code: 3,
+                msg: err.into()
+            },
+            NetworkErrors::EncodeErr(_) => ClientErrMsg {
+                code: 4,
+                msg: "encoding error".into()
+            },
+            NetworkErrors::DecodeErr(_) => ClientErrMsg {
+                code: 5,
+                msg: "decoding error".into()
+            }
         }
     }
 }
@@ -118,7 +129,7 @@ pub struct Greeting {
 }
 
 impl Greeting {
-    pub fn make_greeting(version: u8, msg: String)-> Greeting {
+    pub fn make_greeting(version: u8, msg: String) -> Greeting {
         Greeting { protocol_version: version, message: msg }
     }
 }
@@ -158,7 +169,7 @@ impl Login {
 
 /// reads the data from the response to the handshake,
 /// username and password extracted and authenticated
-pub fn read_login<R: Read+Write>(stream: &mut R)
+pub fn read_login<R: Read + Write>(stream: &mut R)
     -> Result<Login, NetworkErrors>
 {
     // read the first byte
@@ -228,7 +239,7 @@ pub fn send_error_packet<W: Write>(mut stream: &mut W, err: ClientErrMsg)
 }
 
 /// Send ok packet
-pub fn send_ok_packet<W: Write> (mut stream: &mut W)
+pub fn send_ok_packet<W: Write>(mut stream: &mut W)
     -> Result<(), NetworkErrors>
 {
     try!(stream.write_u8(Cnv::OkPkg as u8));
@@ -269,14 +280,14 @@ pub fn test_send_ok_packet() {
 #[test]
 pub fn test_send_error_packet() {
     let mut vec = Vec::new();   // stream to write into
-    let vec2 = vec![Cnv::ErrorPkg as u8, //for error packet
+    let vec2 = vec![Cnv::ErrorPkg as u8, // for error packet
         0, 2, // for kind of error
         0, 0, 0, 0, 0, 0, 0, 17, // for the size of the message string
         117, 110, 101, 120, 112, 101, 99, 116, 101, 100, 32, 112, 97, 99, 107, 101, 116];
         // string itself
     let err = NetworkErrors::UnexpectedPkg("unexpected packet".into());
 
-    //test if the message is sent
+    // test if the message is sent
     let res = send_error_packet(&mut vec, err.into());
     assert_eq!(res.is_ok(), true);
     assert_eq!(vec, vec2);
@@ -284,7 +295,7 @@ pub fn test_send_error_packet() {
 
 #[test]
 pub fn test_read_commands(){
-    //test if the commands are correctly decoded
+    // test if the commands are correctly decoded
     use std::io::Cursor;        // stream to read from
     let mut vec = Vec::new();   // stream to write into
 
@@ -316,10 +327,10 @@ pub fn testlogin() {
     use std::io::Cursor;        // stream to read from
     let mut vec = Vec::new();   // stream to write into
 
-    //original struct
+    // original struct
     let login = Login { username: "elena".into(), password: "praktikum".into() };
     vec.push(1u8);
-    let login_encode = encode_into(&login,&mut vec,SizeLimit::Bounded(1024));
+    let login_encode = encode_into(&login, &mut vec, SizeLimit::Bounded(1024));
 
     let login_res = read_login(&mut Cursor::new(vec)).unwrap();
 
