@@ -20,7 +20,7 @@ pub enum Token {
     Word(String),
     Num(String),
 
-    //detects literals
+    // detects literals
     Literal(Lit),
 
     Semi,
@@ -29,12 +29,12 @@ pub enum Token {
     // Bang,
     // QMark,
 
-    //delimiter (,),',"
+    // delimiter (,),',"
     ParenOp,
     ParenCl,
     ADel,
 
-    //mathematic ops
+    // mathematic ops
     Equ,
     GThan,
     SThan,
@@ -46,7 +46,7 @@ pub enum Token {
     Div,
     Mod,
 
-    //sensitive Wildcard/Mult, eval in parser
+    // sensitive Wildcard/Mult, eval in parser
     Star,
 
     Whitespace,
