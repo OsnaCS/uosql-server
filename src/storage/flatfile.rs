@@ -27,7 +27,7 @@ impl<'a> Engine for FlatFile<'a> {
         Ok(())
     }
 
-    fn table(&self) -> &Table{
+    fn table(&self) -> &Table {
         &self.table
     }
 }
