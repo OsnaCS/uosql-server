@@ -19,7 +19,8 @@ pub fn handle(mut stream: TcpStream) {
     let _ = match res {
         Ok((user, pw)) => {
             info!("Connection established. Handshake sent");
-            auth::find_user(&user, &pw)},
+            auth::find_user(&user, &pw)
+        },
         _ => Err(auth::AuthError::UserNotFound)
     };
 
@@ -32,7 +33,7 @@ pub fn handle(mut stream: TcpStream) {
         match command_res {
             Ok(cmd) =>
             match cmd {
-                //exit the session and shutdown the connection
+                // exit the session and shutdown the connection
                 Command::Quit => {
                     match net::send_ok_packet(&mut stream) {
                         Ok(_) => {
@@ -62,7 +63,7 @@ pub fn handle(mut stream: TcpStream) {
                     let ast = p.parse();
 
                     match ast {
-                    Ok(tree) => {
+                        Ok(tree) => {
                             println!("{:?}", tree);
                             query::execute_from_ast(tree, Some("testbase".into()));
                         },
@@ -76,7 +77,7 @@ pub fn handle(mut stream: TcpStream) {
                     continue
                 }
             },
-            Err(_) => continue//error handling
+            Err(_) => continue // TODO: error handling
         }
     }
 }
