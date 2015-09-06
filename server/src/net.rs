@@ -301,7 +301,7 @@ pub fn test_read_commands(){
 
     // write the command into the stream
     vec.push(Cnv::CommandPkg as u8);
-    let command_encode = encode_into(&Command::Quit, &mut vec, SizeLimit::Bounded(1024));
+    let _ = encode_into(&Command::Quit, &mut vec, SizeLimit::Bounded(1024));
 
     // read the command from the stream for Command::Quit
     let mut command_res = read_commands(&mut Cursor::new(vec));
@@ -312,7 +312,7 @@ pub fn test_read_commands(){
     let mut vec2 = Vec::new();
     // write the command into the stream
     vec2.push(Cnv::CommandPkg as u8);
-    let command_encode = encode_into(&Command::Query("select".into()),
+    let _ = encode_into(&Command::Query("select".into()),
                                      &mut vec2,
                                      SizeLimit::Bounded(1024));
 
@@ -330,7 +330,7 @@ pub fn testlogin() {
     // original struct
     let login = Login { username: "elena".into(), password: "praktikum".into() };
     vec.push(1u8);
-    let login_encode = encode_into(&login, &mut vec, SizeLimit::Bounded(1024));
+    let _ = encode_into(&login, &mut vec, SizeLimit::Bounded(1024));
 
     let login_res = read_login(&mut Cursor::new(vec)).unwrap();
 

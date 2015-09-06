@@ -16,7 +16,7 @@ fn main() {
 
     let ty = SqlType::Int;
     let mut v = Vec::new();
-    encode_into(&ty, &mut v, SizeLimit::Infinite);
+    let _ = encode_into(&ty, &mut v, SizeLimit::Infinite);
     println!("{:?}", v);
 
     let db = Database::create("storage_team").unwrap();
@@ -31,7 +31,7 @@ fn main() {
 
     let _storage_team = db.create_table("storage_team", cols, 1).unwrap();
 
-    let mut t = db.load_table("storage_team").unwrap();
+    let t = db.load_table("storage_team").unwrap();
 
 
     let mut engine = t.create_engine();
