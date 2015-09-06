@@ -1,8 +1,14 @@
 language: rust
 rust:
   - stable
-  - beta
   - nightly
+before_install:
+  - bash check-style.sh
+script:
+  - cd server && cargo build --verbose && cd ..
+  - cd server && cargo test --verbose && cd ..
+  - cargo build --verbose
+  - cargo test --verbose
 after_success:
   - |
         test ${TRAVIS_PULL_REQUEST} == "false" && \
