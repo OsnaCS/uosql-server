@@ -1,9 +1,9 @@
-extern crate uosql;
+extern crate server;
 extern crate byteorder;
 extern crate rustc_serialize;
 extern crate bincode;
 
-use uosql::net;
+use server::net;
 //use bincode::rustc_serialize::{encode_into};
 //use bincode::SizeLimit;
 

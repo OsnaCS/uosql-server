@@ -1,6 +1,6 @@
-extern crate uosql;
-use uosql::parse;
-use uosql::query;
+extern crate server;
+use server::parse;
+use server::query;
 
 
 fn main() {

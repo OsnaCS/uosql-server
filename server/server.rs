@@ -1,26 +1,15 @@
+extern crate docopt;
 #[macro_use]
 extern crate log;
-extern crate term_painter as term;
-extern crate byteorder;
 extern crate rustc_serialize;
-extern crate bincode;
-extern crate docopt;
+extern crate server;
 
 use rustc_serialize::json;
 use std::fs::File;
 use std::io::Read;
 use docopt::Docopt;
-use std::net::{Ipv4Addr, SocketAddrV4};
+use std::net::Ipv4Addr;
 use std::str::FromStr;
-
-
-pub mod auth;
-pub mod conn;
-pub mod logger;
-pub mod net;
-pub mod parse;
-pub mod query;
-pub mod storage;
 
 /// For console input, manages flags and arguments
 const USAGE: &'static str = "
@@ -42,13 +31,11 @@ struct Args {
    flag_dir: Option<String>
 }
 
-/// Entry point for server. Allow dead_code to supress warnings when
-/// compiled as a library.
-#[allow(dead_code)]
+/// Entry point for server.
 fn main() {
     // Configure and enable the logger. We may `unwrap` here, because a panic
     // would happen right after starting the program
-    logger::with_loglevel(log::LogLevelFilter::Trace)
+    server::logger::with_loglevel(log::LogLevelFilter::Trace)
         .with_logfile(std::path::Path::new("log.txt"))
         .enable().unwrap();
     info!("Starting uoSQL server...");
@@ -59,7 +46,7 @@ fn main() {
 
     // If a cfg is entered, use this file name to set configurations
     let mut config = read_conf_from_json(args.flag_cfg
-                                .unwrap_or("src/config.json".into()));
+                                .unwrap_or("config.json".into()));
 
     // Change the bind address if flag is set
     config.address = args.flag_bind.and_then(|b| Ipv4Addr::from_str(&b)
@@ -75,40 +62,14 @@ fn main() {
                         config.address, config.port, config.dir);
 
     // Start listening for incoming Tcp connections
-    listen(config);
+    server::listen(config);
 }
 
-
-/// Listens for incoming TCP streams
-fn listen(config: Config) {
-    use std::net::TcpListener;
-    use std::thread;
-
-    // Converting configurations to a valid socket address
-    let sock_addr = SocketAddrV4::new(config.address, config.port);
-    let listener = TcpListener::bind(sock_addr).unwrap();
-
-    // Accept connections and process them
-    for stream in listener.incoming() {
-        match stream {
-            Ok(stream) => {
-                // Connection succeeded: Spawn thread and handle
-                thread::spawn(move|| {
-                    conn::handle(stream)
-                });
-            },
-            Err(e) => {
-                // Something went wrong...
-                warn!("Failed to accept incoming connection: {:?}", e);
-            },
-        }
-    }
-}
 
 /// Creates a Config struct out of a config file
 /// returns default values for everything that is
 /// not entered manually
-fn read_conf_from_json(name: String) -> Config {
+fn read_conf_from_json(name: String) -> server::Config {
 
     #[derive(Debug, RustcDecodable, Default)]
     struct CfgFile {
@@ -138,17 +99,9 @@ fn read_conf_from_json(name: String) -> Config {
     };
 
     // Return configuration, all None datafields set to default
-    Config {
+    server::Config {
         address: bind,
         port: config.port.unwrap_or(4242),
         dir: config.dir.unwrap_or("data".into())
     }
-}
-
-/// A struct for managing configurations
-#[derive(Debug)]
-pub struct Config {
-    address: Ipv4Addr,
-    port: u16,
-    dir: String
 }

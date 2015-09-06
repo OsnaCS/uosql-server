@@ -1,11 +1,11 @@
-extern crate uosql;
+extern crate server;
 extern crate bincode;
 extern crate log;
-use uosql::storage::*;
+use server::storage::*;
 use bincode::rustc_serialize::{encode_into};
 use bincode::SizeLimit;
-use uosql::parse::ast::SqlType;
-use uosql::logger;
+use server::parse::ast::SqlType;
+use server::logger;
 
 
 fn main() {

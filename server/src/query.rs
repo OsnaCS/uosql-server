@@ -4,8 +4,8 @@
 //! by calling the appropriate `storage` and `auth` methods.
 //!
 
-use parse::{ast, parser};
-use parse::ast::{Query, CreateStmt, DefStmt, CreateTableStmt};
+use super::parse::{ast, parser};
+use super::parse::ast::{Query, CreateStmt, DefStmt, CreateTableStmt};
 use super::storage::{Database, Column};
 
 
