@@ -4,12 +4,12 @@
 //! by calling the appropriate `storage` and `auth` methods.
 //!
 
-use parse::{ast, parser};
-use parse::ast::{Query, CreateStmt, DefStmt, CreateTableStmt};
+use super::parse::ast;
+use super::parse::ast::{Query, CreateStmt, DefStmt, CreateTableStmt};
 use super::storage::{Database, Column};
 
 
-pub struct queryexecutor {
+pub struct Executor {
     pub database: Option<Database>,
 
 }
@@ -18,14 +18,14 @@ pub struct queryexecutor {
     pub fn execute_from_ast(query: ast::Query, dbase: Option<String>) {
 
 
-        let mut executor = queryexecutor::new();
+        let mut executor = Executor::new();
          match dbase {
             None => (),
             Some(s) => executor.database =  Database::load(&s).ok(),
         };
 
         match query {
-            Query::ManipulationStmt(stmt) => (),
+            Query::ManipulationStmt(_) => (),
             Query::DefStmt(stmt) => executor.execute_def_stmt(stmt),
             _ => (),
 
@@ -38,10 +38,10 @@ pub struct queryexecutor {
 
 
 
-impl queryexecutor{
+impl Executor{
 
-    pub fn new() -> queryexecutor {
-        queryexecutor { database: None }
+    pub fn new() -> Executor {
+        Executor { database: None }
     }
 
 
@@ -84,7 +84,8 @@ impl queryexecutor{
                         sql_type: c.datatype,
                     }).collect();
 
-                    base.create_table(&query.tid, tmp_vec, 0);
+                    // TODO: Use the result!
+                    let _ = base.create_table(&query.tid, tmp_vec, 0);
 
                 },
             None => (),

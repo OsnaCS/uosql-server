@@ -2,7 +2,7 @@
 
 # config
 COLS=100
-FOLDER="src"
+FOLDER="."
 FILES="*.rs"
 
 

@@ -1,11 +1,11 @@
-extern crate uosql;
+extern crate server;
 extern crate bincode;
 extern crate log;
-use uosql::storage::*;
+use server::storage::*;
 use bincode::rustc_serialize::{encode_into};
 use bincode::SizeLimit;
-use uosql::parse::ast::SqlType;
-use uosql::logger;
+use server::parse::ast::SqlType;
+use server::logger;
 
 
 fn main() {
@@ -16,7 +16,7 @@ fn main() {
 
     let ty = SqlType::Int;
     let mut v = Vec::new();
-    encode_into(&ty, &mut v, SizeLimit::Infinite);
+    let _ = encode_into(&ty, &mut v, SizeLimit::Infinite);
     println!("{:?}", v);
 
     let db = Database::create("storage_team").unwrap();
@@ -31,7 +31,7 @@ fn main() {
 
     let _storage_team = db.create_table("storage_team", cols, 1).unwrap();
 
-    let mut t = db.load_table("storage_team").unwrap();
+    let t = db.load_table("storage_team").unwrap();
 
 
     let mut engine = t.create_engine();

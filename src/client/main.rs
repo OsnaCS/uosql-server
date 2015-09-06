@@ -120,7 +120,7 @@ fn send_cmd<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
             return true // maybe send quit signal
         },
         ":help" => {
-            let help = include_str!("../client_readme.txt");
+            let help = include_str!("readme.txt");
             println!("{}", help);
         },
         _ => {

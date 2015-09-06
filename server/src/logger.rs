@@ -113,7 +113,7 @@ impl Log for Logger {
         };
 
         // Ignore the leading 'src/' in the file path
-        let src_file = &record.location().file()[4 ..];
+        let src_file = &record.location().file();
 
         // If a logfile is specified (file logging is enabled)
         if let Some(ref file) = self.logfile {
