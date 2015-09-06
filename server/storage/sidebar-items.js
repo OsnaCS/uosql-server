@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["DataType","A Enum for Datatypes (will be removed later)"],["DatabaseError","A database table"]],"mod":[["flatfile",""]],"struct":[["Column","A table column. Has a name, a type, ..."],["Database",""],["Table","Table struct that contains the table information"],["TableMetaData",""]],"trait":[["Engine","Storage Engine Interface."]]});

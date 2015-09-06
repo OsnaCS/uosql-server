@@ -1,1 +1,0 @@
-initSidebarItems({"enum":[["Query","Top level type. Is returned by `parse`."]]});

@@ -1,1 +1,0 @@
-initSidebarItems({"enum":[["AuthError","Errors that may occur during user authentication"]],"fn":[["find_user","Validates username and password and returns the matched user."]],"struct":[["User","Contains information about the user that opened the connection. Is used for every type of access control."]]});

@@ -1,1 +1,0 @@
-initSidebarItems({"fn":[["parse","Main function of this module: Takes a sql query as string and returns the parsed AST."]],"mod":[["ast","Defines types of the abstract syntax tree"],["lex",""],["token",""]],"struct":[["Span","Represents a substring in the query string in byte indices."]]});

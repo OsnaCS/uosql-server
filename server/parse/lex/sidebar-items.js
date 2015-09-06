@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Lexer","A lexer with its associated query, a char iterator, and positions (last, current, next)"]]});
