@@ -10,7 +10,8 @@ pub struct TokenSpan {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
 	Str(String),
-	Int(String)
+	Int(i64),
+    Float(f64)
 }
 
 /// A token: Everything the lexer can produce
@@ -18,7 +19,6 @@ pub enum Lit {
 pub enum Token {
 
     Word(String),
-    Num(String),
 
     // detects literals
     Literal(Lit),

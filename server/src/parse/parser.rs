@@ -3,11 +3,12 @@
 
 use std::iter::Iterator;
 use super::ast::*;
-use super::token::TokenSpan;
+use super::token::{TokenSpan, Lit};
 use super::lex::Lexer;
 use std::mem::swap;
 use super::token::Token;
 use super::Span;
+use super::super::storage::SqlType;
 
 // ===========================================================================
 // Parser public functions
@@ -32,22 +33,18 @@ impl<'a> Parser<'a> {
         let l = Lexer::from_query(query);
         let mut p = Parser { lexiter: l, last: None, curr: None, peek: None };
         // Sets initial position of lexer and curr/peek
-        p.lexer_next();
-        p.lexer_next();
+        p.bump();
+        p.bump();
         p
     }
 
     /// Parses the given query into an AST
     pub fn parse(&mut self) -> Result<Query, ParseError> {
         // deletes Whitespaces in the beginning of Query
-        match self.expect_token(&[Token::Whitespace]) {
-            Ok(&Token::Whitespace) => self.lexer_next(),
-            _ => (),
-        }
 
         // first token is checked if it's a keyword using expect_keyword()
         let keywords = &[Keyword::Create, Keyword::Drop, Keyword::Alter,
-                         Keyword::Use, Keyword::Delete];
+        Keyword::Use, Keyword::Delete, Keyword::Insert, Keyword::Describe];
         let querytype = self.expect_keyword(keywords).map_err(|e| match e {
             ParseError::UnexpectedEoq => ParseError::EmptyQueryError,
             _ => e,
@@ -68,7 +65,7 @@ impl<'a> Parser<'a> {
             Keyword::Alter => {
                 let query = Query::DefStmt(DefStmt::Alter(
                     try!(self.parse_alt_stmt())
-                ));
+                    ));
                 Ok(try!(self.return_query_ast(query)))
             },
 
@@ -76,7 +73,7 @@ impl<'a> Parser<'a> {
             Keyword::Drop => {
                 let query = Query::DefStmt(DefStmt::Drop(
                     try!(self.parse_drop_stmt())
-                ));
+                    ));
                 Ok(try!(self.return_query_ast(query)))
             },
 
@@ -84,7 +81,15 @@ impl<'a> Parser<'a> {
             Keyword::Use => {
                 let query = Query::ManipulationStmt(ManipulationStmt::Use(
                     try!(self.parse_use_stmt())
-                ));
+                    ));
+                Ok(try!(self.return_query_ast(query)))
+            }
+
+            // Insert-Query
+            Keyword::Insert => {
+                let query = Query::ManipulationStmt(ManipulationStmt::Insert(
+                    try!(self.parse_insert_stmt())
+                    ));
                 Ok(try!(self.return_query_ast(query)))
             }
 
@@ -92,14 +97,25 @@ impl<'a> Parser<'a> {
             Keyword::Delete => {
                 let query = Query::ManipulationStmt(ManipulationStmt::Delete(
                     try!(self.parse_delete_stmt())
-                ));
+                    ));
                 Ok(try!(self.return_query_ast(query)))
             }
+
+            //Describe-Query
+            Keyword::Describe => {
+                self.bump();
+                let query = Query::ManipulationStmt(ManipulationStmt::Describe(
+                    try!(self.expect_word())
+                    ));
+                Ok(try!(self.return_query_ast(query)))
+            }
+
 
             // Unknown Error
             _ => Err(ParseError::UnknownError)
         }
     }
+
 
 
 
@@ -121,6 +137,7 @@ impl<'a> Parser<'a> {
                 self.bump();
                 Ok(CreateStmt::Database(try!(self.expect_word())))
             },
+
             // Create the view subtree
             // Keyword::View => ...
 
@@ -167,10 +184,7 @@ impl<'a> Parser<'a> {
         let mut colsvec = Vec::<ColumnInfo>::new();
 
         // fill the vector with content until ParenCl is the curr token
-        while match self.expect_token(&[Token::ParenCl]) {
-            Ok(&Token::ParenCl) => false,
-            _ => true,
-        }
+        while self.expect_token(&[Token::ParenCl]).is_ok()
         {
             // parsing the content for a single ColumnInfo
             colsvec.push(try!(self.expect_column_info()));
@@ -178,18 +192,13 @@ impl<'a> Parser<'a> {
             // Check if there is a Comma seperating two columns or a ParenCl
             // ending the vectorparsing
             match try!(self.expect_token(&[Token::Comma, Token::ParenCl])) {
-                &Token::Comma => self.bump(),
+                Token::Comma => self.bump(),
                 _ => (),
             };
         }
 
         Ok(colsvec)
     }
-
-
-
-
-
 
     // Parses tokens for alter statement
     fn parse_alt_stmt(&mut self) -> Result<AltStmt, ParseError> {
@@ -214,7 +223,6 @@ impl<'a> Parser<'a> {
         };
 
         Ok(alt_table_stmt)
-
     }
 
     // Parses operations applied on selected table including tablename and
@@ -267,7 +275,103 @@ impl<'a> Parser<'a> {
         }
     }
 
-     // Parses the tokens for delete statement
+    // Parses tokens for insert statement
+    fn parse_insert_stmt(&mut self) -> Result<InsertStmt, ParseError> {
+        self.bump();
+
+        match try!(self.expect_keyword(&[Keyword::Into])) {
+            Keyword::Into => (),
+            _ => return Err(ParseError::UnknownError),
+        }
+
+        self.bump();
+        let i = InsertStmt {
+            tid: try!(self.expect_word()),
+            col: try!(self.parse_insert_stmt_detail()),
+            val: try!(self.parse_insert_stmt_value()),
+        };
+
+        if i.col.len() != 0 && i.col.len() != i.val.len() {
+            return Err(ParseError::ColumnCountMissmatch);
+        }
+        Ok(i)
+    }
+
+    // Parses columns for insert statement
+    fn parse_insert_stmt_detail(&mut self) -> Result<Vec<String>, ParseError> {
+        self.bump();
+
+        let mut res_vec = Vec::<String>::new();
+
+        if self.expect_token(&[Token::ParenOp]).is_ok() {
+            // includes additional bump due to closing par
+            res_vec = try!(self.parse_insert_stmt_column());
+        } else {
+            return Ok(res_vec);
+        }
+
+        Ok(res_vec)
+    }
+
+    // Continuation of parse_insert_stmt_detail
+    fn parse_insert_stmt_column(&mut self) -> Result<Vec<String>, ParseError> {
+        self.bump();
+
+        let mut res_vec = Vec::<String>::new();
+
+        // fill the vector with content until ParenCl is the curr token
+        while self.expect_token(&[Token::ParenCl]).is_ok() {
+            // parsing the content for a single column
+            res_vec.push(try!(self.expect_word()));
+            self.bump();
+            // Check if there is a Comma seperating two columns or a ParenCl
+            // ending the vectorparsing
+            match try!(self.expect_token(&[Token::Comma, Token::ParenCl])) {
+                Token::Comma => self.bump(),
+                _ => (),
+            };
+        }
+        self.bump();
+        Ok(res_vec)
+    }
+
+    // Parses i.val of parse_insert_stmt
+    fn parse_insert_stmt_value(&mut self) -> Result<Vec<Lit>, ParseError> {
+        let mut res_vec = Vec::<Lit>::new();
+
+
+        match try!(self.expect_keyword(&[Keyword::Values])) {
+            Keyword::Values => (),
+            _ => return Err(ParseError::UnknownError),
+        }
+
+        self.bump();
+
+        try!(self.expect_token(&[Token::ParenOp]));
+        self.bump();
+
+        // fill the vector with content until ParenCl is the curr token
+        while self.expect_token(&[Token::ParenCl]).is_ok() {
+            // parsing the content for a single column
+
+            let lit = try!(self.expect_literal());
+
+            res_vec.push(lit);
+
+
+            self.bump();
+            // Check if there is a Comma seperating two columns or a ParenCl
+            // ending the vectorparsing
+            match try!(self.expect_token(&[Token::Comma, Token::ParenCl])) {
+                Token::Comma => self.bump(),
+                _ => (),
+            };
+        }
+        Ok(res_vec)
+
+    }
+
+    // Parses the tokens for delete statement
     fn parse_delete_stmt(&mut self) -> Result<DeleteStmt, ParseError> {
         self.bump();
         try!(self.expect_keyword(&[Keyword::From]));
@@ -277,7 +381,6 @@ impl<'a> Parser<'a> {
         let conditiontree = match self.expect_keyword(&[Keyword::Where]) {
             Ok(Keyword::Where) => Some(try!(self.parse_where_part())),
             _ => None,
-
         };
 
         Ok(DeleteStmt { tid: tableid, cond: conditiontree } )
@@ -290,60 +393,122 @@ impl<'a> Parser<'a> {
 // Utility Functions
 // ===========================================================================
 
-    // moves current to the next non-whitespace
-    fn bump(&mut self) {
-        self.lexer_next();
-        match self.expect_token(&[Token::Whitespace]) {
-            Ok(&Token::Whitespace) => self.lexer_next(),
-            _ => ()
-        };
-    }
 
-     // sets next position for the lexer
-     fn lexer_next(&mut self) {
+    // sets next position for the lexer
+    fn bump(&mut self) {
         swap(&mut self.last, &mut self.curr);  //  last = curr
         swap(&mut self.curr, &mut self.peek);  //  curr = peek
-        self.peek = self.lexiter.next();
+        self.peek = self.lexiter.next_real();
     }
 
     // checks, if query is ended correctly. if yes -> returns query as ast
     fn return_query_ast(&mut self, query: Query) -> Result<Query, ParseError> {
         self.bump();
         if self.curr.is_none() {
-           Ok(query)
-       } else {
-           Err(ParseError::InvalidEoq)
-       }
-   }
+            Ok(query)
+        } else {
+            Err(ParseError::InvalidEoq)
+        }
+    }
 
-   // parses the where part into Conditions type
-   fn parse_where_part(&mut self) -> Result<Conditions, ParseError> {
+    // parses the where part into Conditions type
+    fn parse_where_part(&mut self) -> Result<Conditions, ParseError> {
+
+
+        let mut cond = Conditions::Leaf(try!(self.parse_condition()));
+
         self.bump();
-        //TODO: further implementation
-        Ok(Conditions::Leaf( Condition {
-            col: "TEST".to_string(),
-            op: CompType::Equ,
-            rhs: CondType::Word("TEST".to_string())
-        }))
-   }
 
-   // aprses a single condition
-   fn parse_condition(&mut self) -> Result<Condition, ParseError> {
+        while self.expect_keyword(&[Keyword::And, Keyword::Or]).is_ok() {
+            if self.expect_keyword(&[Keyword::Or]).is_ok() {
+
+                cond = Conditions::Or(Box::new(cond),Box::new(try!(self.parse_where_part())));
+
+            } else {
+          
+                cond = Conditions::And(Box::new(cond),Box::new(Conditions::Leaf(try!(self.parse_condition()))));
+
+            };
+           self.bump();
+
+        };
+
+        Ok(cond)
+
+       /* let mut paren = false;
+
+
+        match self.peek {
+            Some(ref token) => match token.tok {
+                Token::ParenOp => {
+                    paren = true;
+                } 
+                _ => (),
+            },
+            _ => (),
+        };
+
+        if paren {
+            self.bump();
+        }
+
+        let cond = try!(self.parse_condition());
+        //TODO: further implementation
+
+        match self.expect_token(&[Token::And, Token::Or]){
+            Ok(Token::And) => ,
+            Ok(Token::Or) => ,
+
+        }
+
+
+        self.bump();
+        if paren {
+            try!(self.expect_token(&[Token::ParenCl]).map_err(|e| match e {
+                ParseError::WrongToken(t) => ParseError::MissingParenthesis(t),
+                _ => e,
+            }));
+        }
+        Ok(Conditions::Leaf( cond )) */
+        
+    }
+
+    fn check_next_token(&self, checktoken: Token) -> bool {
+        match self.peek {
+            Some(ref token) => { token.tok == checktoken},
+             _ => false,
+        }
+    }
+
+    // aprses a single condition
+    fn parse_condition(&mut self) -> Result<Condition, ParseError> {
     //TODO: implement
         self.bump();
         let columnname = try!(self.expect_word());
         self.bump();
-        let operation = try!(self.expect_token(&[Token::Equ, Token::GThan,
-                                                 Token::SThan, Token::GEThan,
-                                                 Token::NEqu]));
+        let operation = match try!(self.expect_token(&[Token::Equ, Token::GThan,
+        Token::SThan, Token::GEThan,
+        Token::NEqu])) {
+            Token::Equ => CompType::Equ,
+            Token::GThan => CompType::GThan,
+            Token::SThan => CompType::SThan,
+            Token::GEThan => CompType::GEThan,
+            Token::NEqu => CompType::NEqu,
+            _ => return Err(ParseError::UnknownError),
 
+        };
+        self.bump();
+        let rhs = match self.expect_word() {
+            Ok(s) => CondType::Word(s),
+            _ => CondType::Literal(try!(self.expect_literal())),
+        };
 
         Ok(Condition {
-            col: "TEST".to_string(),
-            op: CompType::Equ,
-            rhs: CondType::Word("TEST".to_string())
+            col: columnname,
+            op: operation,
+            rhs: rhs,
         })
-   }
+    }
 
 
     // Utility function to parse metadata of columns
@@ -391,14 +556,24 @@ impl<'a> Parser<'a> {
                 self.bump();
                 try!(self.expect_token(&[Token::ParenOp]));
                 self.bump();
-                let length_string = try!(self.expect_number());
+                let length_lit = try!(self.expect_number());
                 self.bump();
                 try!(self.expect_token(&[Token::ParenCl]));
-                let length = match length_string.parse::<u8>() {
-                    Ok(length) => length,
-                    Err(error) => return Err(ParseError::DatatypeMissmatch(
-                                       Span { lo: span_lo , hi: span_hi }
-                                   )),
+
+                let length = match length_lit {
+                    Lit::Int(i) => {
+                        if 0 <= i && i <= ( u8::max_value() as i64)  {
+                            i as u8
+                        }else {
+                            return Err(ParseError::DatatypeMissmatch(
+                                Span { lo: span_lo , hi: span_hi }
+                            ))
+                        }
+                    },
+
+                    _ => return Err(ParseError::DatatypeMissmatch(
+                                Span { lo: span_lo , hi: span_hi }
+                                ))
                 };
                 SqlType::Char(length)
             },
@@ -407,21 +582,31 @@ impl<'a> Parser<'a> {
                 self.bump();
                 try!(self.expect_token(&[Token::ParenOp]));
                 self.bump();
-                let length_string = try!(self.expect_number());
+                let length_lit = try!(self.expect_number());
                 self.bump();
                 try!(self.expect_token(&[Token::ParenCl]));
-                let length = match length_string.parse::<u16>() {
-                    Ok(length) => length,
-                    Err(error) => return Err(ParseError::DatatypeMissmatch(
-                                      Span { lo: span_lo , hi: span_hi}
-                                  )),
+
+                let length = match length_lit {
+                    Lit::Int(i) => {
+                        if 0 <= i && i <= ( u16::max_value() as i64)  {
+                            i as u16
+                        }else {
+                            return Err(ParseError::DatatypeMissmatch(
+                                Span { lo: span_lo , hi: span_hi }
+                            ))
+                        }
+                    },
+
+                    _ => return Err(ParseError::DatatypeMissmatch(
+                                Span { lo: span_lo , hi: span_hi }
+                                ))
                 };
                 SqlType::VarChar(length)
             },
 
             _ => return Err(ParseError::NotADatatype(
-                     Span { lo: span_lo , hi: span_hi }
-                 )),
+             Span { lo: span_lo , hi: span_hi }
+             )),
         };
         Ok((found_datatype))
     }
@@ -447,15 +632,42 @@ impl<'a> Parser<'a> {
             found_word = match token.tok {
                 Token::Word(ref s) => s,
                 _ => return Err(ParseError::NotAWord(
-                         Span { lo: span_lo , hi: span_hi }
-                     ))
+                 Span { lo: span_lo , hi: span_hi }
+                 ))
             };
         }
         Ok(found_word.to_string())
     }
 
+       // checks if the current token is a word
+    fn expect_literal(&self) -> Result<Lit, ParseError> {
+        let mut found_lit;
+        let mut span_lo;
+        let mut span_hi;
+        {
+            // checks if token non or some
+            let token = match self.curr {
+                None => return Err(ParseError::UnexpectedEoq),
+                // in case of som: return reference to token
+                Some(ref token) => token,
+            };
+
+            span_lo = token.span.lo;
+            span_hi = token.span.hi;
+
+            // checks whether token is a word
+            found_lit = match token.tok {
+                Token::Literal(ref s) => s.clone(),
+                _ => return Err(ParseError::NotALiteral(
+                 Span { lo: span_lo , hi: span_hi }
+                 ))
+            };
+        }
+        Ok(found_lit)
+    }
+
     // checks if the current token is a number
-    fn expect_number(&self) -> Result<String, ParseError> {
+    fn expect_number(&self) -> Result<Lit, ParseError> {
         let mut found_num;
         let mut span_lo;
         let mut span_hi;
@@ -472,16 +684,17 @@ impl<'a> Parser<'a> {
 
             // checks whether token is a valid number
             found_num = match token.tok {
-                Token::Num(ref s) => s,
+                Token::Literal(Lit::Int(s)) => Lit::Int(s),
+                Token::Literal(Lit::Float(s)) => Lit::Float(s),
                 _ => return Err(ParseError::NotANumber(Span { lo: span_lo , hi: span_hi } ))
             };
         }
-        Ok(found_num.to_string())
+        Ok(found_num)
     }
 
     // checks if current token is an expected token
     fn expect_token(&self,expected_tokens: &[Token])
-        -> Result<&Token, ParseError>
+    -> Result<Token, ParseError>
     {
 
             // checks if current is none or some
@@ -492,7 +705,7 @@ impl<'a> Parser<'a> {
             };
 
             if expected_tokens.contains(&(token.tok)) {
-                Ok(&token.tok)
+                Ok(token.tok.clone())
             } else {
                 Err(ParseError::WrongToken(Span { lo: token.span.lo, hi: token.span.hi } ))
             }
@@ -501,7 +714,7 @@ impl<'a> Parser<'a> {
     // matches current token against any keyword and checks if it is one of
     // the expected keywords
     fn expect_keyword(&self,expected_keywords: &[Keyword])
-        -> Result<Keyword, ParseError>
+    -> Result<Keyword, ParseError>
     {
         let mut found_keyword;
         let mut span_lo;
@@ -519,7 +732,7 @@ impl<'a> Parser<'a> {
 
             // checks whether token is a word
             let word = match token.tok {
-                Token::Word(ref s) => s,
+                Token::Word(ref s) => s.to_lowercase(),
                 _ => return Err(ParseError::NotAKeyword(Span { lo: span_lo , hi: span_hi } ))
             };
 
@@ -538,10 +751,14 @@ impl<'a> Parser<'a> {
                 "add" => Keyword::Add,
                 "column" => Keyword::Column,
                 "database" => Keyword::Database,
+                "into" => Keyword::Into,
                 "use" => Keyword::Use,
+                "values" => Keyword::Values,
                 "from" => Keyword::From,
                 "where" => Keyword::Where,
-
+                "describe" => Keyword::Describe,
+                "and" => Keyword::And,
+                "or" => Keyword::Or,
                 _ => return Err(ParseError::NotAKeyword(Span { lo: span_lo , hi: span_hi } )),
 
             };
@@ -570,6 +787,7 @@ pub enum Keyword {
     Drop,
     Alter,
     Use,
+    Describe,
 
     // data manipulation keywords
     Select,
@@ -587,7 +805,11 @@ pub enum Keyword {
     From,
     Where,
     Modify,
-    Add
+    Add,
+    Into,
+    Values,
+    And,
+    Or
 }
 
 #[derive(Debug)]
@@ -600,6 +822,8 @@ pub enum ParseError {
     //End of file,
     UnexpectedEoq,
     InvalidEoq,
+    Filler1,
+    Filler2,
 
     //Token errors
     WrongKeyword(Span),
@@ -610,9 +834,9 @@ pub enum ParseError {
     NotAWord(Span),
     NotADatatype(Span),
     NotANumber(Span),
-
-
-
+    NotALiteral(Span),
+    ColumnCountMissmatch,
+    MissingParenthesis(Span),
 
     //Used for debugging
     DebugError(String)
