@@ -2,10 +2,10 @@
 //!
 use std::net::TcpStream;
 use net;
-use net::Command;
 use auth;
 use parse::parser;
 use super::query;
+use net::types::*;
 
 pub fn handle(mut stream: TcpStream) {
     // Logging about the new connection

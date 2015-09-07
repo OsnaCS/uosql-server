@@ -6,10 +6,11 @@ extern crate uosql;
 extern crate bincode;
 extern crate byteorder;
 
+
 use std::io::{self, stdout, Write, Read};
 use std::net::TcpStream;
 use uosql::logger;
-use uosql::net::{PkgType, Greeting, Login, Command, Error};
+use uosql::net::types::*;
 use bincode::SizeLimit;
 use bincode::rustc_serialize::{decode_from, encode_into};
 
