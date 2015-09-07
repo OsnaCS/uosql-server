@@ -122,17 +122,17 @@ pub fn test_send_ok_packet() {
 
     let res = send_ok_packet(&mut vec);
     assert_eq!(res.is_ok(), true);
-    assert_eq!(vec, vec![PkgType::Ok as u8]);
+    assert_eq!(vec, vec![0, 0, 0, 4]);
 }
 
 #[test]
 pub fn test_send_error_packet() {
     let mut vec = Vec::new();   // stream to write into
-    let vec2 = vec![PkgType::Error as u8, // for error packet
+    let vec2 = vec![0, 0, 0, 3, // for error packet
         0, 2, // for kind of error
         0, 0, 0, 0, 0, 0, 0, 17, // for the size of the message string
-        117, 110, 101, 120, 112, 101, 99, 116, 101, 100, 32, 112, 97, 99, 107, 101, 116];
-        // string itself
+        117, 110, 101, 120, 112, 101, 99, 116, 101, 100,
+        32, 112, 97, 99, 107, 101, 116]; // string itself
     let err = Error::UnexpectedPkg("unexpected packet".into());
 
     // test if the message is sent
@@ -148,7 +148,7 @@ pub fn test_read_commands(){
     let mut vec = Vec::new();   // stream to write into
 
     // write the command into the stream
-    vec.push(PkgType::Command as u8);
+    let _ = encode_into(&PkgType::Command, &mut vec, SizeLimit::Bounded(1024));
     let _ = encode_into(&Command::Quit, &mut vec, SizeLimit::Bounded(1024));
 
     // read the command from the stream for Command::Quit
@@ -159,7 +159,7 @@ pub fn test_read_commands(){
 
     let mut vec2 = Vec::new();
     // write the command into the stream
-    vec2.push(PkgType::Command as u8);
+    let _ = encode_into(&PkgType::Command, &mut vec2, SizeLimit::Bounded(1024));
     let _ = encode_into(&Command::Query("select".into()),
                                      &mut vec2,
                                      SizeLimit::Bounded(1024));
@@ -176,13 +176,13 @@ pub fn testlogin() {
     let mut vec = Vec::new();   // stream to write into
 
     // original struct
-    let login = Login { username: "elena".into(), password: "praktikum".into() };
-    vec.push(1u8);
+    let login = Login { username: "elena".into(), password: "prakt".into() };
+    let _ = encode_into(&PkgType::Login, &mut vec, SizeLimit::Bounded(1024));
     let _ = encode_into(&login, &mut vec, SizeLimit::Bounded(1024));
 
     let login_res = read_login(&mut Cursor::new(vec)).unwrap();
 
     // test for equality
     assert_eq!(login_res.username, "elena");
-    assert_eq!(login_res.password, "praktikum");
+    assert_eq!(login_res.password, "prakt");
 }
