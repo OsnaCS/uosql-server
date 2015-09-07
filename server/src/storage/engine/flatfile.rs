@@ -1,4 +1,6 @@
-use super::{Engine, DatabaseError, Table};
+
+use super::super::meta::{Table};
+use super::super::{Engine, Error};
 use std::fs::OpenOptions;
 
 pub struct FlatFile<'a> {
@@ -19,7 +21,7 @@ impl<'a> Drop for FlatFile<'a> {
 }
 
 impl<'a> Engine for FlatFile<'a> {
-    fn create_table(&mut self) -> Result<(), DatabaseError> {
+    fn create_table(&mut self) -> Result<(), Error> {
         let mut _file = try!(OpenOptions::new()
             .write(true)
             .create(true)
