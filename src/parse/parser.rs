@@ -4,11 +4,11 @@
 use std::iter::Iterator;
 use super::ast::{Query, DefStmt, ManipulationStmt, CreateStmt, DropStmt, AltStmt, CreateTableStmt,
    AlterTableStmt, AlterOp, ColumnInfo, SqlType, UseStmt, InsertStmt};
-   use super::token::TokenSpan;
-   use super::lex::Lexer;
-   use std::mem::swap;
-   use super::token::Token;
-   use super::Span;
+use super::token::TokenSpan;
+use super::lex::Lexer;
+use std::mem::swap;
+use super::token::Token;
+use super::Span;
 
 /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #Parser public functions
@@ -231,6 +231,7 @@ impl<'a> Parser<'a> {
         }
     }
 
+    // Parses tokens for insert statement
     fn parse_insert_stmt(&mut self) -> Result<InsertStmt, ParseError> {
         self.bump();
 
@@ -238,32 +239,36 @@ impl<'a> Parser<'a> {
             Keyword::Into => (),
             _ => return Err(ParseError::UnknownError),
         }
-        let mut filler_vec = Vec::<SqlType>::new();
-        filler_vec.push(SqlType::Int);
-
 
         self.bump();
-        let insert_table_stmt = InsertStmt { 
+        let i = InsertStmt { 
             tid: try!(self.expect_word()), 
-            col: try!(self.parse_insert_stmt_detail()   ), 
-            val: filler_vec
+            col: try!(self.parse_insert_stmt_detail()), 
+            val: try!(self.parse_insert_stmt_detail_value()),
         };
-        Ok(insert_table_stmt)
+
+        if i.col.len() != 0 && i.col.len() != i.val.len() {
+            return Err(ParseError::DebugError("Column length unequal to value length".to_string()));
+        }
+        Ok(i)
     }
 
+    // Parses columns for insert statement
     fn parse_insert_stmt_detail(&mut self) -> Result<Vec<String>, ParseError> {
         self.bump();
 
         let mut res_vec = Vec::<String>::new();
 
-        res_vec = match self.expect_token(&[Token::ParenOp]) {
-            Ok(&Token::ParenOp) => try!(self.parse_insert_stmt_detail_column()),
-            _ => return Err(ParseError::Filler2),//try!(self.parse_insert_stmt_detail_no_column()),
-        };
+        if self.expect_token(&[Token::ParenOp]).is_ok() {
+            res_vec = try!(self.parse_insert_stmt_detail_column()); // includes additional bump due to ")"
+        } else {
+            return Ok(res_vec);
+        }
 
         Ok(res_vec)
     }
 
+    // Continuation of parse_insert_stmt_detail
     fn parse_insert_stmt_detail_column(&mut self) -> Result<Vec<String>, ParseError> {
         self.bump();
 
@@ -283,12 +288,48 @@ impl<'a> Parser<'a> {
                 _ => (),
             };
         }
+        self.bump();
         Ok(res_vec)
     }
 
-    fn parse_insert_stmt_detail_no_column(&mut self) -> Result<InsertStmt, ParseError> {
-        Err(ParseError::Filler2)
-       // _ => Err(ParseError::DebugError("Expected ( sign.".to_string())),
+    // Parses i.val of parse_insert_stmt
+
+    // TODO: FIX AST TO INCLUDE REAL VALUES INSTEAD OF DATATYPE; PRIORITY HIGH
+    fn parse_insert_stmt_detail_value(&mut self) -> Result<Vec<SqlType>, ParseError> {
+        let mut res_vec = Vec::<SqlType>::new();
+
+        //res_vec.push(SqlType::int)
+
+        match try!(self.expect_keyword(&[Keyword::Values])) {
+            Keyword::Values => (),
+            _ => return Err(ParseError::UnknownError),
+        }
+
+        self.bump();
+
+        if self.expect_token(&[Token::ParenOp]).is_ok() {
+        } else {
+            return Err(ParseError::DebugError("ParenOp expected.".to_string()));
+        }
+
+        self.bump();
+
+        // fill the vector with content until ParenCl is the curr token
+        while match self.expect_token(&[Token::ParenCl]) {
+            Ok(&Token::ParenCl) => false,
+            _ => true,
+        } {
+            // parsing the content for a single column
+            res_vec.push(try!(self.expect_datatype()));
+            self.bump();
+            // Check if there is a Comma seperating two columns or a ParenCl ending the vectorparsing
+            match try!(self.expect_token(&[Token::Comma, Token::ParenCl])) {
+                &Token::Comma => { self.bump(); () },
+                _ => (),
+            };
+        }
+        Ok(res_vec)
+
     }
 
 
@@ -491,7 +532,7 @@ impl<'a> Parser<'a> {
 
             // checks whether token is a word
             let word = match token.tok {
-                Token::Word(ref s) => s,
+                Token::Word(ref s) => s.to_lowercase(),
                 _ => return Err(ParseError::NotAKeyword(Span { lo: span_lo , hi: span_hi } ))
             };
 
@@ -512,6 +553,7 @@ impl<'a> Parser<'a> {
                 "database" => Keyword::Database,
                 "into" => Keyword::Into,
                 "use" => Keyword::Use,
+                "values" => Keyword::Values,
                 _ => return Err(ParseError::NotAKeyword(Span { lo: span_lo , hi: span_hi } )),
 
             };
@@ -559,7 +601,8 @@ pub enum Keyword {
     Where,
     Modify,
     Add,
-    Into
+    Into,
+    Values
 }
 
 #[derive(Debug)]

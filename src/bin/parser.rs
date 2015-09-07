@@ -9,7 +9,7 @@ use uosql::parse;
 fn main() {
 
 
-    let mut p = parse::Parser::create("insert into random_table (bla, bli, blubb)");
+    let mut p = parse::Parser::create("insert into random_table () values (asd,dsad, asd)");
 
     println!("{:?}",p.parse());
 
