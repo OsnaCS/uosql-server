@@ -8,7 +8,7 @@ use server::parse;
 
 fn main() {
 
-    let mut p = parse::Parser::create("insert into random_table  values (5, 1, 'test')");
+    let mut p = parse::Parser::create("delete from Stephanie where a='c0' and x = 'c1' or y = 'c2' and z = 'c3'");
     println!("{:?}",p.parse());
 
 }

@@ -23,7 +23,8 @@ pub enum ManipulationStmt {
     Select(SelectStmt),
     Insert(InsertStmt),
     Delete(DeleteStmt),
-    Use(UseStmt)
+    Use(UseStmt),
+    Describe(String),
 }
 
 /// Split between creatable content (only Tables yet)
@@ -155,8 +156,7 @@ pub enum CompType {
 /// Allowed data types for where-clause
 #[derive(Debug, Clone)]
 pub enum CondType {
-    Literal(String),
-    Num(f32),
+    Literal(token::Lit),
     Word(String)
 }
 
