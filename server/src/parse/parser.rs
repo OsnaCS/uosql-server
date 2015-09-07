@@ -277,9 +277,9 @@ impl<'a> Parser<'a> {
         }
 
         self.bump();
-        let i = InsertStmt { 
-            tid: try!(self.expect_word()), 
-            col: try!(self.parse_insert_stmt_detail()), 
+        let i = InsertStmt {
+            tid: try!(self.expect_word()),
+            col: try!(self.parse_insert_stmt_detail()),
             val: try!(self.parse_insert_stmt_value()),
         };
 
@@ -319,7 +319,7 @@ impl<'a> Parser<'a> {
             // parsing the content for a single column
             res_vec.push(try!(self.expect_word()));
             self.bump();
-            // Check if there is a Comma seperating two columns or a ParenCl 
+            // Check if there is a Comma seperating two columns or a ParenCl
             // ending the vectorparsing
             match try!(self.expect_token(&[Token::Comma, Token::ParenCl])) {
                 Token::Comma => self.bump(),
@@ -362,7 +362,7 @@ impl<'a> Parser<'a> {
 
 
             self.bump();
-            // Check if there is a Comma seperating two columns or a ParenCl 
+            // Check if there is a Comma seperating two columns or a ParenCl
             // ending the vectorparsing
             match try!(self.expect_token(&[Token::Comma, Token::ParenCl])) {
                 Token::Comma => self.bump(),
@@ -569,7 +569,7 @@ impl<'a> Parser<'a> {
             };
         }
         Ok(found_word.to_string())
-    } 
+    }
 
        // checks if the current token is a word
     fn expect_literal(&self) -> Result<Lit, ParseError> {
