@@ -414,67 +414,72 @@ impl<'a> Parser<'a> {
     // parses the where part into Conditions type
     fn parse_where_part(&mut self) -> Result<Conditions, ParseError> {
 
-        let paren = self.check_next_token(Token::ParenOp);
         let mut cond;
-        if paren {
+
+        if self.check_next_token(&[Token::ParenOp]) {
             self.bump();
             cond = try!(self.parse_where_part());
             try!(self.expect_token(&[Token::ParenCl]).map_err(|e| match e {
                 ParseError::WrongToken(span) => ParseError::MissingParenthesis(span),
                 _ => e,
             }));
-            self.bump();
-            if self.expect_keyword(&[Keyword::Or]).is_ok() {
 
-                cond = Conditions::Or(Box::new(cond),Box::new(try!(self.parse_where_part())));
-            } else if self.expect_keyword(&[Keyword::And]).is_ok(){
-                cond = Conditions::And(Box::new(cond),Box::new(try!(self.parse_where_part())));
-            };
-
+            if self.check_next_keyword(&[Keyword::Or,Keyword::And]) {
+                self.bump();
+                if self.expect_keyword(&[Keyword::Or]).is_ok() {
+                    cond = Conditions::Or(Box::new(cond),Box::new(try!(self.parse_where_part())));
+                } else if self.expect_keyword(&[Keyword::And]).is_ok(){
+                    cond = Conditions::And(Box::new(cond),Box::new(try!(self.parse_where_part())));
+                };
+            }
         } else {
-
             cond = Conditions::Leaf(try!(self.parse_condition()));
             self.bump();
 
             while self.expect_keyword(&[Keyword::And, Keyword::Or]).is_ok() {
-                let paren = self.check_next_token(Token::ParenOp);
+
                 if self.expect_keyword(&[Keyword::Or]).is_ok() {
                     cond = Conditions::Or(Box::new(cond),Box::new(try!(self.parse_where_part())));
                 } else {
-                    if paren {
+                    if self.check_next_token(&[Token::ParenOp]) {
                         cond = Conditions::And(Box::new(cond),Box::new(try!(self.parse_where_part())));
                     } else {
                         cond = Conditions::And(Box::new(cond),Box::new(Conditions::Leaf(try!(self.parse_condition()))));
-                         self.bump();
+                        self.bump();
                     };
                 };
             };
         }
 
-        println!("{:?}",cond);
+
         Ok(cond)
 
     }
 
-    fn check_next_token(&self, checktoken: Token) -> bool {
+    fn check_next_token(&self, checktoken: &[Token]) -> bool {
         match self.peek {
-            Some(ref token) => { token.tok == checktoken},
+            Some(ref token) => { checktoken.contains(&token.tok)},
              _ => false,
         }
     }
 
-    fn check_next_keyword(&self, checkkeyword: Keyword) -> bool {
+    fn check_next_keyword(&self, checkkeyword: &[Keyword]) -> bool {
         let tokenspan = match self.peek {
             Some(ref s) => s.clone(),
              _ => return false,
         };
 
         let possiblekeyword = match tokenspan.tok {
-            Token::Word(ref s) => s.clone(),
+            Token::Word(ref s) => s,
             _ => return false,
         };
 
-        return true;
+        match keyword_from_string(possiblekeyword) {
+            Some(found_keyword) => checkkeyword.contains(&found_keyword),
+            None => false
+        }
+
+
     }
 
     // aprses a single condition
@@ -734,30 +739,9 @@ impl<'a> Parser<'a> {
             };
 
             // checks if word is a keyword
-            found_keyword = match &word[..] {
-                "create" => Keyword::Create,
-                "drop" => Keyword::Drop,
-                "table" => Keyword::Table,
-                "view" => Keyword::View,
-                "alter" => Keyword::Alter,
-                "update" => Keyword::Update,
-                "select" => Keyword::Select,
-                "insert" => Keyword::Insert,
-                "delete" => Keyword::Delete,
-                "modify" => Keyword::Modify,
-                "add" => Keyword::Add,
-                "column" => Keyword::Column,
-                "database" => Keyword::Database,
-                "into" => Keyword::Into,
-                "use" => Keyword::Use,
-                "values" => Keyword::Values,
-                "from" => Keyword::From,
-                "where" => Keyword::Where,
-                "describe" => Keyword::Describe,
-                "and" => Keyword::And,
-                "or" => Keyword::Or,
-                _ => return Err(ParseError::NotAKeyword(Span { lo: span_lo , hi: span_hi } )),
-
+            found_keyword = match keyword_from_string(&word[..]){
+                Some(keyword) => keyword,
+                None => return Err(ParseError::NotAKeyword(Span { lo: span_lo , hi: span_hi } )),
             };
         }
         // checks if keyword is expected keyword
@@ -767,6 +751,33 @@ impl<'a> Parser<'a> {
             Err(ParseError::WrongKeyword(Span { lo: span_lo , hi: span_hi } ))
         }
     }
+}
+
+fn keyword_from_string(string: &str) -> Option<Keyword>{
+    match string {
+                "create" => Some(Keyword::Create),
+                "drop" => Some(Keyword::Drop),
+                "table" => Some(Keyword::Table),
+                "view" => Some(Keyword::View),
+                "alter" => Some(Keyword::Alter),
+                "update" => Some(Keyword::Update),
+                "select" => Some(Keyword::Select),
+                "insert" => Some(Keyword::Insert),
+                "delete" => Some(Keyword::Delete),
+                "modify" => Some(Keyword::Modify),
+                "add" => Some(Keyword::Add),
+                "column" => Some(Keyword::Column),
+                "database" => Some(Keyword::Database),
+                "into" => Some(Keyword::Into),
+                "use" => Some(Keyword::Use),
+                "values" => Some(Keyword::Values),
+                "from" => Some(Keyword::From),
+                "where" => Some(Keyword::Where),
+                "describe" => Some(Keyword::Describe),
+                "and" => Some(Keyword::And),
+                "or" => Some(Keyword::Or),
+                _ => None,
+            }
 }
 
 
