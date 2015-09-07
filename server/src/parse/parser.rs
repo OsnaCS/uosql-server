@@ -44,7 +44,8 @@ impl<'a> Parser<'a> {
 
         // first token is checked if it's a keyword using expect_keyword()
         let keywords = &[Keyword::Create, Keyword::Drop, Keyword::Alter,
-        Keyword::Use, Keyword::Delete, Keyword::Insert, Keyword::Describe];
+        Keyword::Use, Keyword::Delete, Keyword::Insert, Keyword::Describe,
+        Keyword::Update, Keyword::Select];
         let querytype = self.expect_keyword(keywords).map_err(|e| match e {
             ParseError::UnexpectedEoq => ParseError::EmptyQueryError,
             _ => e,
@@ -93,6 +94,14 @@ impl<'a> Parser<'a> {
                 Ok(try!(self.return_query_ast(query)))
             }
 
+            //Update-Query
+            Keyword::Update => {
+                let query = Query::ManipulationStmt(ManipulationStmt::Update(
+                    try!(self.parse_update_stmt())
+                    ));
+                Ok(try!(self.return_query_ast(query)))
+            },
+
             // Delete-Query
             Keyword::Delete => {
                 let query = Query::ManipulationStmt(ManipulationStmt::Delete(
@@ -110,6 +119,13 @@ impl<'a> Parser<'a> {
                 Ok(try!(self.return_query_ast(query)))
             }
 
+            //Select-Query
+            Keyword::Select => {
+                let query = Query::ManipulationStmt(ManipulationStmt::Select(
+                    try!(self.parse_select_stmt())
+                    ));
+                Ok(try!(self.return_query_ast(query)))
+            }
 
             // Unknown Error
             _ => Err(ParseError::UnknownError)
@@ -119,9 +135,9 @@ impl<'a> Parser<'a> {
 
 
 
-// ===========================================================================
+// ======================================================================================================================================================
 // Parser Functions
-// ===========================================================================
+// ======================================================================================================================================================
 
 
     // Starts the parsing for tokens in create-syntax
@@ -184,7 +200,7 @@ impl<'a> Parser<'a> {
         let mut colsvec = Vec::<ColumnInfo>::new();
 
         // fill the vector with content until ParenCl is the curr token
-        while self.expect_token(&[Token::ParenCl]).is_ok()
+        while !self.expect_token(&[Token::ParenCl]).is_ok()
         {
             // parsing the content for a single ColumnInfo
             colsvec.push(try!(self.expect_column_info()));
@@ -236,9 +252,13 @@ impl<'a> Parser<'a> {
             },
             Keyword::Drop => {
                 self.bump();
+                try!(self.expect_keyword(&[Keyword::Column]));
+                self.bump();
                 Ok(AlterOp::Drop(try!(self.expect_word())))
             },
             Keyword::Modify => {
+                self.bump();
+                try!(self.expect_keyword(&[Keyword::Column]));
                 self.bump();
                 Ok(AlterOp::Modify(try!(self.expect_column_info())))
             },
@@ -371,6 +391,48 @@ impl<'a> Parser<'a> {
 
     }
 
+    // parses update - query
+    fn parse_update_stmt(&mut self) -> Result<UpdateStmt, ParseError> {
+        //parsing the name of the table and checking update x set syntax
+        self.bump();
+        let tableid = try!(self.expect_word());
+        self.bump();
+        try!(self.expect_keyword(&[Keyword::Set]));
+        self.bump();
+
+        //parsing at least one required update change
+        let column = try!(self.expect_word());
+        self.bump();
+        try!(self.expect_token(&[Token::Equ]));
+        self.bump();
+        let value = try!(self.expect_literal());
+        self.bump();
+
+        let mut setvec = Vec::new();
+        setvec.push(Condition { col: column, op: CompType::Equ, rhs: CondType::Literal(value) } );
+
+        //parsing optional update changes
+        while self.expect_token(&[Token::Comma]).is_ok()
+        {
+            self.bump();
+            let column = try!(self.expect_word());
+            self.bump();
+            try!(self.expect_token(&[Token::Equ]));
+            self.bump();
+            let value = try!(self.expect_literal());
+            self.bump();
+
+            setvec.push(Condition { col: column, op: CompType::Equ, rhs: CondType::Literal(value) } );
+        }
+
+
+        if self.expect_keyword(&[Keyword::Where]).is_ok() {
+            Ok(UpdateStmt { tid: tableid, set: setvec, conds: Some(try!(self.parse_where_part())) } )
+        } else {
+            Ok(UpdateStmt { tid: tableid, set: setvec, conds: None } )
+        }
+    }
+
     // Parses the tokens for delete statement
     fn parse_delete_stmt(&mut self) -> Result<DeleteStmt, ParseError> {
         self.bump();
@@ -387,11 +449,57 @@ impl<'a> Parser<'a> {
 
     }
 
+    // Parses the tokens for select statement
+    fn parse_select_stmt(&mut self) -> Result<SelectStmt, ParseError>{
+        self.bump();
+        // parse the target: at least one
+        let target = try!(self.expect_word());
+        self.bump();
+        let mut targetvec = Vec::new();
+        targetvec.push(target);
+
+        // parsing optional targets
+        while self.expect_token(&[Token::Comma]).is_ok()
+        {
+            self.bump();
+            let target = try!(self.expect_word());
+            self.bump();
+            targetvec.push(target);
+
+        }
+
+        // parsing the from list, at least one table required
+        try!(self.expect_keyword(&[Keyword::From]));
+        self.bump();
+        let tableid = try!(self.expect_word());
+        self.bump();
+        let mut tidvec = Vec::new();
+        tidvec.push(tableid);
+
+        // parsing optional tables
+        while self.expect_token(&[Token::Comma]).is_ok()
+        {
+            self.bump();
+            let tableid = try!(self.expect_word());
+            self.bump();
+            tidvec.push(tableid);
+        }
+
+        let mut conditions;
+        // optional where statement
+        if self.expect_keyword(&[Keyword::Where]).is_ok() {
+            conditions = Some(try!(self.parse_where_part()));
+        } else {
+            conditions = None;
+        }
+
+       Ok(SelectStmt { target: targetvec, tid: tidvec, cond: conditions, spec_op: None })
+    }
 
 
-// ===========================================================================
+// ======================================================================================================================================================
 // Utility Functions
-// ===========================================================================
+// ======================================================================================================================================================
 
 
     // sets next position for the lexer
@@ -511,6 +619,7 @@ impl<'a> Parser<'a> {
             rhs: rhs,
         })
     }
+
 
 
     // Utility function to parse metadata of columns
@@ -776,6 +885,7 @@ fn keyword_from_string(string: &str) -> Option<Keyword>{
                 "describe" => Some(Keyword::Describe),
                 "and" => Some(Keyword::And),
                 "or" => Some(Keyword::Or),
+                "set" => Some(Keyword::Set),
                 _ => None,
             }
 }
@@ -802,6 +912,7 @@ pub enum Keyword {
     Update,
     Insert,
     Delete,
+    Set,
 
     // 2nd level keywords
     Table,
