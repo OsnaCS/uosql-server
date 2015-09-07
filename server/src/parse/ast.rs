@@ -161,7 +161,8 @@ pub enum CondType {
 }
 
 pub enum DataSrc  {
-    Int(i32),
+    Int(i64),
     String(String),
+    Bool(u8),
 
 }

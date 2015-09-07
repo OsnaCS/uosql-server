@@ -34,6 +34,7 @@ pub enum Error {
     LoadDataBase,
     RemoveColumn,
     AddColumn,
+    InvalidType,
 }
 
 impl From<io::Error> for Error {
