@@ -1,4 +1,5 @@
 /// Top level type. Is returned by `parse`.
+use super::token;
 #[derive(Debug, Clone)]
 pub enum Query {
     Dummy, // For Compiling
@@ -104,7 +105,7 @@ pub struct SelectStmt {
 pub struct InsertStmt {
     pub tid: String,
     pub col: Vec<String>,
-    pub val: Vec<SqlType>
+    pub val: Vec<token::Lit>
 }
 
 /// Information for data deletion
