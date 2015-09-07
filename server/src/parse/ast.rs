@@ -1,5 +1,6 @@
 /// Top level type. Is returned by `parse`.
 use super::token;
+use super::super::storage::SqlType;
 #[derive(Debug, Clone)]
 pub enum Query {
     Dummy, // For Compiling
@@ -159,24 +160,8 @@ pub enum CondType {
     Word(String)
 }
 
-/// General enums in SQL
-#[derive(Debug, Clone, Copy, RustcDecodable, RustcEncodable)]
-pub enum SqlType {
-    Int,
-    Bool,
-    Char(u8),
-    VarChar(u16)
-}
+pub enum DataSrc  {
+    Int(i32),
+    String(String),
 
-/// Defines the size of Sql data types
-/// and returns them
-impl SqlType {
-    pub fn size(&self) -> u32 {
-        match self {
-            &SqlType::Int => 4 as u32,
-            &SqlType::Bool => 1 as u32,
-            &SqlType::Char(len) => (len + 1) as u32,
-            &SqlType::VarChar(len) => (len + 1) as u32
-        }
-    }
 }

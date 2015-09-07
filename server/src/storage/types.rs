@@ -1,4 +1,8 @@
 use super::{Error};
+use std::io::Write;
+use super::super::parse::ast::DataSrc;
+use byteorder::{BigEndian, WriteBytesExt};
+
 
 /// General enums in SQL
 #[derive(Debug, Clone, Copy, RustcDecodable, RustcEncodable)]
@@ -8,6 +12,7 @@ pub enum SqlType {
     Char(u8),
     VarChar(u16)
 }
+
 
 /// Defines the size of Sql data types
 /// and returns them
@@ -21,7 +26,28 @@ impl SqlType {
         }
     }
 
-    encode_into<W: Write>(&self, buf: W, data: ast::DataSrc) -> Result<u32, Error> {
+    pub fn encode_into<W: Write>(&self, mut buf: W, data: DataSrc)
+    -> Result<u32, Error>
+    {
+        match self {
+            &SqlType::Int => {
+                match data {
+                    DataSrc::Int(a) => try!(buf.write_i32::<BigEndian>(a)),
+                    _=> {}
+                }
+            },
+            &SqlType::Bool => {
 
+            },
+            &SqlType::Char(len) => {
+
+            },
+            &SqlType::VarChar(len) => {
+
+            }
+        }
+// buf.write_i32::<BigEndian>(a)
+        Ok(17)
     }
+
 }
