@@ -6,13 +6,13 @@ extern crate uosql;
 extern crate bincode;
 extern crate byteorder;
 
+
 use std::io::{self, stdout, Write, Read};
 use std::net::TcpStream;
 use uosql::logger;
-use uosql::net::{Cnv, Greeting, Login, Command, NetworkErrors};
+use uosql::net::types::*;
 use bincode::SizeLimit;
 use bincode::rustc_serialize::{decode_from, encode_into};
-use byteorder::{ReadBytesExt, WriteBytesExt};
 
 const PROTOCOL_VERSION : u8 = 1;
 
@@ -50,7 +50,7 @@ fn main() {
         let input = read_line();
 
         // send code for command-package
-        let cs = send_cmd(&mut s, &input);
+        let cs = process_input(&mut s, &input);
         match cs {
             true => return, // end client
             false => continue, // next iteration
@@ -70,24 +70,21 @@ fn read_line() -> String {
     }
 }
 
-/// Send command-package to server.
-fn send_cmd<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
+fn send_cmd<W: Write>(mut s: &mut W, cmd: Command, size: u64) -> Result<(), Error> {
+    try!(encode_into(&PkgType::Command, s, SizeLimit::Bounded(1024)));
+    try!(encode_into(&cmd, &mut s, SizeLimit::Bounded(size)));
+    Ok(())
+}
+
+/// Process commandline-input from user
+fn process_input<R: Read + Write>(mut s: &mut R, input: &str) -> bool {
     let input_low = input.to_lowercase();
-    let status = s.write_u8(Cnv::CommandPkg as u8);
-    let _ = match status {
-        Ok(_) => {},
-        Err(_) => {
-            error!("Sending command-header failed");
-            return false
-        }
-    };
+
     match &*input_low {
         ":quit" => {
-            let cmd_encode = encode_into(&Command::Quit, &mut s,
-                SizeLimit::Bounded(1024));
-            match cmd_encode {
+            match send_cmd(s, Command::Quit, 1024) {
                 Ok(_) => {
-                    match receive(&mut s, Cnv::OkPkg as u8) {
+                    match receive(&mut s, PkgType::Ok) {
                         Ok(_) => { info!("Connection closed"); return true },
                         Err(_) => {
                             warn!("Failed to receive close-confirmation");
@@ -102,38 +99,50 @@ fn send_cmd<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
             }
         },
         ":ping" => {
-            let cmd_encode = encode_into(&Command::Ping, &mut s,
-                SizeLimit::Bounded(1024));
-            let _ = match cmd_encode {
+            match send_cmd(s, Command::Ping, 1024) {
                 Ok(_) => {},
                 Err(_) => {
                     error!("Sending ping-message failed");
                     return false
                 }
             };
-            match receive(&mut s, Cnv::OkPkg as u8) {
+            match receive(&mut s, PkgType::Ok) {
                 Ok(_) => println!("Server still reachable."),
                 Err(_) => error!("Error reading ping-package")
             }
         },
         ":exit" => {
-            return true // maybe send quit signal
+            // TODO: other functionality to exit than quit
+            match send_cmd(s, Command::Quit, 1024) {
+                Ok(_) => {
+                    match receive(&mut s, PkgType::Ok) {
+                        Ok(_) => { info!("Connection closed"); return true },
+                        Err(_) => {
+                            warn!("Failed to receive close-confirmation");
+                            return true
+                        }
+                    }
+                },
+                Err(_) => {
+                    error!("Sending quit-message failed");
+                    return true
+                }
+            }
         },
         ":help" => {
             let help = include_str!("readme.txt");
             println!("{}", help);
         },
         _ => {
-            let cmd_encode = encode_into(&Command::Query(input.to_string()),
-                &mut s, SizeLimit::Bounded(1024));
-            let _ = match cmd_encode {
+            // Size
+            match send_cmd(s, Command::Query(input.into()), 1024) {
                 Ok(_) => {},
                 Err(_) => {
                     error!("Sending command-package failed. Try again.");
                     return false
                 }
             };
-            match receive(&mut s, Cnv::OkPkg as u8) {
+            match receive(&mut s, PkgType::Ok) {
                 Ok(_) => warn!("decoding response not implemented yet!"),
                 Err(_) => error!("Error reading response-package")
             }
@@ -143,14 +152,11 @@ fn send_cmd<R: Read + Write>(mut s: &mut R, input: &String) -> bool {
 }
 
 /// Match received packages to expected packages
-fn receive<R: Read>(s: &mut R, cmd: u8) -> Result<(), NetworkErrors> {
-    let status = s.read_u8();
-    let st = match status {
-        Ok(st) => st,
-        Err(a) => { return Err(NetworkErrors::ByteOrder(a)) }
-    };
-    if st != cmd {
-        return Err(NetworkErrors::UnexpectedPkg("Received
+fn receive<R: Read>(s: &mut R, cmd: PkgType) -> Result<(), Error> {
+    let status: PkgType = try!(decode_from(s, SizeLimit::Bounded(1024)));
+
+    if status != cmd {
+        return Err(Error::UnexpectedPkg("Received
             unexpected package".into()))
     }
     Ok(())
@@ -158,7 +164,7 @@ fn receive<R: Read>(s: &mut R, cmd: u8) -> Result<(), NetworkErrors> {
 
 /// Receive greeting from server
 fn receive_greeting<R: Read>(mut buf: &mut R) -> bool {
-    match receive(&mut buf, Cnv::GreetPkg as u8) {
+    match receive(&mut buf, PkgType::Greet) {
         Ok(_) => {},
         Err(_) => {
             info!("Communication mismatch. Try again later.");
@@ -186,24 +192,23 @@ fn receive_greeting<R: Read>(mut buf: &mut R) -> bool {
 
 /// Read login information from command line and send it to the server
 fn send_login<W: Write>(buf: &mut W) -> bool {
-    let mut login = Login::new();
     println!("Username: ");
-    login.username = read_line();
+    let usern = read_line();
 
     println!("Password: ");
-    login.password = read_line();
+    let passw = read_line();
+    let login = Login {username: usern, password: passw};
 
     //send Login package to server
-    let status = buf.write_u8(Cnv::LoginPkg as u8);
-    let _ = match status {
+    match encode_into(&PkgType::Login, buf, SizeLimit::Bounded(1024)) {
         Ok(_) => {},
         Err(_) => {
             info!("Sending package header failed");
             return false
         }
-    };
-    let encode = encode_into(&login, buf, SizeLimit::Bounded(1024));
-    match encode {
+    }
+
+    match encode_into(&login, buf, SizeLimit::Bounded(1024)) {
         Ok(_) => return true,
         Err(_) => {
             info!("Sending login-data failed");
