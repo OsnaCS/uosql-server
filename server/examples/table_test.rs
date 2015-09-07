@@ -4,7 +4,6 @@ extern crate log;
 use server::storage::*;
 use bincode::rustc_serialize::{encode_into};
 use bincode::SizeLimit;
-use server::parse::ast::SqlType;
 use server::logger;
 
 

@@ -8,7 +8,7 @@ use super::lex::Lexer;
 use std::mem::swap;
 use super::token::Token;
 use super::Span;
-
+use super::super::storage::SqlType;
 
 // ===========================================================================
 // Parser public functions

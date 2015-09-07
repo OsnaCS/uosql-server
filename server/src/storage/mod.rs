@@ -3,11 +3,13 @@
 //!
 pub mod engine;
 mod meta;
+mod types;
 
 
 pub use self::meta::Table;
 pub use self::meta::Database;
 pub use self::meta::Column;
+pub use self::types::SqlType;
 
 use std::io;
 

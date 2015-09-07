@@ -13,7 +13,7 @@ use byteorder::{WriteBytesExt, ReadBytesExt, BigEndian};
 use bincode::SizeLimit;
 use bincode::rustc_serialize::{encode_into, decode_from};
 
-use parse::ast::SqlType;
+use super::SqlType;
 
 use super::Engine;
 use super::Error;
