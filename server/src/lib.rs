@@ -1,9 +1,9 @@
+extern crate bincode;
+extern crate byteorder;
 #[macro_use]
 extern crate log;
-extern crate term_painter as term;
-extern crate byteorder;
 extern crate rustc_serialize;
-extern crate bincode;
+extern crate term_painter as term;
 
 pub mod auth;
 pub mod conn;
@@ -13,26 +13,24 @@ pub mod parse;
 pub mod query;
 pub mod storage;
 
-/// Entry point for server. Allow dead_code to supress warnings when
-/// compiled as a library.
-#[allow(dead_code)]
-fn main() {
-    // Configure and enable the logger. We may `unwrap` here, because a panic
-    // would happen right after starting the program
-    logger::with_loglevel(log::LogLevelFilter::Trace)
-        .with_logfile(std::path::Path::new("log.txt"))
-        .enable().unwrap();
-    info!("Starting uoSQL server...");
+use std::net::{Ipv4Addr, SocketAddrV4};
 
-    // Start listening for incoming Tcp connections
-    listen();
+/// A struct for managing configurations
+#[derive(Debug)]
+pub struct Config {
+    pub address: Ipv4Addr,
+    pub port: u16,
+    pub dir: String
 }
 
-fn listen() {
+/// Listens for incoming TCP streams
+pub fn listen(config: Config) {
     use std::net::TcpListener;
     use std::thread;
 
-    let listener = TcpListener::bind("127.0.0.1:4242").unwrap();
+    // Converting configurations to a valid socket address
+    let sock_addr = SocketAddrV4::new(config.address, config.port);
+    let listener = TcpListener::bind(sock_addr).unwrap();
 
     // Accept connections and process them
     for stream in listener.incoming() {

@@ -113,7 +113,7 @@ impl Log for Logger {
         };
 
         // Ignore the leading 'src/' in the file path
-        let src_file = &record.location().file()[4 ..];
+        let src_file = &record.location().file();
 
         // If a logfile is specified (file logging is enabled)
         if let Some(ref file) = self.logfile {
@@ -125,7 +125,7 @@ impl Log for Logger {
             // We ignore the result of `write!`, because: What else should we
             // do? ;)
             let _ = write!(file.lock().unwrap().deref_mut(),
-                "[{level: <5}][{module} @ {file}:{line}]> {msg}",
+                "[{level: <5}][{module} @ {file}:{line}]> {msg}\n",
                 level = record.level(),
                 module = mod_path,
                 file = src_file,

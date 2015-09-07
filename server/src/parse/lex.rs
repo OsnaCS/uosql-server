@@ -6,7 +6,7 @@ use std::iter::{Iterator};
 /// A lexer with its associated query, a char iterator, and
 /// positions (last, current, next)
 pub struct Lexer<'a> {
-    chs : Chars<'a>,
+    chs: Chars<'a>,
     last: Option<char>,
     last_pos: Option<usize>,
     curr: Option<char>,
@@ -26,14 +26,14 @@ impl<'a> Lexer<'a> {
             last_pos: None,
             next: None,
             span_start: None,
-            chs : query.chars()
+            chs: query.chars()
         };
         lex.dbump();
         lex
     }
 
     /// Bumper function advances to the next char
-    fn bump(&mut self){
+    fn bump(&mut self) {
 
         // advance all pointers to the next char
         self.last = self.curr;
@@ -50,12 +50,11 @@ impl<'a> Lexer<'a> {
             Some(c) => {
                 self.curr_pos = match self.curr_pos {
                     Some(n) => Some(n + c.len_utf8()),
-                    None => Some(0 + c.len_utf8()) // Start at pos 0
+                    None => Some(c.len_utf8()) // Start at pos 0
                 }
             }
             _ => {}
         };
-
     }
 
     /// Double bump
@@ -124,7 +123,7 @@ impl<'a> Lexer<'a> {
 
     /// Skips all the whitespaces
     fn skip_whitespace(&mut self) {
-        while is_whitespace(self.curr.unwrap_or('x')){
+        while is_whitespace(self.curr.unwrap_or('x')) {
             self.bump();
         }
     }
@@ -230,7 +229,7 @@ impl<'a> Iterator for Lexer<'a> {
 
             // GEThan >=
             '>' if nexchar == '=' => {
-                self.dbump(); //because two chars!
+                self.dbump(); // because two chars!
                 Token::GEThan
             },
 
@@ -305,7 +304,10 @@ impl<'a> Iterator for Lexer<'a> {
         // Return an Option
         Some(TokenSpan {
             tok: token,
-            span: Span { lo: self.span_start.unwrap(), hi: self.curr_pos.unwrap()}
+            span: Span {
+                lo: self.span_start.unwrap(),
+                hi: self.curr_pos.unwrap()
+            }
         })
     }
 }
