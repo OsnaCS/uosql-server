@@ -363,7 +363,9 @@ impl<'a> Parser<'a> {
             _ => true,
         } {
             // parsing the content for a single column
+
             res_vec.push(try!(self.expect_datatype()));
+
             self.bump();
             // Check if there is a Comma seperating two columns or a ParenCl 
             // ending the vectorparsing
