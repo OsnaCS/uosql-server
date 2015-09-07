@@ -127,7 +127,7 @@ pub fn do_handshake<W: Write + Read>(stream: &mut W)
     let greet = Greeting::make_greeting(PROTOCOL_VERSION, "Welcome".into());
 
     // send handshake packet to client
-    try!(encode_into(&PkgType::Greet, stream, SizeLimit::Bounded(1))); //kind of message
+    try!(encode_into(&PkgType::Greet, stream, SizeLimit::Bounded(1024))); //kind of message
     try!(encode_into(&greet, stream, SizeLimit::Bounded(1024)));
 
     // receive login data from client
@@ -152,7 +152,7 @@ pub fn read_login<R: Read + Write>(stream: &mut R)
     -> Result<Login, Error>
 {
     // read package-type
-    let status: PkgType = try!(decode_from(stream, SizeLimit::Bounded(1)));
+    let status: PkgType = try!(decode_from(stream, SizeLimit::Bounded(1024)));
 
     if status != PkgType::Login {
         return Err(Error::UnexpectedPkg("package not expected".into()));
@@ -167,7 +167,7 @@ pub fn read_login<R: Read + Write>(stream: &mut R)
 pub fn send_error_package<W: Write>(mut stream: &mut W, err: ClientErrMsg)
     -> Result<(), Error>
 {
-    try!(encode_into(&PkgType::Error, stream, SizeLimit::Bounded(1)));
+    try!(encode_into(&PkgType::Error, stream, SizeLimit::Bounded(1024)));
     try!(encode_into(&err, &mut stream, SizeLimit::Bounded(1024)));
     Ok(())
 }
@@ -191,7 +191,7 @@ pub fn read_commands<R: Read + Write>(stream: &mut R)
     -> Result<Command, Error>
 {
     // read the first byte for code numeric value
-    let status: PkgType = try!(decode_from(stream, SizeLimit::Bounded(1)));
+    let status: PkgType = try!(decode_from(stream, SizeLimit::Bounded(1024)));
     if status != PkgType::Command {
         //send error_packet
         return Err(Error::UnknownCmd("command not known".into()))
@@ -205,7 +205,7 @@ pub fn read_commands<R: Read + Write>(stream: &mut R)
 pub fn send_error_packet<W: Write>(mut stream: &mut W, err: ClientErrMsg)
     -> Result<(), Error>
 {
-    try!(encode_into(&PkgType::Error, stream, SizeLimit::Bounded(1)));
+    try!(encode_into(&PkgType::Error, stream, SizeLimit::Bounded(1024)));
     try!(encode_into(&err, &mut stream, SizeLimit::Bounded(1024)));
     Ok(())
 }
@@ -214,7 +214,7 @@ pub fn send_error_packet<W: Write>(mut stream: &mut W, err: ClientErrMsg)
 pub fn send_ok_packet<W: Write>(mut stream: &mut W)
     -> Result<(), Error>
 {
-    try!(encode_into(&PkgType::Ok, stream, SizeLimit::Bounded(1)));
+    try!(encode_into(&PkgType::Ok, stream, SizeLimit::Bounded(1024)));
     Ok(())
 }
 

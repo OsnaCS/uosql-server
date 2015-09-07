@@ -70,7 +70,7 @@ fn read_line() -> String {
 }
 
 fn send_cmd<W: Write>(mut s: &mut W, cmd: Command, size: u64) -> Result<(), Error> {
-    try!(encode_into(&PkgType::Command, s, SizeLimit::Bounded(1)));
+    try!(encode_into(&PkgType::Command, s, SizeLimit::Bounded(1024)));
     try!(encode_into(&cmd, &mut s, SizeLimit::Bounded(size)));
     Ok(())
 }
@@ -81,7 +81,7 @@ fn process_input<R: Read + Write>(mut s: &mut R, input: &str) -> bool {
 
     match &*input_low {
         ":quit" => {
-            match send_cmd(s, Command::Quit, 1) {
+            match send_cmd(s, Command::Quit, 1024) {
                 Ok(_) => {
                     match receive(&mut s, PkgType::Ok) {
                         Ok(_) => { info!("Connection closed"); return true },
@@ -98,7 +98,7 @@ fn process_input<R: Read + Write>(mut s: &mut R, input: &str) -> bool {
             }
         },
         ":ping" => {
-            match send_cmd(s, Command::Ping, 1) {
+            match send_cmd(s, Command::Ping, 1024) {
                 Ok(_) => {},
                 Err(_) => {
                     error!("Sending ping-message failed");
@@ -112,7 +112,7 @@ fn process_input<R: Read + Write>(mut s: &mut R, input: &str) -> bool {
         },
         ":exit" => {
             // TODO: other functionality to exit than quit
-            match send_cmd(s, Command::Quit, 1) {
+            match send_cmd(s, Command::Quit, 1024) {
                 Ok(_) => {
                     match receive(&mut s, PkgType::Ok) {
                         Ok(_) => { info!("Connection closed"); return true },
@@ -152,7 +152,7 @@ fn process_input<R: Read + Write>(mut s: &mut R, input: &str) -> bool {
 
 /// Match received packages to expected packages
 fn receive<R: Read>(s: &mut R, cmd: PkgType) -> Result<(), Error> {
-    let status: PkgType = try!(decode_from(s, SizeLimit::Bounded(1)));
+    let status: PkgType = try!(decode_from(s, SizeLimit::Bounded(1024)));
 
     if status != cmd {
         return Err(Error::UnexpectedPkg("Received
@@ -199,7 +199,7 @@ fn send_login<W: Write>(buf: &mut W) -> bool {
     let login = Login {username: usern, password: passw};
 
     //send Login package to server
-    match encode_into(&PkgType::Login, buf, SizeLimit::Bounded(1)) {
+    match encode_into(&PkgType::Login, buf, SizeLimit::Bounded(1024)) {
         Ok(_) => {},
         Err(_) => {
             info!("Sending package header failed");
