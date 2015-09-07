@@ -16,30 +16,29 @@
 //!
 
 use std::io::{Write, Read};
-use byteorder::{ReadBytesExt, WriteBytesExt}; // for write_u16()
 // to encode and decode the structs to the given stream
 use bincode::rustc_serialize::{
     decode_from, encode_into, EncodingError, DecodingError
 };
 use bincode::SizeLimit;
-use rustc_serialize::{Encodable, Encoder}; // to encode the Networkerrors
-use byteorder;
+use rustc_serialize::{Encodable, Encoder}; // to encode the Error
+//use byteorder;
 use std::io;
 
 const PROTOCOL_VERSION: u8 = 1;
 
 /// Code numeric value sent as first byte
-#[derive(RustcEncodable, RustcDecodable)]
+#[derive(PartialEq, RustcEncodable, RustcDecodable)]
 #[repr(u8)]
-pub enum Cnv {
-    GreetPkg = 0,
-    LoginPkg,
-    CommandPkg,
-    ErrorPkg,
-    OkPkg,
-    ResponsePkg,
-    AccDeniedPkg,
-    AccGrantedPkg,
+pub enum PkgType {
+    Greet = 0,
+    Login,
+    Command,
+    Error,
+    Ok,
+    Response,
+    AccDenied,
+    AccGranted,
 }
 
 /// Struct to send the kind of error and error message to the client
@@ -49,31 +48,31 @@ pub struct ClientErrMsg {
     msg: String
 }
 
-/// Convert the possible NetworkErrors to a serializable ClientErrMsg struct
-impl From<NetworkErrors> for ClientErrMsg {
-    fn from(error: NetworkErrors) -> ClientErrMsg {
+/// Convert the possible Error to a serializable ClientErrMsg struct
+impl From<Error> for ClientErrMsg {
+    fn from(error: Error) -> ClientErrMsg {
         match error {
-            NetworkErrors::IoError(_) => ClientErrMsg {
+            Error::Io(_) => ClientErrMsg {
                 code: 0,
                 msg: "IO error".into()
             },
-            NetworkErrors::ByteOrder(_) => ClientErrMsg {
-                code: 1,
-                msg: "Byteorder error".into()
-            },
-            NetworkErrors::UnexpectedPkg(err) => ClientErrMsg {
+            //Error::ByteOrder(_) => ClientErrMsg {
+            //    code: 1,
+            //    msg: "Byteorder error".into()
+            //},
+            Error::UnexpectedPkg(err) => ClientErrMsg {
                 code: 2,
                 msg: err.into()
             },
-            NetworkErrors::UnknownCmd(err) => ClientErrMsg {
+            Error::UnknownCmd(err) => ClientErrMsg {
                 code: 3,
                 msg: err.into()
             },
-            NetworkErrors::EncodeErr(_) => ClientErrMsg {
+            Error::Encode(_) => ClientErrMsg {
                 code: 4,
                 msg: "encoding error".into()
             },
-            NetworkErrors::DecodeErr(_) => ClientErrMsg {
+            Error::Decode(_) => ClientErrMsg {
                 code: 5,
                 msg: "decoding error".into()
             }
@@ -83,40 +82,42 @@ impl From<NetworkErrors> for ClientErrMsg {
 
 /// Collection of possible errors while communicating with the client
 #[derive(Debug)]
-pub enum NetworkErrors {
-    IoError(io::Error),
-    ByteOrder(byteorder::Error),
+pub enum Error {
+    Io(io::Error),
+    //ByteOrder(byteorder::Error),
     UnexpectedPkg(String),
     UnknownCmd(String),
-    EncodeErr(EncodingError),
-    DecodeErr(DecodingError),
+    Encode(EncodingError),
+    Decode(DecodingError),
 }
 
 /// Implement the conversion from byteorder::Error to NetworkError
-impl From<byteorder::Error> for NetworkErrors {
-    fn from(err: byteorder::Error) -> NetworkErrors {
-        NetworkErrors::ByteOrder(err)
+/*
+impl From<byteorder::Error> for Error {
+    fn from(err: byteorder::Error) -> Error {
+        Error::ByteOrder(err)
     }
 }
+*/
 
 /// Implement the conversion from io::Error to NetworkError
-impl From<io::Error> for NetworkErrors {
-    fn from(err: io::Error) -> NetworkErrors {
-        NetworkErrors::IoError(err)
+impl From<io::Error> for Error {
+    fn from(err: io::Error) -> Error {
+        Error::Io(err)
     }
 }
 
 /// Implement the conversion from EncodingError to NetworkError
-impl  From<EncodingError> for NetworkErrors {
-    fn from(err: EncodingError) -> NetworkErrors {
-        NetworkErrors::EncodeErr(err)
+impl  From<EncodingError> for Error {
+    fn from(err: EncodingError) -> Error {
+        Error::Encode(err)
     }
 }
 
 /// Implement the conversion from DecodingError to NetworkError
-impl From<DecodingError> for NetworkErrors {
-    fn from(err: DecodingError) -> NetworkErrors {
-        NetworkErrors::DecodeErr(err)
+impl From<DecodingError> for Error {
+    fn from(err: DecodingError) -> Error {
+        Error::Decode(err)
     }
 }
 
@@ -136,12 +137,12 @@ impl Greeting {
 
 /// Write a welcome-message to the given server-client-stream
 pub fn do_handshake<W: Write + Read>(stream: &mut W)
-    -> Result<(String, String), NetworkErrors>
+    -> Result<(String, String), Error>
 {
     let greet = Greeting::make_greeting(PROTOCOL_VERSION, "Welcome".to_string());
 
     // send handshake packet to client
-    try!(stream.write_u8(Cnv::GreetPkg as u8)); //kind of message
+    try!(encode_into(&PkgType::Greet, stream, SizeLimit::Bounded(1))); //kind of message
     try!(encode_into(&greet, stream, SizeLimit::Bounded(1024)));
 
     // receive login data from client
@@ -154,44 +155,34 @@ pub fn do_handshake<W: Write + Read>(stream: &mut W)
 
 /// The client responds with this packet to a `Greeting` packet, finishing the
 /// authentication handshake.
-#[derive(RustcEncodable, RustcDecodable)]
+#[derive(Default, RustcEncodable, RustcDecodable)]
 pub struct Login {
     pub username: String,
     pub password: String
 }
 
-impl Login {
-    // default values
-    pub fn new() -> Login {
-        Login { username: "".to_string(), password: "".to_string() }
-    }
-}
-
 /// reads the data from the response to the handshake,
 /// username and password extracted and authenticated
 pub fn read_login<R: Read + Write>(stream: &mut R)
-    -> Result<Login, NetworkErrors>
+    -> Result<Login, Error>
 {
-    // read the first byte
-    let status = try!(stream.read_u8());
-    if status != Cnv::LoginPkg as u8 {
-        return Err(NetworkErrors::UnexpectedPkg("package not expected".into()));
+    // read package-type
+    let status: PkgType = try!(decode_from(stream, SizeLimit::Bounded(1)));
+
+    if status != PkgType::Login {
+        return Err(Error::UnexpectedPkg("package not expected".into()));
     }
 
     // read the login data
-    let res = decode_from(stream, SizeLimit::Bounded(1024));
-    match res {
-        Ok(log) => Ok(log),
-        Err(e) => Err(e.into())
-    }
+    decode_from(stream, SizeLimit::Bounded(1024)).map_err(|e| e.into())
 }
 
 
 /// send error package with given error code status
 pub fn send_error_package<W: Write>(mut stream: &mut W, err: ClientErrMsg)
-    -> Result<(), NetworkErrors>
+    -> Result<(), Error>
 {
-    try!(stream.write_u8(Cnv::ErrorPkg as u8));
+    try!(encode_into(&PkgType::Error, stream, SizeLimit::Bounded(1)));
     try!(encode_into(&err, &mut stream, SizeLimit::Bounded(1024)));
     Ok(())
 }
@@ -212,37 +203,33 @@ pub enum Command {
 
 /// Read the sent bytes, extract the kind of command
 pub fn read_commands<R: Read + Write>(stream: &mut R)
-    -> Result<Command, NetworkErrors>
+    -> Result<Command, Error>
 {
     // read the first byte for code numeric value
-    let status = try!(stream.read_u8());
-    if status != Cnv::CommandPkg as u8 {
+    let status: PkgType = try!(decode_from(stream, SizeLimit::Bounded(1)));
+    if status != PkgType::Command {
         //send error_packet
-        return Err(NetworkErrors::UnknownCmd("command not known".into()))
+        return Err(Error::UnknownCmd("command not known".into()))
     }
 
     // second  4 bytes is the kind of command
-    let command_decode = decode_from(stream, SizeLimit::Bounded(4096));
-    match command_decode {
-        Ok(command) => Ok(command),
-        Err(e) => Err(e.into())
-    }
+    decode_from(stream, SizeLimit::Bounded(4096)).map_err(|e| e.into())
 }
 
 /// Send error packet with given error code status
 pub fn send_error_packet<W: Write>(mut stream: &mut W, err: ClientErrMsg)
-    -> Result<(), NetworkErrors>
+    -> Result<(), Error>
 {
-    try!(stream.write_u8(Cnv::ErrorPkg as u8));
+    try!(encode_into(&PkgType::Error, stream, SizeLimit::Bounded(1)));
     try!(encode_into(&err, &mut stream, SizeLimit::Bounded(1024)));
     Ok(())
 }
 
 /// Send ok packet
 pub fn send_ok_packet<W: Write>(mut stream: &mut W)
-    -> Result<(), NetworkErrors>
+    -> Result<(), Error>
 {
-    try!(stream.write_u8(Cnv::OkPkg as u8));
+    try!(encode_into(&PkgType::Ok, stream, SizeLimit::Bounded(1)));
     Ok(())
 }
 
@@ -274,18 +261,18 @@ pub fn test_send_ok_packet() {
 
     let res = send_ok_packet(&mut vec);
     assert_eq!(res.is_ok(), true);
-    assert_eq!(vec, vec![Cnv::OkPkg as u8]);
+    assert_eq!(vec, vec![PkgType::Ok as u8]);
 }
 
 #[test]
 pub fn test_send_error_packet() {
     let mut vec = Vec::new();   // stream to write into
-    let vec2 = vec![Cnv::ErrorPkg as u8, // for error packet
+    let vec2 = vec![PkgType::Error as u8, // for error packet
         0, 2, // for kind of error
         0, 0, 0, 0, 0, 0, 0, 17, // for the size of the message string
         117, 110, 101, 120, 112, 101, 99, 116, 101, 100, 32, 112, 97, 99, 107, 101, 116];
         // string itself
-    let err = NetworkErrors::UnexpectedPkg("unexpected packet".into());
+    let err = Error::UnexpectedPkg("unexpected packet".into());
 
     // test if the message is sent
     let res = send_error_packet(&mut vec, err.into());
@@ -300,7 +287,7 @@ pub fn test_read_commands(){
     let mut vec = Vec::new();   // stream to write into
 
     // write the command into the stream
-    vec.push(Cnv::CommandPkg as u8);
+    vec.push(PkgType::Command as u8);
     let _ = encode_into(&Command::Quit, &mut vec, SizeLimit::Bounded(1024));
 
     // read the command from the stream for Command::Quit
@@ -311,7 +298,7 @@ pub fn test_read_commands(){
 
     let mut vec2 = Vec::new();
     // write the command into the stream
-    vec2.push(Cnv::CommandPkg as u8);
+    vec2.push(PkgType::Command as u8);
     let _ = encode_into(&Command::Query("select".into()),
                                      &mut vec2,
                                      SizeLimit::Bounded(1024));
