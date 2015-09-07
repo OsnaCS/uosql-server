@@ -3,11 +3,12 @@
 
 use std::iter::Iterator;
 use super::ast::*;
-use super::token::TokenSpan;
+use super::token::{TokenSpan, Lit};
 use super::lex::Lexer;
 use std::mem::swap;
 use super::token::Token;
 use super::Span;
+
 
 // ===========================================================================
 // Parser public functions
@@ -32,18 +33,14 @@ impl<'a> Parser<'a> {
         let l = Lexer::from_query(query);
         let mut p = Parser { lexiter: l, last: None, curr: None, peek: None };
         // Sets initial position of lexer and curr/peek
-        p.lexer_next();
-        p.lexer_next();
+        p.bump();
+        p.bump();
         p
     }
 
     /// Parses the given query into an AST
     pub fn parse(&mut self) -> Result<Query, ParseError> {
         // deletes Whitespaces in the beginning of Query
-        match self.expect_token(&[Token::Whitespace]) {
-            Ok(&Token::Whitespace) => self.lexer_next(),
-            _ => (),
-        }
 
         // first token is checked if it's a keyword using expect_keyword()
         let keywords = &[Keyword::Create, Keyword::Drop, Keyword::Alter,
@@ -177,7 +174,7 @@ impl<'a> Parser<'a> {
 
         // fill the vector with content until ParenCl is the curr token
         while match self.expect_token(&[Token::ParenCl]) {
-            Ok(&Token::ParenCl) => false,
+            Ok(Token::ParenCl) => false,
             _ => true,
         }
         {
@@ -187,7 +184,7 @@ impl<'a> Parser<'a> {
             // Check if there is a Comma seperating two columns or a ParenCl
             // ending the vectorparsing
             match try!(self.expect_token(&[Token::Comma, Token::ParenCl])) {
-                &Token::Comma => self.bump(),
+                Token::Comma => self.bump(),
                 _ => (),
             };
         }
@@ -287,9 +284,7 @@ impl<'a> Parser<'a> {
         };
 
         if i.col.len() != 0 && i.col.len() != i.val.len() {
-            return Err(ParseError::DebugError(
-                "Column length unequal to value length".to_string()
-                ));
+            return Err(ParseError::ColumnCountMissmatch);
         }
         Ok(i)
     }
@@ -318,7 +313,7 @@ impl<'a> Parser<'a> {
 
         // fill the vector with content until ParenCl is the curr token
         while match self.expect_token(&[Token::ParenCl]) {
-            Ok(&Token::ParenCl) => false,
+            Ok(Token::ParenCl) => false,
             _ => true,
         } {
             // parsing the content for a single column
@@ -327,7 +322,7 @@ impl<'a> Parser<'a> {
             // Check if there is a Comma seperating two columns or a ParenCl 
             // ending the vectorparsing
             match try!(self.expect_token(&[Token::Comma, Token::ParenCl])) {
-                &Token::Comma => self.bump(),
+                Token::Comma => self.bump(),
                 _ => (),
             };
         }
@@ -336,12 +331,9 @@ impl<'a> Parser<'a> {
     }
 
     // Parses i.val of parse_insert_stmt
+    fn parse_insert_stmt_value(&mut self) -> Result<Vec<Lit>, ParseError> {
+        let mut res_vec = Vec::<Lit>::new();
 
-    // TODO: FIX AST TO INCLUDE REAL VALUES INSTEAD OF DATATYPE; PRIORITY HIGH
-    fn parse_insert_stmt_value(&mut self) -> Result<Vec<SqlType>, ParseError> {
-        let mut res_vec = Vec::<SqlType>::new();
-
-        //res_vec.push(SqlType::int)
 
         match try!(self.expect_keyword(&[Keyword::Values])) {
             Keyword::Values => (),
@@ -359,18 +351,21 @@ impl<'a> Parser<'a> {
 
         // fill the vector with content until ParenCl is the curr token
         while match self.expect_token(&[Token::ParenCl]) {
-            Ok(&Token::ParenCl) => false,
+            Ok(Token::ParenCl) => false,
             _ => true,
         } {
             // parsing the content for a single column
 
-            res_vec.push(try!(self.expect_datatype()));
+            let mut lit = try!(self.expect_literal());
+
+            res_vec.push(lit);
+
 
             self.bump();
             // Check if there is a Comma seperating two columns or a ParenCl 
             // ending the vectorparsing
             match try!(self.expect_token(&[Token::Comma, Token::ParenCl])) {
-                &Token::Comma => self.bump(),
+                Token::Comma => self.bump(),
                 _ => (),
             };
         }
@@ -400,20 +395,12 @@ impl<'a> Parser<'a> {
 // Utility Functions
 // ===========================================================================
 
-    // moves current to the next non-whitespace
-    fn bump(&mut self) {
-        self.lexer_next();
-        match self.expect_token(&[Token::Whitespace]) {
-            Ok(&Token::Whitespace) => self.lexer_next(),
-            _ => ()
-        };
-    }
 
     // sets next position for the lexer
-    fn lexer_next(&mut self) {
+    fn bump(&mut self) {
         swap(&mut self.last, &mut self.curr);  //  last = curr
         swap(&mut self.curr, &mut self.peek);  //  curr = peek
-        self.peek = self.lexiter.next();
+        self.peek = self.lexiter.next_real();
     }
 
     // checks, if query is ended correctly. if yes -> returns query as ast
@@ -501,14 +488,24 @@ impl<'a> Parser<'a> {
                 self.bump();
                 try!(self.expect_token(&[Token::ParenOp]));
                 self.bump();
-                let length_string = try!(self.expect_number());
+                let length_lit = try!(self.expect_number());
                 self.bump();
                 try!(self.expect_token(&[Token::ParenCl]));
-                let length = match length_string.parse::<u8>() {
-                    Ok(length) => length,
-                    Err(error) => return Err(ParseError::DatatypeMissmatch(
-                       Span { lo: span_lo , hi: span_hi }
-                       )),
+
+                let length = match length_lit {
+                    Lit::Int(i) => {
+                        if 0 <= i && i <= ( u8::max_value() as i64)  {
+                            i as u8
+                        }else {
+                            return Err(ParseError::DatatypeMissmatch(
+                                Span { lo: span_lo , hi: span_hi }
+                            ))
+                        }
+                    },
+
+                    _ => return Err(ParseError::DatatypeMissmatch(
+                                Span { lo: span_lo , hi: span_hi }
+                                ))
                 };
                 SqlType::Char(length)
             },
@@ -517,14 +514,24 @@ impl<'a> Parser<'a> {
                 self.bump();
                 try!(self.expect_token(&[Token::ParenOp]));
                 self.bump();
-                let length_string = try!(self.expect_number());
+                let length_lit = try!(self.expect_number());
                 self.bump();
                 try!(self.expect_token(&[Token::ParenCl]));
-                let length = match length_string.parse::<u16>() {
-                    Ok(length) => length,
-                    Err(error) => return Err(ParseError::DatatypeMissmatch(
-                      Span { lo: span_lo , hi: span_hi}
-                      )),
+
+                let length = match length_lit {
+                    Lit::Int(i) => {
+                        if 0 <= i && i <= ( u16::max_value() as i64)  {
+                            i as u16
+                        }else {
+                            return Err(ParseError::DatatypeMissmatch(
+                                Span { lo: span_lo , hi: span_hi }
+                            ))
+                        }
+                    },
+
+                    _ => return Err(ParseError::DatatypeMissmatch(
+                                Span { lo: span_lo , hi: span_hi }
+                                ))
                 };
                 SqlType::VarChar(length)
             },
@@ -562,10 +569,37 @@ impl<'a> Parser<'a> {
             };
         }
         Ok(found_word.to_string())
+    } 
+
+       // checks if the current token is a word
+    fn expect_literal(&self) -> Result<Lit, ParseError> {
+        let mut found_lit;
+        let mut span_lo;
+        let mut span_hi;
+        {
+            // checks if token non or some
+            let token = match self.curr {
+                None => return Err(ParseError::UnexpectedEoq),
+                // in case of som: return reference to token
+                Some(ref token) => token,
+            };
+
+            span_lo = token.span.lo;
+            span_hi = token.span.hi;
+
+            // checks whether token is a word
+            found_lit = match token.tok {
+                Token::Literal(ref s) => s.clone(),
+                _ => return Err(ParseError::NotALiteral(
+                 Span { lo: span_lo , hi: span_hi }
+                 ))
+            };
+        }
+        Ok(found_lit)
     }
 
     // checks if the current token is a number
-    fn expect_number(&self) -> Result<String, ParseError> {
+    fn expect_number(&self) -> Result<Lit, ParseError> {
         let mut found_num;
         let mut span_lo;
         let mut span_hi;
@@ -582,16 +616,17 @@ impl<'a> Parser<'a> {
 
             // checks whether token is a valid number
             found_num = match token.tok {
-                Token::Num(ref s) => s,
+                Token::Literal(Lit::Int(s)) => Lit::Int(s),
+                Token::Literal(Lit::Float(s)) => Lit::Float(s),
                 _ => return Err(ParseError::NotANumber(Span { lo: span_lo , hi: span_hi } ))
             };
         }
-        Ok(found_num.to_string())
+        Ok(found_num)
     }
 
     // checks if current token is an expected token
     fn expect_token(&self,expected_tokens: &[Token])
-    -> Result<&Token, ParseError>
+    -> Result<Token, ParseError>
     {
 
             // checks if current is none or some
@@ -602,7 +637,7 @@ impl<'a> Parser<'a> {
             };
 
             if expected_tokens.contains(&(token.tok)) {
-                Ok(&token.tok)
+                Ok(token.tok.clone())
             } else {
                 Err(ParseError::WrongToken(Span { lo: token.span.lo, hi: token.span.hi } ))
             }
@@ -726,8 +761,8 @@ pub enum ParseError {
     NotAWord(Span),
     NotADatatype(Span),
     NotANumber(Span),
-
-
+    NotALiteral(Span),
+    ColumnCountMissmatch,
 
     //Used for debugging
     DebugError(String)

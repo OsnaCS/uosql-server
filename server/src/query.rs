@@ -79,15 +79,17 @@ impl Executor{
             Some(ref base) => {
 
 
-                    let tmp_vec : Vec<_> = query.cols.into_iter().map(|c| Column {
-                        name: c.cid,
-                        sql_type: c.datatype,
-                    }).collect();
+                let tmp_vec : Vec<_> = query.cols.into_iter().map(|c| Column {
+                    name: c.cid,
+                    sql_type: c.datatype,
+                    allow_null: false,
+                    description: "this is a column".to_string(),
+                }).collect();
 
-                    // TODO: Use the result!
-                    let _ = base.create_table(&query.tid, tmp_vec, 0);
+                // TODO: Use the result!
+                let _ = base.create_table(&query.tid, tmp_vec, 0);
 
-                },
+            },
             None => (),
         }
 

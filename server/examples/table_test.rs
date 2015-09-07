@@ -23,10 +23,30 @@ fn main() {
     //let db = Database::load("storage_team").unwrap();
 
     let mut cols = Vec::new();
-    cols.push(Column { name: "Heiner".into(), sql_type: SqlType::Int });
-    cols.push(Column { name: "Mathias".into(), sql_type: SqlType::Bool });
-    cols.push(Column { name: "Dennis".into(), sql_type: SqlType::Char(6) });
-    cols.push(Column { name: "Jana".into(), sql_type: SqlType::VarChar(178) });
+    cols.push(Column {
+        name: "Heiner".into(),
+        sql_type: SqlType::Int,
+        allow_null: false,
+        description: "Heiner".to_string()
+    });
+    cols.push(Column {
+        name: "Mathias".into(),
+        sql_type: SqlType::Bool,
+        allow_null: false,
+        description: "Mathias".to_string()
+    });
+    cols.push(Column {
+        name: "Dennis".into(),
+        sql_type: SqlType::Char(6),
+        allow_null: false,
+        description: "Dennis".to_string()
+    });
+    cols.push(Column {
+        name: "Jana".into(),
+        sql_type: SqlType::VarChar(178),
+        allow_null: false,
+        description: "Jana".to_string()
+    });
 
 
     let _storage_team = db.create_table("storage_team", cols, 1).unwrap();
