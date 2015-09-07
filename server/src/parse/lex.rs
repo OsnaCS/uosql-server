@@ -116,7 +116,7 @@ impl<'a> Lexer<'a> {
                     s.push(c);
                 }
             }
-            self.bump();
+            self.dbump();
         }
         s
     }
@@ -127,6 +127,28 @@ impl<'a> Lexer<'a> {
             self.bump();
         }
     }
+
+    /// Returns next token that is not a whitespace
+    pub fn next_real(&mut self) -> Option<TokenSpan> {
+        let tokspanop = self.next();
+        let  wspace = match tokspanop {
+            Some(ref tokspan) => {
+                match tokspan.tok {
+                    Token::Whitespace => true,
+                    _ => false
+                }
+
+            }
+            _ => false,
+        };
+
+        if wspace {
+            self.next()
+        } else {
+            tokspanop
+        }
+    }
+
 }
 
 /// Checks for whitespace/line break/tab
@@ -162,14 +184,21 @@ impl<'a> Iterator for Lexer<'a> {
             // Words
             'a' ... 'z' | 'A' ... 'Z' => {
                 let w = self.scan_words();
-                Token::Word(w.to_lowercase())
+                Token::Word(w)
             },
 
-            // Nums
+            // Lit Num
             '0' ... '9' => {
                 let n = self.scan_nums();
-                Token::Num(n)
-
+                if let Ok(i) = n.parse::<i64>() {
+                    Token::Literal(Lit::Int(i))
+                } else {
+                    if let Ok(f) = n.parse::<f64>() {
+                        Token::Literal(Lit::Float(f))
+                    } else {
+                        Token::Unknown
+                    }
+                }
             },
 
             // Semicolon
@@ -217,7 +246,6 @@ impl<'a> Iterator for Lexer<'a> {
             // Literals
             '\'' | '"' => {
                 let l = self.scan_lit();
-                self.bump();
                 Token::Literal(Lit::Str(l))
             },
 

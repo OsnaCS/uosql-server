@@ -8,7 +8,7 @@ use server::parse;
 
 fn main() {
 
-    let mut p = parse::Parser::create("create table test");
+    let mut p = parse::Parser::create("create table Lisa (Name varchar(2044243))");
 
     println!("{:?}",p.parse());
 
