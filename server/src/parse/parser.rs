@@ -414,63 +414,46 @@ impl<'a> Parser<'a> {
     // parses the where part into Conditions type
     fn parse_where_part(&mut self) -> Result<Conditions, ParseError> {
 
-
-        let mut cond = Conditions::Leaf(try!(self.parse_condition()));
-
-        self.bump();
-
-        while self.expect_keyword(&[Keyword::And, Keyword::Or]).is_ok() {
+        let paren = self.check_next_token(Token::ParenOp);
+        let mut cond;
+        if paren {
+            self.bump();
+            cond = try!(self.parse_where_part());
+            try!(self.expect_token(&[Token::ParenCl]).map_err(|e| match e {
+                ParseError::WrongToken(span) => ParseError::MissingParenthesis(span),
+                _ => e,
+            }));
+            self.bump();
             if self.expect_keyword(&[Keyword::Or]).is_ok() {
 
                 cond = Conditions::Or(Box::new(cond),Box::new(try!(self.parse_where_part())));
-
-            } else {
-          
-                cond = Conditions::And(Box::new(cond),Box::new(Conditions::Leaf(try!(self.parse_condition()))));
-
+            } else if self.expect_keyword(&[Keyword::And]).is_ok(){
+                cond = Conditions::And(Box::new(cond),Box::new(try!(self.parse_where_part())));
             };
-           self.bump();
 
-        };
+        } else {
 
+            cond = Conditions::Leaf(try!(self.parse_condition()));
+            self.bump();
+
+            while self.expect_keyword(&[Keyword::And, Keyword::Or]).is_ok() {
+                let paren = self.check_next_token(Token::ParenOp);
+                if self.expect_keyword(&[Keyword::Or]).is_ok() {
+                    cond = Conditions::Or(Box::new(cond),Box::new(try!(self.parse_where_part())));
+                } else {
+                    if paren {
+                        cond = Conditions::And(Box::new(cond),Box::new(try!(self.parse_where_part())));
+                    } else {
+                        cond = Conditions::And(Box::new(cond),Box::new(Conditions::Leaf(try!(self.parse_condition()))));
+                         self.bump();
+                    };
+                };
+            };
+        }
+
+        println!("{:?}",cond);
         Ok(cond)
 
-       /* let mut paren = false;
-
-
-        match self.peek {
-            Some(ref token) => match token.tok {
-                Token::ParenOp => {
-                    paren = true;
-                } 
-                _ => (),
-            },
-            _ => (),
-        };
-
-        if paren {
-            self.bump();
-        }
-
-        let cond = try!(self.parse_condition());
-        //TODO: further implementation
-
-        match self.expect_token(&[Token::And, Token::Or]){
-            Ok(Token::And) => ,
-            Ok(Token::Or) => ,
-
-        }
-
-
-        self.bump();
-        if paren {
-            try!(self.expect_token(&[Token::ParenCl]).map_err(|e| match e {
-                ParseError::WrongToken(t) => ParseError::MissingParenthesis(t),
-                _ => e,
-            }));
-        }
-        Ok(Conditions::Leaf( cond )) */
-        
     }
 
     fn check_next_token(&self, checktoken: Token) -> bool {
@@ -478,6 +461,20 @@ impl<'a> Parser<'a> {
             Some(ref token) => { token.tok == checktoken},
              _ => false,
         }
+    }
+
+    fn check_next_keyword(&self, checkkeyword: Keyword) -> bool {
+        let tokenspan = match self.peek {
+            Some(ref s) => s.clone(),
+             _ => return false,
+        };
+
+        let possiblekeyword = match tokenspan.tok {
+            Token::Word(ref s) => s.clone(),
+            _ => return false,
+        };
+
+        return true;
     }
 
     // aprses a single condition
