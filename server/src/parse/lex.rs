@@ -116,8 +116,9 @@ impl<'a> Lexer<'a> {
                     s.push(c);
                 }
             }
-            self.dbump();
+            self.bump();
         }
+        self.bump();
         s
     }
 
