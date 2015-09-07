@@ -22,7 +22,6 @@ use bincode::rustc_serialize::{
 };
 use bincode::SizeLimit;
 use rustc_serialize::{Encodable, Encoder}; // to encode the Error
-//use byteorder;
 use std::io;
 
 const PROTOCOL_VERSION: u8 = 1;
@@ -56,10 +55,6 @@ impl From<Error> for ClientErrMsg {
                 code: 0,
                 msg: "IO error".into()
             },
-            //Error::ByteOrder(_) => ClientErrMsg {
-            //    code: 1,
-            //    msg: "Byteorder error".into()
-            //},
             Error::UnexpectedPkg(err) => ClientErrMsg {
                 code: 2,
                 msg: err.into()
@@ -84,21 +79,11 @@ impl From<Error> for ClientErrMsg {
 #[derive(Debug)]
 pub enum Error {
     Io(io::Error),
-    //ByteOrder(byteorder::Error),
     UnexpectedPkg(String),
     UnknownCmd(String),
     Encode(EncodingError),
     Decode(DecodingError),
 }
-
-/// Implement the conversion from byteorder::Error to NetworkError
-/*
-impl From<byteorder::Error> for Error {
-    fn from(err: byteorder::Error) -> Error {
-        Error::ByteOrder(err)
-    }
-}
-*/
 
 /// Implement the conversion from io::Error to NetworkError
 impl From<io::Error> for Error {
@@ -139,7 +124,7 @@ impl Greeting {
 pub fn do_handshake<W: Write + Read>(stream: &mut W)
     -> Result<(String, String), Error>
 {
-    let greet = Greeting::make_greeting(PROTOCOL_VERSION, "Welcome".to_string());
+    let greet = Greeting::make_greeting(PROTOCOL_VERSION, "Welcome".into());
 
     // send handshake packet to client
     try!(encode_into(&PkgType::Greet, stream, SizeLimit::Bounded(1))); //kind of message

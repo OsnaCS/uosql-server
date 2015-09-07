@@ -12,7 +12,6 @@ use uosql::logger;
 use uosql::net::{PkgType, Greeting, Login, Command, Error};
 use bincode::SizeLimit;
 use bincode::rustc_serialize::{decode_from, encode_into};
-//use byteorder::{ReadBytesExt, WriteBytesExt};
 
 const PROTOCOL_VERSION : u8 = 1;
 
