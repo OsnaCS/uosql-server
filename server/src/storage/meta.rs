@@ -112,6 +112,7 @@ pub struct TableMetaData {
     version_nmbr: u8,
     engine_id: u8,
     columns: Vec<Column>,
+    //primary_key: String
 }
 
 //---------------------------------------------------------------
@@ -217,8 +218,15 @@ impl<'a> Table<'a> {
 
     /// Adds a column to the tabel
     /// Returns name of Column or on fail Error
-    pub fn add_column(&mut self, name: &str, sql_type: SqlType, allow_null: bool, description: &str)
-        -> Result<(), Error> {
+    pub fn add_column(
+        &mut self,
+        name: &str,
+        sql_type: SqlType,
+        allow_null: bool,
+        description: &str,
+        is_primary_key: bool
+        ) -> Result<(), Error> {
+
         match self.meta_data.columns.iter().find(|x| x.name == name) {
             Some(_) => {
                 warn!("Column {:?} already exists", name);
@@ -228,7 +236,14 @@ impl<'a> Table<'a> {
                 info!("Column {:?} was added", name);
             },
         }
-        self.meta_data.columns.push(Column::new(name, sql_type, allow_null, description));
+
+        self.meta_data.columns.push(Column::new(
+            name,
+            sql_type,
+            allow_null,
+            description,
+            is_primary_key)
+        );
         Ok(())
     }
 
@@ -269,6 +284,19 @@ impl<'a> Table<'a> {
     fn get_path(database: &str, name: &str, ext: &str) -> String {
          format!("{}/{}.{}", database, name, ext)
     }
+
+ /*   fn get_primary_key(&self) -> Column {
+        match self.meta_data.columns.iter().find(|x| x.name == self.meta_data.primary_key) {
+            Some(x) => {
+                info!("Primaty Key: {:?} was found", self.meta_data.primary_key);
+                Ok(x)
+            },
+            None => {
+                warn!("Primary Key: {:?} was not found", self.meta_data.primary_key);
+                Err(Error::PrimaryKey)
+            },
+        }
+    }*/
 }
 
 //---------------------------------------------------------------
@@ -280,7 +308,7 @@ impl<'a> Table<'a> {
 pub struct Column {
     pub name: String, // name of column
     pub sql_type: SqlType, // name of the data type that is contained in this column
-    //pub is_primary_key: bool, // defines if column is PK
+    pub is_primary_key: bool, // defines if column is PK
     pub allow_null: bool, // defines if cloumn allows null
     pub description: String //Displays text describing this column.
 }
@@ -289,12 +317,24 @@ pub struct Column {
 impl Column {
     /// Creates a new column object
     /// Returns with Column
-    pub fn new(name: &str, sql_type: SqlType, allow_null: bool, description: &str) -> Column {
+    pub fn new(
+        name: &str,
+        sql_type: SqlType,
+        allow_null: bool,
+        description: &str,
+        is_primary_key: bool
+        ) -> Column {
+
         Column {
             name: name.to_string(),
             sql_type: sql_type.clone(),
             allow_null: allow_null,
-            description: description.to_string()
+            description: description.to_string(),
+            is_primary_key: is_primary_key
         }
+    }
+
+    pub fn get_sql_type(&self) -> &SqlType {
+        &self.sql_type
     }
 }

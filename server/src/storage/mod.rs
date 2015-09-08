@@ -37,6 +37,7 @@ pub enum Error {
     RemoveColumn,
     AddColumn,
     InvalidType,
+    PrimaryKey,
 }
 
 impl From<io::Error> for Error {
