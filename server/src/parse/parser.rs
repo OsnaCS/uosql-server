@@ -425,9 +425,7 @@ impl<'a> Parser<'a> {
                 cond = Conditions::Or(Box::new(cond),Box::new(try!(self.parse_where_part())));
 
             } else {
-          
                 cond = Conditions::And(Box::new(cond),Box::new(Conditions::Leaf(try!(self.parse_condition()))));
-
             };
            self.bump();
 
@@ -442,7 +440,7 @@ impl<'a> Parser<'a> {
             Some(ref token) => match token.tok {
                 Token::ParenOp => {
                     paren = true;
-                } 
+                }
                 _ => (),
             },
             _ => (),
@@ -470,9 +468,7 @@ impl<'a> Parser<'a> {
             }));
         }
         Ok(Conditions::Leaf( cond )) */
-        
     }
-
     fn check_next_token(&self, checktoken: Token) -> bool {
         match self.peek {
             Some(ref token) => { token.tok == checktoken},

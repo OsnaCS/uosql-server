@@ -277,7 +277,7 @@ fn test_mult_where_blocks() {
                                         col: "lname".to_string(),
                                         op: CompType::Equ,
                                         aliasrhs: None,
-                                        rhs: CondType::Literal(Lit::Str("pan".to_string())),    
+                                        rhs: CondType::Literal(Lit::Str("pan".to_string())),
                                         }
                                     )
                                 )
