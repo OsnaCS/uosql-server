@@ -18,20 +18,53 @@ pub mod types;
 
 use std::io::{Write, Read};
 // to encode and decode the structs to the given stream
-use bincode::rustc_serialize::{decode_from, encode_into};
+use bincode::rustc_serialize::{EncodingError, DecodingError, decode_from, encode_into};
+use std::io;
 use bincode::SizeLimit;
-use net::types::*;
+use self::types::*;
 
 const PROTOCOL_VERSION: u8 = 1;
+
+/// Collection of possible errors while communicating with the client
+#[derive(Debug)]
+pub enum Error {
+    Io(io::Error),
+    UnexpectedPkg(String),
+    UnknownCmd(String),
+    Encode(EncodingError),
+    Decode(DecodingError),
+}
+
+/// Implement the conversion from io::Error to NetworkError
+impl From<io::Error> for Error {
+    fn from(err: io::Error) -> Error {
+        Error::Io(err)
+    }
+}
+
+/// Implement the conversion from EncodingError to NetworkError
+impl  From<EncodingError> for Error {
+    fn from(err: EncodingError) -> Error {
+        Error::Encode(err)
+    }
+}
+
+/// Implement the conversion from DecodingError to NetworkError
+impl From<DecodingError> for Error {
+    fn from(err: DecodingError) -> Error {
+        Error::Decode(err)
+    }
+}
 
 /// Write a welcome-message to the given server-client-stream
 pub fn do_handshake<W: Write + Read>(stream: &mut W)
     -> Result<(String, String), Error>
 {
-    let greet = Greeting::make_greeting(PROTOCOL_VERSION, "Welcome".into());
+    let greet = Greeting::make_greeting(PROTOCOL_VERSION,
+        "Welcome to the fabulous uoSQL database.".into());
 
     // send handshake packet to client
-    try!(encode_into(&PkgType::Greet, stream, SizeLimit::Bounded(1024))); //kind of message
+    try!(encode_into(&PkgType::Greet, stream, SizeLimit::Bounded(1024)));
     try!(encode_into(&greet, stream, SizeLimit::Bounded(1024)));
 
     // receive login data from client
@@ -59,12 +92,20 @@ pub fn read_login<R: Read + Write>(stream: &mut R)
 }
 
 
-/// send error package with given error code status
+/// Send error package with given error code status
 pub fn send_error_package<W: Write>(mut stream: &mut W, err: ClientErrMsg)
     -> Result<(), Error>
 {
     try!(encode_into(&PkgType::Error, stream, SizeLimit::Bounded(1024)));
     try!(encode_into(&err, &mut stream, SizeLimit::Bounded(1024)));
+    Ok(())
+}
+
+/// Send information package with only package type information
+pub fn send_info_package<W: Write>(mut stream: &mut W, pkg: PkgType)
+    -> Result<(), Error>
+{
+    try!(encode_into(&pkg, stream, SizeLimit::Bounded(1024)));
     Ok(())
 }
 
@@ -81,23 +122,6 @@ pub fn read_commands<R: Read + Write>(stream: &mut R)
 
     // second  4 bytes is the kind of command
     decode_from(stream, SizeLimit::Bounded(4096)).map_err(|e| e.into())
-}
-
-/// Send error packet with given error code status
-pub fn send_error_packet<W: Write>(mut stream: &mut W, err: ClientErrMsg)
-    -> Result<(), Error>
-{
-    try!(encode_into(&PkgType::Error, stream, SizeLimit::Bounded(1024)));
-    try!(encode_into(&err, &mut stream, SizeLimit::Bounded(1024)));
-    Ok(())
-}
-
-/// Send ok packet
-pub fn send_ok_packet<W: Write>(mut stream: &mut W)
-    -> Result<(), Error>
-{
-    try!(encode_into(&PkgType::Ok, stream, SizeLimit::Bounded(1024)));
-    Ok(())
 }
 
 // # Some information for the `net` working group:
@@ -120,7 +144,7 @@ pub fn send_ok_packet<W: Write>(mut stream: &mut W)
 pub fn test_send_ok_packet() {
     let mut vec = Vec::new();
 
-    let res = send_ok_packet(&mut vec);
+    let res = send_info_package(&mut vec, PkgType::Ok);
     assert_eq!(res.is_ok(), true);
     assert_eq!(vec, vec![0, 0, 0, 4]);
 }
@@ -136,7 +160,7 @@ pub fn test_send_error_packet() {
     let err = Error::UnexpectedPkg("unexpected packet".into());
 
     // test if the message is sent
-    let res = send_error_packet(&mut vec, err.into());
+    let res = send_error_package(&mut vec, err.into());
     assert_eq!(res.is_ok(), true);
     assert_eq!(vec, vec2);
 }
