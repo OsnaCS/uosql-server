@@ -1,11 +1,12 @@
 extern crate server;
 extern crate bincode;
 extern crate log;
+
 use server::storage::*;
 use bincode::rustc_serialize::{encode_into};
 use bincode::SizeLimit;
 use server::logger;
-
+use server::parse::ast::DataSrc;
 
 fn main() {
 
@@ -16,10 +17,10 @@ fn main() {
     let ty = SqlType::Int;
     let mut v = Vec::new();
     let _ = encode_into(&ty, &mut v, SizeLimit::Infinite);
-    println!("{:?}", v);
+    //println!("{:?}", v);
 
-    let db = Database::create("storage_team").unwrap();
-    //let db = Database::load("storage_team").unwrap();
+    //let db = Database::create("storage_team").unwrap();
+    let db = Database::load("storage_team").unwrap();
 
     let mut cols = Vec::new();
     cols.push(Column {
@@ -47,6 +48,16 @@ fn main() {
         description: "Jana".to_string()
     });
 
+    //let my_data = DataSrc::String("fünf".to_string());
+
+    let mut my_data: Vec<Option<DataSrc>> = Vec::new();
+    my_data.push(Some(DataSrc::Int(10)));
+    my_data.push(Some(DataSrc::Bool(1)));
+    my_data.push(Some(DataSrc::String("fünf".to_string())));
+    my_data.push(Some(DataSrc::String("i am a very long string, at least i think i am".to_string())));
+
+
+
 
     let _storage_team = db.create_table("storage_team", cols, 1).unwrap();
 
@@ -55,10 +66,12 @@ fn main() {
 
     let mut engine = t.create_engine();
 
-    let _e  = engine.create_table();
-    let t = engine.table();
+    engine.insert_row(&my_data);
 
-    t.delete().unwrap();
-    db.delete().unwrap();
+    //let _e  = engine.create_table();
+    //let t = engine.table();
+
+    //t.delete().unwrap();
+    //db.delete().unwrap();
 
 }

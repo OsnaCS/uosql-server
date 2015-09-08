@@ -11,14 +11,14 @@ pub struct FlatFile<'a> {
 
 impl<'a> FlatFile<'a> {
     pub fn new<'b>(table: Table<'b>) -> FlatFile<'b> {
-        println!("Hallo");
+        info!("new flatfile with table: {:?}", table);
         FlatFile { table: table }
     }
 }
 
 impl<'a> Drop for FlatFile<'a> {
     fn drop(&mut self) {
-        println!("Tschüss");
+        info!("drop engine flatfile");
     }
 }
 
@@ -28,6 +28,9 @@ impl<'a> Engine for FlatFile<'a> {
             .write(true)
             .create(true)
             .open(&self.table.get_table_data_path()));
+
+        info!("created file for data: {:?}", _file);
+
         Ok(())
     }
 
@@ -44,6 +47,7 @@ impl<'a> Engine for FlatFile<'a> {
                             .write(true)
                             .append(true)
                             .open(&self.table.get_table_data_path()));
+        info!("created file for data: {:?}", file);
 
         let defaults = [ast::DataSrc::Int(0),
                         ast::DataSrc::Bool(0),
@@ -53,6 +57,7 @@ impl<'a> Engine for FlatFile<'a> {
         // Iterate over given columns data and the meta data
         // simultaneously and get either the given data or a
         // defaul type
+        info!("starting encodeding of data");
         for (d, meta) in data.iter().zip(self.table().columns()) {
             // Entry contains default or given value
             let entry = d.as_ref().unwrap_or(match meta.sql_type {
@@ -66,7 +71,7 @@ impl<'a> Engine for FlatFile<'a> {
             // (appends to end of file)
             try!(meta.sql_type.encode_into(&mut file, entry));
         }
-
+        info!("finished encoding");
         Ok(())
     }
 }
