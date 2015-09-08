@@ -341,7 +341,7 @@ impl<'a> Parser<'a> {
         let mut res_vec = Vec::<String>::new();
 
         // fill the vector with content until ParenCl is the curr token
-        while self.expect_token(&[Token::ParenCl]).is_ok() {
+        while !self.expect_token(&[Token::ParenCl]).is_ok() {
             // parsing the content for a single column
             res_vec.push(try!(self.expect_word()));
             self.bump();
@@ -496,7 +496,11 @@ impl<'a> Parser<'a> {
             };
 
             // required target column
-            let targetcol = try!(self.expect_word());
+            let targetcol = match self.expect_token(&[Token::Star]) {
+                Err(err) => Col::Specified(try!(self.expect_word())),
+                Ok(Token::Star) => Col::Every,
+                _ => return Err(ParseError::UnknownError) ,
+                };
             self.bump();
 
             // optional target column rename
@@ -513,8 +517,6 @@ impl<'a> Parser<'a> {
                 done = true;
             }
         }
-
-
 
         // parsing the from list, at least one table required
         try!(self.expect_keyword(&[Keyword::From]));
@@ -536,28 +538,65 @@ impl<'a> Parser<'a> {
                 }
             }
 
-            self.bump();
+
             tidvec.push(tableid);
-            if !self.expect_token(&[Token::Comma]).is_ok() {
+            if !self.check_next_token(&[Token::Comma]) {
                 done = true;
+            } else {
+                self.bump();
             }
         }
 
         let mut conditions;
         // optional where statement
-        if self.expect_keyword(&[Keyword::Where]).is_ok() {
+        if self.check_next_keyword(&[Keyword::Where]) {
+            self.bump();
             conditions = Some(try!(self.parse_where_part()));
 
         } else {
             conditions = None;
         }
 
-       Ok(SelectStmt {
+
+        if self.expect_keyword(&[Keyword::Group]).is_ok(){
+            return Err(ParseError::DebugError("GroupBy part needs implementation!".to_string()));
+        }
+
+        if self.expect_keyword(&[Keyword::Order]).is_ok() {
+            return Err(ParseError::DebugError("OrderBy part needs implementation!".to_string()));
+        }
+
+        let mut limit = None;
+
+        if self.expect_keyword(&[Keyword::Limit]).is_ok() {
+            self.bump();
+            let tmp = match try!(self.expect_number()) {
+                Lit::Int(i) => i ,
+                _ => return Err(ParseError::LimitError) ,
+            };
+
+            if self.check_next_token(&[Token::Comma]) {
+                self.bump();
+                self.bump();
+                let count = match try!(self.expect_number()) {
+                    Lit::Int(i) => i ,
+                     _ => return Err(ParseError::LimitError) ,
+                };
+                limit = Some(Limit { count: Some(count), offset: Some(tmp) } ) ;
+            } else {
+                limit = Some(Limit { count: Some(tmp) , offset: None} );
+            };
+
+
+        }
+
+        Ok(SelectStmt {
             target: targetvec,
             tid: tidvec,
             alias: aliasmap,
             cond: conditions,
-            spec_op: None
+            spec_op: None,
+            limit: limit,
         })
     }
 
@@ -982,6 +1021,13 @@ fn keyword_from_string(string: &str) -> Option<Keyword>{
                 "as" => Some(Keyword::As),
                 "primary" => Some(Keyword::Primary),
                 "key" => Some(Keyword::Key),
+                "group" => Some(Keyword::Group),
+                "by" => Some(Keyword::By),
+                "having" => Some(Keyword::Having),
+                "order" => Some(Keyword::Order),
+                "desc" => Some(Keyword::Desc),
+                "asc" => Some(Keyword::Asc),
+                "limit" => Some(Keyword::Limit),
                 _ => None,
             }
 }
@@ -1019,6 +1065,10 @@ pub enum Keyword {
     // 3rd level keywords
     From,
     Where,
+    Group,
+    Order,
+    Having,
+    Limit,
     Modify,
     Add,
     Into,
@@ -1026,7 +1076,9 @@ pub enum Keyword {
     And,
     Or,
     As,
-
+    By,
+    Asc,
+    Desc,
     Primary,
     Key,
 }
@@ -1056,6 +1108,7 @@ pub enum ParseError {
     NotALiteral(Span),
     ColumnCountMissmatch,
     MissingParenthesis(Span),
+    LimitError,
 
     //Used for debugging
     DebugError(String)
