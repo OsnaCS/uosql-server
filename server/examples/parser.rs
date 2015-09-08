@@ -8,7 +8,7 @@ use server::parse;
 
 fn main() {
 
-    let mut p = parse::Parser::create("select x,y,z from a,b,c,d,e,f,g where x=y and z=54");
+    let mut p = parse::Parser::create("create table test (name int primary key, alter int)");
     println!("{:?}",p.parse());
 
 }
