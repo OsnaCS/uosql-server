@@ -19,7 +19,9 @@ fn main() {
 
     // IP, Port, Username, Passwort einlesen
 
-    let mut conn = match Connection::connect("127.0.0.1".into(), 4242, "hallo".into(), "bla".into()) {
+    let mut conn = match Connection::connect("127.0.0.1".into(), 4242,
+        "hallo".into(), "bla".into())
+    {
         Ok(conn) => conn,
         Err(e) => {
             match e {

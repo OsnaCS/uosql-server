@@ -21,13 +21,16 @@ pub fn handle(mut stream: TcpStream) {
             info!("Connection established. Handshake sent");
             match auth::find_user(&user, &pw) {
                 Ok(_) => {
-                    match net::send_info_package(&mut stream, PkgType::AccGranted) {
+                    match net::send_info_package(&mut stream,
+                        PkgType::AccGranted)
+                    {
                         Ok(_) => {},
                         Err(_) => return
                     }
                 },
                 Err(_) => {
-                    let _ = net::send_info_package(&mut stream, PkgType::AccDenied);
+                    let _ =
+                        net::send_info_package(&mut stream, PkgType::AccDenied);
                     // Loops for user-convienience?
                     return
                 }
@@ -55,7 +58,8 @@ pub fn handle(mut stream: TcpStream) {
                             debug!("Client disconnected properly.");
                             return
                         },
-                        Err(_) => warn!("Failed to send packet. Connection close.")
+                        Err(_) =>
+                            warn!("Failed to send packet. Connection close.")
                     }
                 },
                 // send OK-Package, unused value can be checked to try again and

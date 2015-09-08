@@ -8,7 +8,8 @@ use std::io::{self, Write};
 pub use server::net::types;
 pub use server::logger;
 use bincode::SizeLimit;
-use bincode::rustc_serialize::{EncodingError, DecodingError, decode_from, encode_into};
+use bincode::rustc_serialize::{EncodingError, DecodingError,
+    decode_from, encode_into};
 use types::*;
 
 // const PROTOCOL_VERSION : u8 = 1;
@@ -60,7 +61,9 @@ pub struct Connection {
 
 impl Connection {
     /// Establish connection to specified address and port
-    pub fn connect(addr: String, port: u16, usern: String, passwd: String) -> Result<Connection, Error> {
+    pub fn connect(addr: String, port: u16, usern: String, passwd: String)
+        -> Result<Connection, Error>
+    {
         // Parse IPv4 address from String
         let tmp_addr = match std::net::Ipv4Addr::from_str(&addr) {
             Ok(tmp_addr) => tmp_addr,
@@ -78,11 +81,14 @@ impl Connection {
             Ok(_) => {},
             Err(e) => return Err(e)
         };
-        let greet: Greeting = try!(decode_from(&mut tmp_tcp, SizeLimit::Bounded(1024)));
+        let greet: Greeting =
+            try!(decode_from(&mut tmp_tcp, SizeLimit::Bounded(1024)));
 
         // Login
         let log = Login { username: usern, password: passwd };
-        match encode_into(&PkgType::Login, &mut tmp_tcp, SizeLimit::Bounded(1024)) {
+        match encode_into(&PkgType::Login, &mut tmp_tcp,
+            SizeLimit::Bounded(1024))
+        {
             Ok(_) => {},
             Err(e) => return Err(e.into())
         }
@@ -92,13 +98,16 @@ impl Connection {
             Err(e) => return Err(e.into())
         }
 
-        let status: PkgType = try!(decode_from(&mut tmp_tcp, SizeLimit::Bounded(1024)));
+        let status: PkgType =
+            try!(decode_from(&mut tmp_tcp, SizeLimit::Bounded(1024)));
         match status {
             PkgType::AccGranted =>
                 Ok(Connection { ip: addr, port: port, tcp: tmp_tcp,
                     greeting: greet, user_data: log} ),
-            PkgType::AccDenied => Err(Error::Auth("Authentication failure.".into())),
-            _ => Err(Error::UnexpectedPkg("Unexpected package received. Server is INSANE.".into()))
+            PkgType::AccDenied =>
+                Err(Error::Auth("Authentication failure.".into())),
+            _ => Err(Error::UnexpectedPkg("Unexpected package
+                    received. Server is INSANE.".into()))
         }
     }
 
@@ -159,7 +168,9 @@ impl Connection {
     }
 }
 
-fn send_cmd<W: Write>(mut s: &mut W, cmd: Command, size: u64) -> Result<(), Error> {
+fn send_cmd<W: Write>(mut s: &mut W, cmd: Command, size: u64)
+    -> Result<(), Error>
+{
     try!(encode_into(&PkgType::Command, s, SizeLimit::Bounded(1024)));
     try!(encode_into(&cmd, &mut s, SizeLimit::Bounded(size)));
     Ok(())

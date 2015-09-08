@@ -60,10 +60,11 @@ impl From<DecodingError> for Error {
 pub fn do_handshake<W: Write + Read>(stream: &mut W)
     -> Result<(String, String), Error>
 {
-    let greet = Greeting::make_greeting(PROTOCOL_VERSION, "Welcome to the fabulous uoSQL database.".into());
+    let greet = Greeting::make_greeting(PROTOCOL_VERSION,
+        "Welcome to the fabulous uoSQL database.".into());
 
     // send handshake packet to client
-    try!(encode_into(&PkgType::Greet, stream, SizeLimit::Bounded(1024))); //kind of message
+    try!(encode_into(&PkgType::Greet, stream, SizeLimit::Bounded(1024)));
     try!(encode_into(&greet, stream, SizeLimit::Bounded(1024)));
 
     // receive login data from client
@@ -101,7 +102,9 @@ pub fn send_error_package<W: Write>(mut stream: &mut W, err: ClientErrMsg)
 }
 
 /// Send information package with only package type information
-pub fn send_info_package<W: Write>(mut stream: &mut W, pkg: PkgType) -> Result<(), Error> {
+pub fn send_info_package<W: Write>(mut stream: &mut W, pkg: PkgType)
+    -> Result<(), Error>
+{
     try!(encode_into(&pkg, stream, SizeLimit::Bounded(1024)));
     Ok(())
 }
