@@ -144,7 +144,7 @@ pub fn read_commands<R: Read + Write>(stream: &mut R)
 pub fn test_send_ok_packet() {
     let mut vec = Vec::new();
 
-    let res = send_ok_packet(&mut vec);
+    let res = send_info_package(&mut vec, PkgType::Ok);
     assert_eq!(res.is_ok(), true);
     assert_eq!(vec, vec![0, 0, 0, 4]);
 }
@@ -160,7 +160,7 @@ pub fn test_send_error_packet() {
     let err = Error::UnexpectedPkg("unexpected packet".into());
 
     // test if the message is sent
-    let res = send_error_packet(&mut vec, err.into());
+    let res = send_error_package(&mut vec, err.into());
     assert_eq!(res.is_ok(), true);
     assert_eq!(vec, vec2);
 }
