@@ -1,7 +1,8 @@
 use super::{Error};
 use std::io::Write;
+use std::io::Read;
 use super::super::parse::ast::DataSrc;
-use byteorder::{BigEndian, WriteBytesExt};
+use byteorder::{BigEndian, WriteBytesExt, ReadBytesExt};
 
 
 /// General enums in SQL
@@ -26,12 +27,36 @@ impl SqlType {
         }
     }
 
+    /// Decodes the data in buf according to SqlType into a DataSrc enum.
+    pub fn decode_from<R: Read>(&self, mut buf: &mut R) -> Result<DataSrc, Error> {
+        match self {
+            &SqlType::Int => {
+                let i = try!(buf.read_i32::<BigEndian>());
+                Ok(DataSrc::Int(i as i64))
+            },
+            &SqlType::Bool => {
+                let b = try!(buf.read_u8());
+                Ok(DataSrc::Bool(b))
+            },
+            &SqlType::Char(_) => {
+                let mut s = String::new();
+                try!(buf.read_to_string(&mut s));
+                Ok(DataSrc::String(s))
+            },
+            &SqlType::VarChar(_) => {
+                let mut s = String::new();
+                try!(buf.read_to_string(&mut s));
+                Ok(DataSrc::String(s))
+            }
+        }
+    }
+
+
     /// Writes data to buf
     /// Returns the bytes written.
     /// Returns Error::InvalidType if type of DataSrc does not match expected
     /// type.
     /// Returns byteorder::Error, if data could not be written to buf.
-
     pub fn encode_into<W: Write>(&self, mut buf: &mut W, data: &DataSrc)
     -> Result<u32, Error>
     {
@@ -161,5 +186,9 @@ impl Column {
 
     pub fn get_sql_type(&self) -> &SqlType {
         &self.sql_type
+    }
+
+    pub fn get_size(&self) -> u64 {
+        self.sql_type.size() as u64
     }
 }

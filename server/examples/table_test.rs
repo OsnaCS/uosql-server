@@ -54,7 +54,7 @@ fn main() {
     let mut my_data: Vec<Option<DataSrc>> = Vec::new();
     my_data.push(Some(DataSrc::Int(10)));
     my_data.push(Some(DataSrc::Bool(1)));
-    my_data.push(Some(DataSrc::String("fünf".to_string())));
+    my_data.push(Some(DataSrc::String("fuenf".to_string())));
     my_data.push(
         Some(DataSrc::String("i am a very long string, at least i think i am".to_string()))
     );
@@ -64,8 +64,13 @@ fn main() {
     let t = db.load_table("storage_team").unwrap();
 
     let mut engine = t.create_engine();
-
+    //engine.create_table();
     engine.insert_row(&my_data);
+    let rows = engine.full_scan().unwrap();
+
+    let row = rows.get_row(0).unwrap();
+    println!("{:?}", row);
+
 
     //let _e  = engine.create_table();
     //let t = engine.table();
