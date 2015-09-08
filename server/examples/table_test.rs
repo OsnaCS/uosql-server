@@ -26,25 +26,29 @@ fn main() {
         name: "Heiner".into(),
         sql_type: SqlType::Int,
         allow_null: false,
-        description: "Heiner".to_string()
+        description: "Heiner".to_string(),
+        is_primary_key: false,
     });
     cols.push(Column {
         name: "Mathias".into(),
         sql_type: SqlType::Bool,
         allow_null: false,
-        description: "Mathias".to_string()
+        description: "Mathias".to_string(),
+        is_primary_key: false,
     });
     cols.push(Column {
         name: "Dennis".into(),
         sql_type: SqlType::Char(6),
         allow_null: false,
-        description: "Dennis".to_string()
+        description: "Dennis".to_string(),
+        is_primary_key: true,
     });
     cols.push(Column {
         name: "Jana".into(),
         sql_type: SqlType::VarChar(178),
         allow_null: false,
-        description: "Jana".to_string()
+        description: "Jana".to_string(),
+        is_primary_key: false,
     });
 
     let mut my_data: Vec<Option<DataSrc>> = Vec::new();

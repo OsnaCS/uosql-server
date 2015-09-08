@@ -87,7 +87,6 @@ impl SqlType {
             }
         }
     }
-
     /// Writes the vector vec to buf.
     /// Returns the bytes written.
     /// Returns byteorder::Error if vec could not be written to buf

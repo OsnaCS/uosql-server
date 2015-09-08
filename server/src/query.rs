@@ -84,6 +84,7 @@ impl Executor{
                     sql_type: c.datatype,
                     allow_null: false,
                     description: "this is a column".to_string(),
+                    is_primary_key: true,
                 }).collect();
 
                 // TODO: Use the result!
