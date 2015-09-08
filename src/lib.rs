@@ -2,13 +2,16 @@
 extern crate server;
 extern crate bincode;
 
-use std::net::{Ipv4Addr, SocketAddrV4, AddrParseError, TcpStream};
+use std::net::{Ipv4Addr, AddrParseError, TcpStream};
 use std::str::FromStr;
-use std::io::{self, Write, Read};
-pub use server::net::types::{Command, PkgType};
+use std::io::{self, Write};
+pub use server::net::types;
 pub use server::logger;
 use bincode::SizeLimit;
 use bincode::rustc_serialize::{EncodingError, DecodingError, decode_from, encode_into};
+use types::*;
+
+// const PROTOCOL_VERSION : u8 = 1;
 
 pub enum Error {
     AddrParse(AddrParseError),
@@ -47,24 +50,52 @@ impl From<DecodingError> for Error {
 }
 
 pub struct Connection {
-    ip: Ipv4Addr,
+    ip: String,
     port: u16,
     tcp: TcpStream,
+    greeting: Greeting,
+    user_data: Login,
 }
 
 impl Connection {
     /// Establish connection to specified address and port
-    pub fn connect(addr: String, port: u16) -> Result<Connection, Error> {
+    pub fn connect(addr: String, port: u16, usern: String, passwd: String) -> Result<Connection, Error> {
+        // Parse IPv4 address from String
         let tmp_addr = match std::net::Ipv4Addr::from_str(&addr) {
             Ok(tmp_addr) => tmp_addr,
-            Err(e) => return Err(Error::AddrParse(e))
+            Err(e) => return Err(e.into())
         };
-        match TcpStream::connect((tmp_addr, port)) {
-            Ok(tcp) => Ok(Connection { ip: tmp_addr, port: port, tcp: tcp } ),
-            Err(e) => Err(Error::Io(e))
+
+        // Establish Tcp connection
+        let mut tmp_tcp = match TcpStream::connect((tmp_addr, port)) {
+            Ok(tmp_tcp) => tmp_tcp,
+            Err(e) => return Err(e.into())
+        };
+
+        // Greeting message
+        match receive(&mut tmp_tcp, PkgType::Greet) {
+            Ok(_) => {},
+            Err(e) => return Err(e)
+        };
+        let greet: Greeting = try!(decode_from(&mut tmp_tcp, SizeLimit::Bounded(1024)));
+
+        // Login
+        let log = Login { username: usern, password: passwd };
+        match encode_into(&PkgType::Login, &mut tmp_tcp, SizeLimit::Bounded(1024)) {
+            Ok(_) => {},
+            Err(e) => return Err(e.into())
         }
+
+        match encode_into(&log, &mut tmp_tcp, SizeLimit::Bounded(1024)) {
+            Ok(_) => {},
+            Err(e) => return Err(e.into())
+        }
+
+        Ok(Connection { ip: addr, port: port, tcp: tmp_tcp,
+            greeting: greet, user_data: log} )
     }
 
+    /// Sends ping-command to server and receives Ok-package
     pub fn ping(&mut self) -> Result<(), Error> {
         match send_cmd(&mut self.tcp, Command::Ping, 1024) {
             Ok(_) => {},
@@ -74,6 +105,50 @@ impl Connection {
             Ok(_) => Ok(()),
             Err(err) => Err(err)
         }
+    }
+
+    /// Sends quit-command to server and receives Ok-package
+    pub fn quit(&mut self) -> Result<(), Error> {
+        match send_cmd(&mut self.tcp, Command::Quit, 1024) {
+            Ok(_) => {},
+            Err(e) => return Err(e)
+        };
+        match receive(&mut self.tcp, PkgType::Ok) {
+            Ok(_) => Ok(()),
+            Err(err) => Err(err)
+        }
+    }
+
+    // TODO: Return results (response-package)
+    pub fn execute(&mut self, query: String) -> Result<(), Error> {
+        match send_cmd(&mut self.tcp, Command::Query(query), 1024) {
+            Ok(_) => {},
+            Err(e) => return Err(e)
+        };
+        match receive(&mut self.tcp, PkgType::Ok) {
+            Ok(_) => Ok(()),
+            Err(err) => Err(err)
+        }
+    }
+
+    pub fn get_version(&self) -> u8 {
+        self.greeting.protocol_version
+    }
+
+    pub fn get_message(&self) -> &str {
+        &self.greeting.message
+    }
+
+    pub fn get_ip(&self) -> &str {
+        &self.ip
+    }
+
+    pub fn get_port(&self) -> u16 {
+        self.port
+    }
+
+    pub fn get_username(&self) -> &str {
+        &self.user_data.username
     }
 }
 

@@ -6,7 +6,7 @@ use auth;
 use parse::parser;
 use super::query;
 //use super::net::types::*;
-//use net::types::*;
+use net::types::*;
 
 pub fn handle(mut stream: TcpStream) {
     // Logging about the new connection

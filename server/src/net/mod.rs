@@ -60,7 +60,7 @@ impl From<DecodingError> for Error {
 pub fn do_handshake<W: Write + Read>(stream: &mut W)
     -> Result<(String, String), Error>
 {
-    let greet = Greeting::make_greeting(PROTOCOL_VERSION, "Welcome".into());
+    let greet = Greeting::make_greeting(PROTOCOL_VERSION, "Welcome to the fabulous uoSQL database.".into());
 
     // send handshake packet to client
     try!(encode_into(&PkgType::Greet, stream, SizeLimit::Bounded(1024))); //kind of message
