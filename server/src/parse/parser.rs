@@ -136,9 +136,9 @@ impl<'a> Parser<'a> {
 
 
 
-// ======================================================================================================================================================
+// =============================================================================
 // Parser Functions
-// ======================================================================================================================================================
+// =============================================================================
 
 
     // Starts the parsing for tokens in create-syntax
@@ -427,7 +427,13 @@ impl<'a> Parser<'a> {
             let value = try!(self.expect_literal());
             self.bump();
 
-            setvec.push(Condition {aliascol: alias, col: column, op: CompType::Equ, aliasrhs: None, rhs: CondType::Literal(value) } );
+            setvec.push(Condition {
+                aliascol: alias,
+                col: column,
+                op: CompType::Equ,
+                aliasrhs: None,
+                rhs: CondType::Literal(value)
+            } );
             if !self.expect_token(&[Token::Comma]).is_ok() {
                 done = true;
 
@@ -520,7 +526,8 @@ impl<'a> Parser<'a> {
         {
             self.bump();
             let tableid = try!(self.expect_word());
-            if !self.check_next_keyword(&[Keyword::Where]) && !self.check_next_token(&[Token::Comma]) {
+            if !self.check_next_keyword(&[Keyword::Where])
+            && !self.check_next_token(&[Token::Comma]) {
                 self.bump();
                 match self.expect_word() {
                     Err(ParseError::UnexpectedEoq) => (),
@@ -545,13 +552,19 @@ impl<'a> Parser<'a> {
             conditions = None;
         }
 
-       Ok(SelectStmt { target: targetvec, tid: tidvec, alias: aliasmap, cond: conditions, spec_op: None })
+       Ok(SelectStmt {
+            target: targetvec,
+            tid: tidvec,
+            alias: aliasmap,
+            cond: conditions,
+            spec_op: None
+        })
     }
 
 
-// ======================================================================================================================================================
+// ============================================================================
 // Utility Functions
-// ======================================================================================================================================================
+// ============================================================================
 
 
     // sets next position for the lexer
@@ -601,9 +614,12 @@ impl<'a> Parser<'a> {
                     cond = Conditions::Or(Box::new(cond),Box::new(try!(self.parse_where_part())));
                 } else {
                     if self.check_next_token(&[Token::ParenOp]) {
-                        cond = Conditions::And(Box::new(cond),Box::new(try!(self.parse_where_part())));
+                        cond = Conditions::And(
+                            Box::new(cond),
+                            Box::new(try!(self.parse_where_part())));
                     } else {
-                        cond = Conditions::And(Box::new(cond),Box::new(Conditions::Leaf(try!(self.parse_condition()))));
+                        cond = Conditions::And(Box::new(cond),
+                            Box::new(Conditions::Leaf(try!(self.parse_condition()))));
                         self.bump();
                     };
                 };
@@ -705,7 +721,7 @@ impl<'a> Parser<'a> {
             try!(self.expect_keyword(&[Keyword::Key]));
             colprimary = true;
         }
-        Ok(ColumnInfo { cid: column_id, datatype: dtype , primary: colprimary})
+        Ok(ColumnInfo { cid: column_id, datatype: dtype, primary: colprimary})
     }
 
     // checks if the current token is a datatype.
