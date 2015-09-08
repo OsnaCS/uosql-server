@@ -179,6 +179,7 @@ pub enum CondType {
     Word(String)
 }
 
+#[derive(Debug)]
 pub enum DataSrc  {
     Int(i64),
     String(String),

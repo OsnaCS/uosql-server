@@ -4,14 +4,15 @@
 pub mod engine;
 mod meta;
 mod types;
-
+mod data;
 
 pub use self::meta::Table;
 pub use self::meta::Database;
 pub use self::meta::Column;
-
+pub use self::data::Rows;
 pub use self::types::SqlType;
 use parse::ast;
+use std::string::FromUtf8Error;
 
 use std::io;
 
@@ -31,6 +32,7 @@ pub enum Error {
     BinEn(EncodingError),
     BinDe(DecodingError),
     Byteorder(::byteorder::Error),
+    Utf8Error(FromUtf8Error),
     WrongMagicNmbr,
     Engine, // cur not used
     LoadDataBase,
@@ -38,6 +40,14 @@ pub enum Error {
     AddColumn,
     InvalidType,
     PrimaryKey,
+    InterruptedRead,
+    OutOfBounds,
+}
+
+impl From<FromUtf8Error> for Error {
+    fn from(err: FromUtf8Error) -> Error {
+        Error::Utf8Error(err)
+    }
 }
 
 impl From<io::Error> for Error {
@@ -81,8 +91,11 @@ pub trait Engine {
     /// returns the table
     fn table(&self) -> &Table;
 
+    /// Writes a row to hard drive
     fn insert_row(&mut self, data: &[Option<ast::DataSrc>])
         -> Result<(), Error>;
+
+    fn full_scan(&self) -> Result<Rows, Error>;
 }
 
 #[repr(u8)]

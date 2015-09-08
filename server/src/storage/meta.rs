@@ -337,4 +337,8 @@ impl Column {
     pub fn get_sql_type(&self) -> &SqlType {
         &self.sql_type
     }
+
+    pub fn get_size(&self) -> u64 {
+        self.sql_type.size() as u64
+    }
 }
