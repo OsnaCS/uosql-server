@@ -1,5 +1,6 @@
-use bincode::rustc_serialize::{EncodingError, DecodingError};
-use std::io;
+/// Because of cyclic references to modules we need to use super::Error to use
+/// the enum. Nightly Build supports using enums - so we can fix super::Error in
+/// about 3 months ;)
 
 /// Code numeric value sent as first byte
 #[derive(PartialEq, RustcEncodable, RustcDecodable)]
@@ -23,61 +24,30 @@ pub struct ClientErrMsg {
 }
 
 /// Convert the possible Error to a serializable ClientErrMsg struct
-impl From<Error> for ClientErrMsg {
-    fn from(error: Error) -> ClientErrMsg {
+impl From<super::Error> for ClientErrMsg {
+    fn from(error: super::Error) -> ClientErrMsg {
         match error {
-            Error::Io(_) => ClientErrMsg {
+            super::Error::Io(_) => ClientErrMsg {
                 code: 0,
                 msg: "IO error".into()
             },
-            Error::UnexpectedPkg(err) => ClientErrMsg {
+            super::Error::UnexpectedPkg(err) => ClientErrMsg {
                 code: 2,
                 msg: err.into()
             },
-            Error::UnknownCmd(err) => ClientErrMsg {
+            super::Error::UnknownCmd(err) => ClientErrMsg {
                 code: 3,
                 msg: err.into()
             },
-            Error::Encode(_) => ClientErrMsg {
+            super::Error::Encode(_) => ClientErrMsg {
                 code: 4,
                 msg: "encoding error".into()
             },
-            Error::Decode(_) => ClientErrMsg {
+            super::Error::Decode(_) => ClientErrMsg {
                 code: 5,
                 msg: "decoding error".into()
             }
         }
-    }
-}
-
-/// Collection of possible errors while communicating with the client
-#[derive(Debug)]
-pub enum Error {
-    Io(io::Error),
-    UnexpectedPkg(String),
-    UnknownCmd(String),
-    Encode(EncodingError),
-    Decode(DecodingError),
-}
-
-/// Implement the conversion from io::Error to NetworkError
-impl From<io::Error> for Error {
-    fn from(err: io::Error) -> Error {
-        Error::Io(err)
-    }
-}
-
-/// Implement the conversion from EncodingError to NetworkError
-impl  From<EncodingError> for Error {
-    fn from(err: EncodingError) -> Error {
-        Error::Encode(err)
-    }
-}
-
-/// Implement the conversion from DecodingError to NetworkError
-impl From<DecodingError> for Error {
-    fn from(err: DecodingError) -> Error {
-        Error::Decode(err)
     }
 }
 

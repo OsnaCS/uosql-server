@@ -13,7 +13,7 @@ use super::parser;
 use std::collections::HashMap;
 
 // ============================================================================
-// Ok unittest
+// Result::Ok unittest
 // ============================================================================
 
 #[test]
@@ -227,7 +227,7 @@ fn test_delete_row() {
             })),
     })));
 }
-
+#[test]
 fn test_delete_full_with_alias() {
     let mut p = parser::Parser::create("delete from foo bar");
     let mut aliashm = HashMap::new();
@@ -241,7 +241,7 @@ fn test_delete_full_with_alias() {
             cond: None,
     })));
 }
-
+#[test]
 fn test_mult_where_blocks() {
     let mut p = parser::Parser::create("delete from foo where lname = 'peng' or
         fname = 'peter' and lname = 'pan'");
@@ -291,7 +291,7 @@ fn test_mult_where_blocks() {
 }
 
 // ============================================================================
-// Error unittest
+// Result::Err unittest
 // ============================================================================
 
 
