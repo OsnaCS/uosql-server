@@ -1,5 +1,6 @@
 use bincode::rustc_serialize::{EncodingError, DecodingError};
 use std::io;
+use super::Error;
 
 /// Code numeric value sent as first byte
 #[derive(PartialEq, RustcEncodable, RustcDecodable)]
@@ -47,37 +48,6 @@ impl From<Error> for ClientErrMsg {
                 msg: "decoding error".into()
             }
         }
-    }
-}
-
-/// Collection of possible errors while communicating with the client
-#[derive(Debug)]
-pub enum Error {
-    Io(io::Error),
-    UnexpectedPkg(String),
-    UnknownCmd(String),
-    Encode(EncodingError),
-    Decode(DecodingError),
-}
-
-/// Implement the conversion from io::Error to NetworkError
-impl From<io::Error> for Error {
-    fn from(err: io::Error) -> Error {
-        Error::Io(err)
-    }
-}
-
-/// Implement the conversion from EncodingError to NetworkError
-impl  From<EncodingError> for Error {
-    fn from(err: EncodingError) -> Error {
-        Error::Encode(err)
-    }
-}
-
-/// Implement the conversion from DecodingError to NetworkError
-impl From<DecodingError> for Error {
-    fn from(err: DecodingError) -> Error {
-        Error::Decode(err)
     }
 }
 

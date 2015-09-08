@@ -18,11 +18,43 @@ pub mod types;
 
 use std::io::{Write, Read};
 // to encode and decode the structs to the given stream
-use bincode::rustc_serialize::{decode_from, encode_into};
+use bincode::rustc_serialize::{EncodingError, DecodingError, decode_from, encode_into};
+use std::io;
 use bincode::SizeLimit;
-use net::types::*;
+use self::types::*;
 
 const PROTOCOL_VERSION: u8 = 1;
+
+/// Collection of possible errors while communicating with the client
+#[derive(Debug)]
+pub enum Error {
+    Io(io::Error),
+    UnexpectedPkg(String),
+    UnknownCmd(String),
+    Encode(EncodingError),
+    Decode(DecodingError),
+}
+
+/// Implement the conversion from io::Error to NetworkError
+impl From<io::Error> for Error {
+    fn from(err: io::Error) -> Error {
+        Error::Io(err)
+    }
+}
+
+/// Implement the conversion from EncodingError to NetworkError
+impl  From<EncodingError> for Error {
+    fn from(err: EncodingError) -> Error {
+        Error::Encode(err)
+    }
+}
+
+/// Implement the conversion from DecodingError to NetworkError
+impl From<DecodingError> for Error {
+    fn from(err: DecodingError) -> Error {
+        Error::Decode(err)
+    }
+}
 
 /// Write a welcome-message to the given server-client-stream
 pub fn do_handshake<W: Write + Read>(stream: &mut W)
