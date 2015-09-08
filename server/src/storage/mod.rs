@@ -3,7 +3,7 @@
 //!
 pub mod engine;
 mod meta;
-mod types;
+pub mod types;
 
 
 pub use self::meta::Table;
