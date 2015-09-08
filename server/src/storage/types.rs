@@ -120,8 +120,6 @@ impl SqlType {
         while v.len() < l as usize {
             v.push(0x00);
         }
-
-
         v
     }
 

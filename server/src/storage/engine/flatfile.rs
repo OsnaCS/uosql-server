@@ -5,11 +5,16 @@ use std::fs::OpenOptions;
 use super::super::super::parse::ast;
 use super::super::types::SqlType;
 
+//---------------------------------------------------------------
+// FlatFile-Engine
+//---------------------------------------------------------------
+
 pub struct FlatFile<'a> {
     table: Table<'a>,
 }
 
 impl<'a> FlatFile<'a> {
+    ///
     pub fn new<'b>(table: Table<'b>) -> FlatFile<'b> {
         info!("new flatfile with table: {:?}", table);
         FlatFile { table: table }
@@ -17,12 +22,15 @@ impl<'a> FlatFile<'a> {
 }
 
 impl<'a> Drop for FlatFile<'a> {
+    /// drops the Flatfile
     fn drop(&mut self) {
         info!("drop engine flatfile");
     }
 }
 
 impl<'a> Engine for FlatFile<'a> {
+    /// creates table for use later
+    /// returns with error when it has either no permission or full disk
     fn create_table(&mut self) -> Result<(), Error> {
         let mut _file = try!(OpenOptions::new()
             .write(true)
@@ -33,7 +41,7 @@ impl<'a> Engine for FlatFile<'a> {
 
         Ok(())
     }
-
+    /// returns own table
     fn table(&self) -> &Table {
         &self.table
     }

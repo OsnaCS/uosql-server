@@ -17,7 +17,6 @@ fn main() {
     let ty = SqlType::Int;
     let mut v = Vec::new();
     let _ = encode_into(&ty, &mut v, SizeLimit::Infinite);
-    //println!("{:?}", v);
 
     //let db = Database::create("storage_team").unwrap();
     let db = Database::load("storage_team").unwrap();
@@ -47,8 +46,6 @@ fn main() {
         allow_null: false,
         description: "Jana".to_string()
     });
-
-    //let my_data = DataSrc::String("fünf".to_string());
 
     let mut my_data: Vec<Option<DataSrc>> = Vec::new();
     my_data.push(Some(DataSrc::Int(10)));
