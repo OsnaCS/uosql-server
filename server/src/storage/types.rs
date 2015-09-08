@@ -31,13 +31,13 @@ impl SqlType {
     /// Returns Error::InvalidType if type of DataSrc does not match expected
     /// type.
     /// Returns byteorder::Error, if data could not be written to buf.
-    pub fn encode_into<W: Write>(&self, mut buf: W, data: DataSrc)
+    pub fn encode_into<W: Write>(&self, mut buf: &mut W, data: &DataSrc)
     -> Result<u32, Error>
     {
         match self {
             &SqlType::Int => {
                 match data {
-                    DataSrc::Int(a) => {
+                    &DataSrc::Int(a) => {
                         if a > i32::max_value() as i64 {
                             return Err(Error::InvalidType)
                         }
@@ -53,7 +53,7 @@ impl SqlType {
             },
             &SqlType::Bool => {
                 match data {
-                    DataSrc::Bool(a) => {
+                    &DataSrc::Bool(a) => {
                         try!(buf.write_u8(a as u8));
                         return Ok(self.size())
                     }
@@ -64,7 +64,7 @@ impl SqlType {
             },
             &SqlType::Char(len) => {
                 match data {
-                    DataSrc::String(a) => {
+                    &DataSrc::String(ref a) => {
                         let str_as_bytes = Self::to_bytes(&a, len as u32);
                         return Ok(try!(Self::write_to_buf(buf, &str_as_bytes)))
                     }
@@ -75,7 +75,7 @@ impl SqlType {
             },
             &SqlType::VarChar(len) => {
                 match data {
-                    DataSrc::String(a) => {
+                    &DataSrc::String(ref a) => {
                         let str_as_bytes = Self::to_bytes(&a, len as u32);
                         return Ok(try!(Self::write_to_buf(buf, &str_as_bytes)))
                     }
