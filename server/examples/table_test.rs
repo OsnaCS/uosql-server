@@ -51,15 +51,13 @@ fn main() {
     my_data.push(Some(DataSrc::Int(10)));
     my_data.push(Some(DataSrc::Bool(1)));
     my_data.push(Some(DataSrc::String("fünf".to_string())));
-    my_data.push(Some(DataSrc::String("i am a very long string, at least i think i am".to_string())));
-
-
-
+    my_data.push(
+        Some(DataSrc::String("i am a very long string, at least i think i am".to_string()))
+    );
 
     let _storage_team = db.create_table("storage_team", cols, 1).unwrap();
 
     let t = db.load_table("storage_team").unwrap();
-
 
     let mut engine = t.create_engine();
 
