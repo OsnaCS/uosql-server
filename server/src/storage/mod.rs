@@ -9,7 +9,9 @@ mod types;
 pub use self::meta::Table;
 pub use self::meta::Database;
 pub use self::meta::Column;
+
 pub use self::types::SqlType;
+use parse::ast;
 
 use std::io;
 
@@ -77,6 +79,9 @@ pub trait Engine {
     fn create_table(&mut self) -> Result<(), Error>;
     /// returns the table
     fn table(&self) -> &Table;
+
+    fn insert_row(&mut self, data: &[Option<ast::DataSrc>])
+        -> Result<(), Error>;
 }
 
 #[repr(u8)]
