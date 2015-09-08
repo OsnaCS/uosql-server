@@ -17,6 +17,7 @@ use super::SqlType;
 use super::Engine;
 use super::Error;
 use super::engine::FlatFile;
+use super::types::Column;
 
 /// constants
 const MAGIC_NUMBER: u64 = 0x6561742073686974; // secret
@@ -297,48 +298,4 @@ impl<'a> Table<'a> {
             },
         }
     }*/
-}
-
-//---------------------------------------------------------------
-// Column
-//---------------------------------------------------------------
-
-/// A table column. Has a name, a type, ...
-#[derive(Debug,RustcDecodable, RustcEncodable,Clone)]
-pub struct Column {
-    pub name: String, // name of column
-    pub sql_type: SqlType, // name of the data type that is contained in this column
-    pub is_primary_key: bool, // defines if column is PK
-    pub allow_null: bool, // defines if cloumn allows null
-    pub description: String //Displays text describing this column.
-}
-
-
-impl Column {
-    /// Creates a new column object
-    /// Returns with Column
-    pub fn new(
-        name: &str,
-        sql_type: SqlType,
-        allow_null: bool,
-        description: &str,
-        is_primary_key: bool
-        ) -> Column {
-
-        Column {
-            name: name.to_string(),
-            sql_type: sql_type.clone(),
-            allow_null: allow_null,
-            description: description.to_string(),
-            is_primary_key: is_primary_key
-        }
-    }
-
-    pub fn get_sql_type(&self) -> &SqlType {
-        &self.sql_type
-    }
-
-    pub fn get_size(&self) -> u64 {
-        self.sql_type.size() as u64
-    }
 }

@@ -6,38 +6,55 @@ extern crate uosql;
 extern crate bincode;
 extern crate byteorder;
 
-
-use std::io::{self, stdout, Write, Read};
-use std::net::TcpStream;
+use std::io::{self, stdout, Write};
 use uosql::logger;
-use uosql::net::types::*;
-use bincode::SizeLimit;
-use bincode::rustc_serialize::{decode_from, encode_into};
-
-const PROTOCOL_VERSION : u8 = 1;
+use uosql::Error;
+use uosql::Connection;
 
 fn main() {
+
     logger::with_loglevel(log::LogLevelFilter::Trace)
         .with_logfile(std::path::Path::new("log.txt"))
         .enable().unwrap();
 
-    // connect to server
-    let stream = TcpStream::connect("127.0.0.1:4242");
-    let mut s = match stream {
-        Ok(s) => s,
-        Err(_) => { error!("Could not connect to server."); return }
+    // IP, Port, Username, Passwort einlesen
+
+    let mut conn = match Connection::connect("127.0.0.1".into(), 4242,
+        "hallo".into(), "bla".into())
+    {
+        Ok(conn) => conn,
+        Err(e) => {
+            match e {
+                Error::AddrParse(_) => {
+                    error!("Could not connect to specified server.");
+                    return
+                },
+                Error::Io(_) => {
+                    error!("Connection failure. Try again later.");
+                    return
+                },
+                Error::Decode(_) => {
+                    error!("Could not read data from server.");
+                    return
+                },
+                Error::Encode(_) => {
+                    error!("Could not send data to server.");
+                    return
+                },
+                Error::UnexpectedPkg(e) => {
+                    error!("{}", e.to_string());
+                    return
+                },
+                Error::Auth(e) => {
+                    info!("{}", e.to_string());
+                    return
+                }
+            }
+        }
     };
-    info!("Connected");
 
-    // receive welcome message from server
-    let rg = receive_greeting(&mut s);
-    if !rg {
-        info!("Connection closed.");
-        return;
-    }
-
-    // try to send login-data as long as it didn't succeed
-    while !send_login(&mut s) {}
+    println!("Connected (version: {}) to {}:{}\n{}\n",
+        conn.get_version(), conn.get_ip(), conn.get_port(), conn.get_message());
 
     // read commands
     loop {
@@ -50,10 +67,10 @@ fn main() {
         let input = read_line();
 
         // send code for command-package
-        let cs = process_input(&mut s, &input);
+        let cs = process_input(&input, &mut conn);
         match cs {
-            true => return, // end client
-            false => continue, // next iteration
+            false => return, // end client
+            true => continue, // next iteration
         }
     }
 }
@@ -70,62 +87,42 @@ fn read_line() -> String {
     }
 }
 
-fn send_cmd<W: Write>(mut s: &mut W, cmd: Command, size: u64) -> Result<(), Error> {
-    try!(encode_into(&PkgType::Command, s, SizeLimit::Bounded(1024)));
-    try!(encode_into(&cmd, &mut s, SizeLimit::Bounded(size)));
-    Ok(())
-}
-
 /// Process commandline-input from user
-fn process_input<R: Read + Write>(mut s: &mut R, input: &str) -> bool {
+fn process_input(input: &str, conn: &mut Connection) -> bool {
     let input_low = input.to_lowercase();
 
     match &*input_low {
         ":quit" => {
-            match send_cmd(s, Command::Quit, 1024) {
-                Ok(_) => {
-                    match receive(&mut s, PkgType::Ok) {
-                        Ok(_) => { info!("Connection closed"); return true },
-                        Err(_) => {
-                            warn!("Failed to receive close-confirmation");
-                            return true
-                        }
-                    }
-                },
+            match conn.quit() {
+                Ok(_) => return false,
                 Err(_) => {
                     error!("Sending quit-message failed");
-                    return false
+                    return true
                 }
             }
         },
         ":ping" => {
-            match send_cmd(s, Command::Ping, 1024) {
-                Ok(_) => {},
+            match conn.ping() {
+                Ok(_) => {
+                    println!("Server still reachable.");
+                    return true
+                },
                 Err(_) => {
                     error!("Sending ping-message failed");
-                    return false
+                    return true
                 }
-            };
-            match receive(&mut s, PkgType::Ok) {
-                Ok(_) => println!("Server still reachable."),
-                Err(_) => error!("Error reading ping-package")
             }
         },
         ":exit" => {
             // TODO: other functionality to exit than quit
-            match send_cmd(s, Command::Quit, 1024) {
+            match conn.quit() {
                 Ok(_) => {
-                    match receive(&mut s, PkgType::Ok) {
-                        Ok(_) => { info!("Connection closed"); return true },
-                        Err(_) => {
-                            warn!("Failed to receive close-confirmation");
-                            return true
-                        }
-                    }
+                    println!("Bye bye.");
+                    return false
                 },
                 Err(_) => {
                     error!("Sending quit-message failed");
-                    return true
+                    return false
                 }
             }
         },
@@ -135,84 +132,34 @@ fn process_input<R: Read + Write>(mut s: &mut R, input: &str) -> bool {
         },
         _ => {
             // Size
-            match send_cmd(s, Command::Query(input.into()), 1024) {
-                Ok(_) => {},
-                Err(_) => {
-                    error!("Sending command-package failed. Try again.");
-                    return false
+            match conn.execute(input.into()) {
+                Ok(_) => { println!("Query sent. Waiting for response.");},
+                Err(e) => {
+                    match e {
+                        Error::Io(_) => {
+                            error!("Connection failure. Try again later.");
+                            return true
+                        },
+                        Error::Decode(_) => {
+                            error!("Could not read data from server.");
+                            return true
+                        }
+                        Error::Encode(_) => {
+                            error!("Could not send data to server.");
+                            return true
+                        }
+                        Error::UnexpectedPkg(e) => {
+                            error!("{}", e.to_string());
+                            return true
+                        },
+                        _ => {
+                            error!("Unexpected behaviour during execute()");
+                            return false
+                        }
+                    }
                 }
-            };
-            match receive(&mut s, PkgType::Ok) {
-                Ok(_) => warn!("decoding response not implemented yet!"),
-                Err(_) => error!("Error reading response-package")
             }
         }
     }
-    false
-}
-
-/// Match received packages to expected packages
-fn receive<R: Read>(s: &mut R, cmd: PkgType) -> Result<(), Error> {
-    let status: PkgType = try!(decode_from(s, SizeLimit::Bounded(1024)));
-
-    if status != cmd {
-        return Err(Error::UnexpectedPkg("Received
-            unexpected package".into()))
-    }
-    Ok(())
-}
-
-/// Receive greeting from server
-fn receive_greeting<R: Read>(mut buf: &mut R) -> bool {
-    match receive(&mut buf, PkgType::Greet) {
-        Ok(_) => {},
-        Err(_) => {
-            info!("Communication mismatch. Try again later.");
-            return false
-        }
-    }
-    // read greeting
-    let greet = decode_from::<R, Greeting>(buf, SizeLimit::Bounded(1024));
-    let gr = match greet {
-        Ok(gr) => gr,
-        _ => {
-            info!("Could not decode greet-package");
-            return false
-        }
-    };
-    let greeting = Greeting::make_greeting(gr.protocol_version, gr.message);
-    if PROTOCOL_VERSION != greeting.protocol_version {
-        info!("Cannot communicate with server - different versions");
-        return false
-    }
-    println!("Protocol version: {}\n{}", greeting.protocol_version,
-        greeting.message);
     true
-}
-
-/// Read login information from command line and send it to the server
-fn send_login<W: Write>(buf: &mut W) -> bool {
-    println!("Username: ");
-    let usern = read_line();
-
-    println!("Password: ");
-    let passw = read_line();
-    let login = Login {username: usern, password: passw};
-
-    //send Login package to server
-    match encode_into(&PkgType::Login, buf, SizeLimit::Bounded(1024)) {
-        Ok(_) => {},
-        Err(_) => {
-            info!("Sending package header failed");
-            return false
-        }
-    }
-
-    match encode_into(&login, buf, SizeLimit::Bounded(1024)) {
-        Ok(_) => return true,
-        Err(_) => {
-            info!("Sending login-data failed");
-            return false
-        }
-    }
 }

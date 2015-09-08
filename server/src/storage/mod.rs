@@ -8,8 +8,8 @@ mod data;
 
 pub use self::meta::Table;
 pub use self::meta::Database;
-pub use self::meta::Column;
 pub use self::data::Rows;
+pub use self::types::Column;
 pub use self::types::SqlType;
 use parse::ast;
 use std::string::FromUtf8Error;

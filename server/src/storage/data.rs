@@ -41,7 +41,11 @@ impl<'a> Rows<'a> {
         let columns = self.table.columns();
 
         for i in 0..columns.len() {
-            let mut col_data = &self.data[(field_start as usize)..((field_start + columns[i].get_size()) as usize)];
+            // this is a slice ;-)
+            let mut col_data =
+                &self.data[(field_start as usize)
+                ..((field_start + columns[i].get_size()) as usize)];
+
             field_start = field_start + columns[i].get_size();
             let datasrc = try!(columns[i].sql_type.decode_from(&mut col_data));
             result.push(datasrc);
