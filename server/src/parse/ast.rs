@@ -1,6 +1,7 @@
 /// Top level type. Is returned by `parse`.
 use super::token;
 use super::super::storage::SqlType;
+use std::collections::HashMap;
 #[derive(Debug, Clone)]
 pub enum Query {
     Dummy, // For Compiling
@@ -23,7 +24,8 @@ pub enum ManipulationStmt {
     Select(SelectStmt),
     Insert(InsertStmt),
     Delete(DeleteStmt),
-    Use(UseStmt)
+    Use(UseStmt),
+    Describe(String),
 }
 
 /// Split between creatable content (only Tables yet)
@@ -67,6 +69,7 @@ pub struct CreateTableStmt {
 pub struct ColumnInfo {
     pub cid: String,
     pub datatype: SqlType,
+    pub primary: bool,
 }
 
 /// Information for table alteration
@@ -88,6 +91,7 @@ pub enum AlterOp {
 #[derive(Debug, Clone)]
 pub struct UpdateStmt {
     pub tid: String,
+    pub alias: HashMap<String, String>,
     pub set: Vec<Condition>,
     pub conds: Option<Conditions>
 }
@@ -95,10 +99,19 @@ pub struct UpdateStmt {
 /// Information for data selection
 #[derive(Debug, Clone)]
 pub struct SelectStmt {
-    pub target: Vec<String>,
+    pub target: Vec<Target>,
     pub tid: Vec<String>,
+    pub alias: HashMap<String, String>,
     pub cond: Option<Conditions>,
     pub spec_op: Option<SpecOps>
+}
+
+/// Information for data selection
+#[derive(Debug, Clone)]
+pub struct Target {
+    pub alias: Option<String>,
+    pub col: String,
+    pub rename: Option<String>,
 }
 
 /// Information for data insertion
@@ -113,6 +126,7 @@ pub struct InsertStmt {
 #[derive(Debug, Clone)]
 pub struct DeleteStmt {
     pub tid: String,
+    pub alias: HashMap<String, String>,
     pub cond: Option<Conditions>
 }
 
@@ -136,8 +150,14 @@ pub enum Conditions {
 /// Information for the where-clause
 #[derive(Debug, Clone)]
 pub struct Condition {
+    pub aliascol: Option<String>,
     pub col: String,
     pub op: CompType,
+    // in where clause, the condition may consist of two column names,
+    // this alaiasrhs is existent, if the right side is a word (=column)
+    // and if there exists an alias in the sql statement
+    // example: where p.name = s.name
+    pub aliasrhs: Option<String>,
     pub rhs: CondType
 }
 
@@ -155,8 +175,7 @@ pub enum CompType {
 /// Allowed data types for where-clause
 #[derive(Debug, Clone)]
 pub enum CondType {
-    Literal(String),
-    Num(f32),
+    Literal(token::Lit),
     Word(String)
 }
 
