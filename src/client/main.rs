@@ -34,13 +34,17 @@ fn main() {
                 Error::Decode(_) => {
                     error!("Could not read data from server.");
                     return
-                }
+                },
                 Error::Encode(_) => {
                     error!("Could not send data to server.");
                     return
-                }
+                },
                 Error::UnexpectedPkg(e) => {
                     error!("{}", e.to_string());
+                    return
+                },
+                Error::Auth(e) => {
+                    info!("{}", e.to_string());
                     return
                 }
             }

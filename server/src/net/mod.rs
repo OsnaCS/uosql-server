@@ -91,12 +91,18 @@ pub fn read_login<R: Read + Write>(stream: &mut R)
 }
 
 
-/// send error package with given error code status
+/// Send error package with given error code status
 pub fn send_error_package<W: Write>(mut stream: &mut W, err: ClientErrMsg)
     -> Result<(), Error>
 {
     try!(encode_into(&PkgType::Error, stream, SizeLimit::Bounded(1024)));
     try!(encode_into(&err, &mut stream, SizeLimit::Bounded(1024)));
+    Ok(())
+}
+
+/// Send information package with only package type information
+pub fn send_info_package<W: Write>(mut stream: &mut W, pkg: PkgType) -> Result<(), Error> {
+    try!(encode_into(&pkg, stream, SizeLimit::Bounded(1024)));
     Ok(())
 }
 
@@ -113,23 +119,6 @@ pub fn read_commands<R: Read + Write>(stream: &mut R)
 
     // second  4 bytes is the kind of command
     decode_from(stream, SizeLimit::Bounded(4096)).map_err(|e| e.into())
-}
-
-/// Send error packet with given error code status
-pub fn send_error_packet<W: Write>(mut stream: &mut W, err: ClientErrMsg)
-    -> Result<(), Error>
-{
-    try!(encode_into(&PkgType::Error, stream, SizeLimit::Bounded(1024)));
-    try!(encode_into(&err, &mut stream, SizeLimit::Bounded(1024)));
-    Ok(())
-}
-
-/// Send ok packet
-pub fn send_ok_packet<W: Write>(mut stream: &mut W)
-    -> Result<(), Error>
-{
-    try!(encode_into(&PkgType::Ok, stream, SizeLimit::Bounded(1024)));
-    Ok(())
 }
 
 // # Some information for the `net` working group:

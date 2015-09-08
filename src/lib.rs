@@ -19,6 +19,7 @@ pub enum Error {
     UnexpectedPkg(String),
     Encode(EncodingError),
     Decode(DecodingError),
+    Auth(String),
 }
 
 /// Implement the conversion from io::Error to Connection-Error
@@ -91,8 +92,14 @@ impl Connection {
             Err(e) => return Err(e.into())
         }
 
-        Ok(Connection { ip: addr, port: port, tcp: tmp_tcp,
-            greeting: greet, user_data: log} )
+        let status: PkgType = try!(decode_from(&mut tmp_tcp, SizeLimit::Bounded(1024)));
+        match status {
+            PkgType::AccGranted =>
+                Ok(Connection { ip: addr, port: port, tcp: tmp_tcp,
+                    greeting: greet, user_data: log} ),
+            PkgType::AccDenied => Err(Error::Auth("Authentication failure.".into())),
+            _ => Err(Error::UnexpectedPkg("Unexpected package received. Server is INSANE.".into()))
+        }
     }
 
     /// Sends ping-command to server and receives Ok-package

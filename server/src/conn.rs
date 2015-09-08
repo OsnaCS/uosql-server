@@ -5,7 +5,6 @@ use net;
 use auth;
 use parse::parser;
 use super::query;
-//use super::net::types::*;
 use net::types::*;
 
 pub fn handle(mut stream: TcpStream) {
@@ -20,9 +19,24 @@ pub fn handle(mut stream: TcpStream) {
     let _ = match res {
         Ok((user, pw)) => {
             info!("Connection established. Handshake sent");
-            auth::find_user(&user, &pw)
+            match auth::find_user(&user, &pw) {
+                Ok(_) => {
+                    match net::send_info_package(&mut stream, PkgType::AccGranted) {
+                        Ok(_) => {},
+                        Err(_) => return
+                    }
+                },
+                Err(_) => {
+                    let _ = net::send_info_package(&mut stream, PkgType::AccDenied);
+                    // Loops for user-convienience?
+                    return
+                }
+            }
         },
-        _ => Err(auth::AuthError::UserNotFound)
+        _ => {
+            let _ = net::send_info_package(&mut stream, PkgType::AccDenied);
+            return
+        }
     };
 
     // Read commands from the client (with help of `net`) --> done
@@ -36,7 +50,7 @@ pub fn handle(mut stream: TcpStream) {
             match cmd {
                 // exit the session and shutdown the connection
                 Command::Quit => {
-                    match net::send_ok_packet(&mut stream) {
+                    match net::send_info_package(&mut stream, PkgType::Ok) {
                         Ok(_) => {
                             debug!("Client disconnected properly.");
                             return
@@ -47,7 +61,7 @@ pub fn handle(mut stream: TcpStream) {
                 // send OK-Package, unused value can be checked to try again and
                 // eventually close to connection as timeout issue
                 Command::Ping => {
-                    match net::send_ok_packet(&mut stream) {
+                    match net::send_info_package(&mut stream, PkgType::Ok) {
                         Ok(_) => { },
                         Err(_) => warn!("Failed to send packet.")
                     }
@@ -71,7 +85,8 @@ pub fn handle(mut stream: TcpStream) {
                         Err(error) => println!("{:?}", error),
                     }
 
-                    match net::send_ok_packet(&mut stream) {
+                    // TODO: Definition of response missing
+                    match net::send_info_package(&mut stream, PkgType::Ok) {
                         Ok(_) => { },
                         Err(_) => warn!("Failed to send packet.")
                     }
