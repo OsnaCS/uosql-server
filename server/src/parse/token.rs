@@ -1,5 +1,5 @@
 use super::Span;
-
+use parse::ast::*;
 /// A token with it's associated Span in the source code
 #[derive(Debug)]
 pub struct TokenSpan {
@@ -12,6 +12,16 @@ pub enum Lit {
 	Str(String),
 	Int(i64),
     Float(f64)
+}
+
+impl Lit {
+    fn into_DataSrc(&self) -> DataSrc {
+        match self {
+            &Lit::Str(ref s) => DataSrc::String(s.clone()),
+            &Lit::Int(ref i) => DataSrc::Int(i.clone()),
+            &Lit::Float(ref f) => DataSrc::String(f.to_string()),
+        }
+    }
 }
 
 /// A token: Everything the lexer can produce

@@ -1,20 +1,63 @@
 extern crate server;
+use std::io::{self, stdout, Write};
 use server::parse;
 use server::query;
+use server::auth;
 
 
 fn main() {
+    print!("Username: ");
+    let username = read_query();
+    let mut user = auth::User { _name: username.into(), _currentDatabase: None };
+    println!("to exit program type 'exit'");
+    print!("Sql Query: ");
+    let mut query = read_query();
+    while query != "exit" {
+        execute(&query, & mut user);
+        print!("Sql Query: ");
+        query = read_query();
+    }
+
+}
 
 
-    let mut p = parse::Parser::create("create table testtable");
-    let ast = p.parse();
+fn execute(query: &str, user: & mut auth::User) {
+        let ast = parse::parse(query);
 
-    match ast {
+        match ast {
         Ok(tree) => {
                 println!("{:?}", tree);
-                query::execute_from_ast(tree, Some("testbase".into()));
+                match query::execute_from_ast(tree, user) {
+                    Ok(s) => (),
+                    Err(error) => println!("{:?}", error),
+                };
             },
         Err(error) => println!("{:?}", error),
 }
+}
 
+pub fn read_query() -> String {
+        let e = stdout().flush();
+        match e {
+            Ok(_) => {},
+            Err(_) => {},
+        }
+        let a = read_line();
+        return a;
+}
+
+
+fn read_line() -> String {
+    let mut input = String::new();
+    loop {
+        match io::stdin().read_line(&mut input) {
+            Ok(_) => {
+                match &*input {
+                    "\n" => return input,
+                    _ => return input.trim().into()
+                }
+            },
+            _ => { }
+        }
+    }
 }
