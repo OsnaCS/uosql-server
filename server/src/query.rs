@@ -11,7 +11,6 @@ use super::storage::{Database, Column};
 
 pub struct Executor {
     pub database: Option<Database>,
-
 }
 
 
@@ -32,10 +31,6 @@ pub struct Executor {
         }
     //info!("Not implemented! :-(");
     }
-
-
-
-
 
 
 impl Executor{
