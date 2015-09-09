@@ -16,7 +16,8 @@ pub struct Executor<'a> {
 }
 
 
-    pub fn execute_from_ast<'a>(query: Query, user: &'a mut auth::User) -> Result<Rows, ExecutionError> {
+    pub fn execute_from_ast<'a>(query: Query, user: &'a mut auth::User)
+        -> Result<Rows, ExecutionError> {
 
 
         let mut executor = Executor::new(user);
@@ -43,7 +44,8 @@ impl<'a> Executor<'a> {
     }
 
 
-    fn execute_manipulation_stmt(&mut self, query: ManipulationStmt) -> Result<Rows, ExecutionError> {
+    fn execute_manipulation_stmt(&mut self, query: ManipulationStmt)
+        -> Result<Rows, ExecutionError> {
 
         match query {
             ManipulationStmt::Use(stmt) => self.execute_use_stmt(stmt),
@@ -103,7 +105,8 @@ impl<'a> Executor<'a> {
         }
     }
 
-    fn execute_create_table_stmt(&mut self, query: CreateTableStmt) -> Result<Rows, ExecutionError> {
+    fn execute_create_table_stmt(&mut self, query: CreateTableStmt)
+         -> Result<Rows, ExecutionError> {
         let base = try!(self.get_own_database());
         let tmp_vec : Vec<_> = query.cols.into_iter().map(|c| Column {
             name: c.cid,

@@ -84,7 +84,9 @@ pub fn handle(mut stream: TcpStream) {
                     match ast {
                         Ok(tree) => {
                             println!("{:?}", tree);
-                            query::execute_from_ast(tree, & mut auth::User { _name: "DummyUser".into(), _currentDatabase: None} );
+                            query::execute_from_ast(tree, & mut auth::User {
+                                _name: "DummyUser".into(),
+                                _currentDatabase: None} );
                         },
                         Err(error) => println!("{:?}", error),
                     }
