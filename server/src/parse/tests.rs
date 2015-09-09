@@ -18,8 +18,7 @@ use std::collections::HashMap;
 
 #[test]
 fn test_create_table_empty() {
-    let mut p = parser::Parser::create("cReAtE table
-        foo");
+    let mut p = parser::Parser::create("cReAtE table \n foo");
 
     assert_eq!(p.parse(), Ok(Query::DefStmt(DefStmt::Create(
         CreateStmt::Table(CreateTableStmt {tid: "foo".to_string(),
