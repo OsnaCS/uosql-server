@@ -17,11 +17,11 @@ Commands
 Startup parameters
 ################################################################################
 Call executable with optional parameters to have a more refined user experience,
-e.g. "uosql-server --bind=192.168.1.59 --port=30" to connect to local host.
-Parameters can be applied in any order. Inocorrect or missing parameters will
-result in input prompt by client for the specific values. If no further input
-is provided by pressing "return", default values will be used to establish a
-connection to local host (127.0.0.1:4242).
+e.g. "uosql-server --bind=192.168.1.59 --port=30" to connect to the given ip at
+the specified port. Parameters can be applied in any order. Inocorrect or
+missing parameters will result in input prompt by client for the specific
+values. If no further input is provided by pressing "return", default values
+will be used to establish a connection to local host (127.0.0.1:4242).
 
 --bind=<address>    Change the bind address. Standard format is "w.x.y.z" with
                     w,x,y,z consisting of one up to three digits.
