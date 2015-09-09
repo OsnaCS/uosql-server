@@ -1,7 +1,7 @@
 //! Storage Engine trait and several implementations
 //!
 //!
-pub mod engine;
+mod engine;
 mod meta;
 pub mod types;
 
@@ -12,8 +12,12 @@ pub use self::meta::Database;
 pub use self::data::Rows;
 pub use self::types::Column;
 pub use self::types::SqlType;
-use parse::ast;
-use std::string::FromUtf8Error;
+pub use parse::ast;
+pub use std::string::FromUtf8Error;
+pub use self::engine::PrimaryKeyMap;
+pub use self::data::Row;
+
+//use super::parse::ast::DataSrc;
 
 use std::io;
 
@@ -40,9 +44,12 @@ pub enum Error {
     RemoveColumn,
     AddColumn,
     InvalidType,
-    PrimaryKey,
     InterruptedRead,
     OutOfBounds,
+    MissingPrimaryKey,
+    InvalidColumn,
+    NotAPrimaryKey,
+    NoImplementation,
 }
 
 impl From<FromUtf8Error> for Error {
@@ -97,6 +104,11 @@ pub trait Engine {
         -> Result<(), Error>;
 
     fn full_scan(&self) -> Result<Rows, Error>;
+
+    fn get_row_with_primary_key(&self, primary_keys: Vec<PrimaryKeyMap>)
+        -> Result<Rows, Error>;
+
+    fn check_for_primary_key(&self, primary_keys: &Vec<PrimaryKeyMap>) -> Result<bool, Error>;
 }
 
 #[repr(u8)]

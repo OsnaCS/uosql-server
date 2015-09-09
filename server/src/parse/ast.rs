@@ -206,5 +206,41 @@ pub enum DataSrc  {
     Int(i64),
     String(String),
     Bool(u8),
+}
 
+impl DataSrc {
+    /// checks if Value is true
+    /// return is true for Int when Value no null
+    /// return is true for String when String is not empty
+    /// return is true for Bool when Bool is not null
+    pub fn is_true(&self) -> bool {
+        match self {
+            &DataSrc::Int(x) => {
+                if x != 0 {
+                    return false
+                }
+                true
+            },
+            &DataSrc::String(ref x) => {
+                if x.is_empty() {
+                    return false
+                }
+                true
+            },
+            &DataSrc::Bool(x) => {
+                if x == 0 {
+                    return false
+                }
+                true
+            },
+        }
+    }
+    /// static method to turn u8 into bool
+    /// return is true for input when input is not null
+    pub fn to_bool(input: u8) -> bool {
+        if input == 0 {
+            return false
+        }
+        true
+    }
 }

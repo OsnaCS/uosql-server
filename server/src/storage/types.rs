@@ -192,6 +192,10 @@ impl Column {
         &self.sql_type
     }
 
+    pub fn get_coulmn_name(&self) -> &str {
+        &self.name
+    }
+
     pub fn get_size(&self) -> u32 {
         self.sql_type.size() as u32
     }
@@ -216,5 +220,23 @@ impl FromSql for u16 {
     fn from_sql(mut data: &[u8]) -> Result<Self, Error> {
         let u = try!(data.read_u16::<BigEndian>());
         Ok(u)
+    }
+}
+
+impl FromSql for u8 {
+    fn from_sql(mut data: &[u8]) -> Result<Self, Error> {
+        Err(Error::NoImplementation)
+    }
+}
+
+impl FromSql for bool {
+    fn from_sql(mut data: &[u8]) -> Result<Self, Error> {
+        Err(Error::NoImplementation)
+    }
+}
+
+impl FromSql for String {
+    fn from_sql(mut data: &[u8]) -> Result<Self, Error> {
+        Err(Error::NoImplementation)
     }
 }

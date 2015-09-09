@@ -4,12 +4,19 @@ use std::fs::OpenOptions;
 use std::io::Read;
 use super::super::super::parse::ast;
 use super::super::types::SqlType;
+use super::super::data::Row;
+use super::super::super::parse::ast::DataSrc;
 
 //---------------------------------------------------------------
 // FlatFile-Engine
 //---------------------------------------------------------------
 use super::super::data::{Rows};
 use std::fs;
+
+pub struct PrimaryKeyMap {
+    column_name: String,
+    primary_key_value: DataSrc,
+}
 
 pub struct FlatFile<'a> {
     table: Table<'a>,
@@ -102,5 +109,78 @@ impl<'a> Engine for FlatFile<'a> {
         }
 
         Ok(Rows{data: buf, columns: self.table().columns().to_vec()})
+    }
+
+    /// Searches rows with machtching primary keys
+    /// returns vector of rows containing matching rows on fail returns early with Error
+    /// returns an empty vector when no matches found
+    fn get_row_with_primary_key(&self, primary_keys: Vec<PrimaryKeyMap>)
+        -> Result<Rows, Error>
+        {
+
+        try!(self.check_for_primary_key(&primary_keys));
+
+        let rows = try!(self.full_scan()); // full list of rows
+        let it = rows.iter(); // iterator for row list
+        let mut checked_rows = Rows::default(); // result list
+        checked_rows.columns = self.table.meta_data.columns.clone();
+        info!("start match search");
+        'outer: for i in it { // outer iterator for rows
+            'inner: for pk in &primary_keys { // inner iterator for keys
+                match &pk.primary_key_value {
+                    &DataSrc::Int(x) => {
+                        let val: i32 = try!(i.get_value_by_name(
+                                &(pk.column_name.to_string())
+                            ));// get value of row with column
+
+                        if !val == (x as i32) {
+                            continue 'outer // stop checking if one false
+                        }
+                    }
+                    &DataSrc::Bool(x) => {
+                        let val: u8 = try!(i.get_value_by_name(
+                                &(pk.column_name.to_string())
+                            ));
+
+                        if !(DataSrc::to_bool(val) && DataSrc::to_bool(x)) {
+                            continue 'outer
+                        }
+                    }
+                    &DataSrc::String(ref x)=> {
+                        let val: String = try!(i.get_value_by_name(
+                                &(pk.column_name.to_string())
+                            ));
+
+                        if !(val == *x) {
+                            continue 'outer
+                        }
+                    }
+                }
+            }
+            info!("found a match gonna push it");
+            checked_rows.add_row(i); // push matches to result list
+        }
+        info!("finished search for match");
+        Ok(checked_rows) // return result list
+    }
+
+    fn check_for_primary_key(&self, primary_keys: &Vec<PrimaryKeyMap>) -> Result<bool, Error> {
+        info!("start check for pk");
+        for pk in primary_keys {
+            match self.table.meta_data.columns.iter().find(|x| x.name == pk.column_name) {
+                Some(x) => {
+                    if x.is_primary_key == false {
+                        warn!("Column {:?} is not a primary key", pk.column_name);
+                        return Err(Error::NotAPrimaryKey)
+                    }
+                },
+                None => {
+                    warn!("Column {:?} does not exist", pk.column_name);
+                    return Err(Error::InvalidColumn)
+                },
+            }
+        }
+        info!("check for pk was successful");
+        Ok(true)
     }
 }

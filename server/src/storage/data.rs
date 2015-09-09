@@ -7,7 +7,7 @@ use super::types::Column;
 use super::types::FromSql;
 use byteorder::{BigEndian, ReadBytesExt};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Rows {
     pub data: Vec<u8>,
     pub columns: Vec<Column>,
@@ -30,9 +30,9 @@ impl<'a> Row<'a> {
         self.owner.columns.len() as u32
     }
 
-    //fn get_value_by_name<T: FromSql>(&self, col_name: &str) -> T {
-
-    //}
+    pub fn get_value_by_name<T: FromSql>(&self, col_name: &str) -> Result<T, Error>{
+        Err(Error::NoImplementation)
+    }
 
    // fn get_value<T: FromSql>(&self, index: u32) -> FromSql -> T {
 
@@ -87,6 +87,10 @@ impl Rows {
             rows: self,
             iter_pos: 0
         }
+    }
+
+    pub fn add_row(&self, add: Row) {
+
     }
 }
 
@@ -149,15 +153,18 @@ impl<'a> Iterator for RowsIter<'a> {
 
                     self.iter_pos = self.iter_pos + 2;
 
-                    buf = &self.rows.data[(self.iter_pos as usize)
-                        ..((self.iter_pos + len as u32) as usize)];
+                    let from = (self.iter_pos as usize);
+                    let to = ((self.iter_pos + len as u32) as usize);
+                    buf = &self.rows.data[from .. to];
+
                     self.iter_pos = self.iter_pos + len as u32;
                     buf
                 },
                 _ => {
-                    let mut buf =
-                        &self.rows.data[(self.iter_pos as usize)
-                        ..((self.iter_pos + columns[i].get_size()) as usize)];
+                    let from = (self.iter_pos as usize);
+                    let to = ((self.iter_pos + columns[i].get_size()) as usize);
+                    let mut buf = &self.rows.data[from .. to];
+
                     self.iter_pos = self.iter_pos + columns[i].get_size();
                     buf
                 }

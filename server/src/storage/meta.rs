@@ -20,7 +20,7 @@ use super::engine::FlatFile;
 use super::types::Column;
 
 /// constants
-const MAGIC_NUMBER: u64 = 0x6561742073686974; // secret
+const MAGIC_NUMBER: u64 = 0x49616D4372616E43;
 const VERSION_NO: u8 = 1;
 
 
@@ -112,7 +112,7 @@ impl Database {
 pub struct TableMetaData {
     version_nmbr: u8,
     engine_id: u8,
-    columns: Vec<Column>,
+    pub columns: Vec<Column>,
     //primary_key: String
 }
 
@@ -125,7 +125,7 @@ pub struct TableMetaData {
 pub struct Table<'a> {
     database: &'a Database,
     pub name: String,
-    meta_data: TableMetaData,
+    pub meta_data: TableMetaData,
 }
 
 impl<'a> Table<'a> {
