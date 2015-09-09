@@ -5,7 +5,7 @@
 //!
 
 use super::parse::ast::*;
-use super::storage::{Database, Column, Table};
+use super::storage::{Database, Column, Table, Rows};
 use super::storage;
 use super::auth;
 use super::parse::parser::ParseError;
@@ -16,7 +16,7 @@ pub struct Executor<'a> {
 }
 
 
-    pub fn execute_from_ast<'a>(query: Query, user: &'a mut auth::User) -> Result<(), ExecutionError> {
+    pub fn execute_from_ast<'a>(query: Query, user: &'a mut auth::User) -> Result<Rows, ExecutionError> {
 
 
         let mut executor = Executor::new(user);
@@ -43,27 +43,18 @@ impl<'a> Executor<'a> {
     }
 
 
-    fn execute_manipulation_stmt(&mut self, query: ManipulationStmt) -> Result<(), ExecutionError> {
+    fn execute_manipulation_stmt(&mut self, query: ManipulationStmt) -> Result<Rows, ExecutionError> {
 
         match query {
             ManipulationStmt::Use(stmt) => self.execute_use_stmt(stmt),
             ManipulationStmt::Insert(stmt) => self.execute_insert_stmt(stmt),
-            _ => Ok(()),
+            ManipulationStmt::Describe(stmt) => self.execute_describe_stmt(stmt),
+            _ => Err(ExecutionError::DebugError("Feature not implemented yet!".into())),
         }
 
     }
 
-    fn execute_use_stmt(&mut self, query: UseStmt) -> Result<(), ExecutionError> {
-        match query {
-            UseStmt::Database(querybase) => {
-                self.user._currentDatabase = Some(try!(Database::load(&querybase)));
-                Ok(())
-            }
-
-        }
-    }
-
-    fn execute_def_stmt(&mut self, query: DefStmt) -> Result<(), ExecutionError> {
+    fn execute_def_stmt(&mut self, query: DefStmt) -> Result<Rows, ExecutionError> {
         match query {
             DefStmt::Create(stmt) => self.execute_create_stmt(stmt),
             DefStmt::Drop(stmt) =>  self.execute_drop_stmt(stmt),
@@ -71,17 +62,48 @@ impl<'a> Executor<'a> {
         }
     }
 
-    fn execute_create_stmt(&mut self, query: CreateStmt) -> Result<(), ExecutionError> {
+    fn execute_use_stmt(&mut self, query: UseStmt) -> Result<Rows, ExecutionError> {
+        match query {
+            UseStmt::Database(querybase) => {
+                self.user._currentDatabase = Some(try!(Database::load(&querybase)));
+                Ok(generate_rows_dummy())
+            }
+
+        }
+    }
+
+    fn execute_insert_stmt(&mut self, stmt: InsertStmt) -> Result<Rows, ExecutionError> {
+        let table = self.get_table(&stmt.tid);
+        if !stmt.col.is_empty() {
+            return Err(ExecutionError::DebugError("Not implemented:
+            Insert just some values into some columns.
+            Use insert into table values (_,....) instead".into()))
+        }
+
+        Ok(generate_rows_dummy())
+
+    }
+
+    fn execute_describe_stmt(&mut self, query: String) -> Result<Rows, ExecutionError>{
+        let table = try!(self.get_table(&query));
+        let columns = table.columns();
+        let mut columnvec = Vec::new();
+
+        columnvec.extend(columns.iter().cloned());
+        Ok(Rows { data: Vec::new(), columns: columnvec } )
+    }
+
+    fn execute_create_stmt(&mut self, query: CreateStmt) -> Result<Rows, ExecutionError> {
         match query {
             CreateStmt::Database(s) => {
                 self.user._currentDatabase = Some(try!(Database::create(&s)));
-                Ok(())
+                Ok(generate_rows_dummy())
             }
             CreateStmt::Table(stmt) => self.execute_create_table_stmt(stmt),
         }
     }
 
-    fn execute_create_table_stmt(&mut self, query: CreateTableStmt) -> Result<(), ExecutionError> {
+    fn execute_create_table_stmt(&mut self, query: CreateTableStmt) -> Result<Rows, ExecutionError> {
         let base = try!(self.get_own_database());
         let tmp_vec : Vec<_> = query.cols.into_iter().map(|c| Column {
             name: c.cid,
@@ -91,15 +113,16 @@ impl<'a> Executor<'a> {
              is_primary_key: c.primary,
         }).collect();
         try!(base.create_table(&query.tid, tmp_vec, 0));
-        Ok(())
+        Ok(generate_rows_dummy())
     }
 
-    fn execute_drop_stmt(&mut self, query: DropStmt) -> Result<(), ExecutionError> {
+    fn execute_drop_stmt(&mut self, query: DropStmt) -> Result<Rows, ExecutionError> {
         match query {
             DropStmt::Table(s) => {
                 let base = try!(self.get_own_database());
                 let table = try!(base.load_table(&s));
-                Ok(try!(table.delete()))
+                try!(table.delete());
+                Ok(generate_rows_dummy())
             },
             DropStmt::Database(s) => {
                 let base = try!(Database::load(&s));
@@ -117,40 +140,30 @@ impl<'a> Executor<'a> {
                 if baseinuse {
                     self.user._currentDatabase = None;
                 };
-                Ok(())
+                Ok(generate_rows_dummy())
             },
         }
     }
 
-    fn execute_alt_stmt(&mut self, query: AltStmt) -> Result<(), ExecutionError> {
+    fn execute_alt_stmt(&mut self, query: AltStmt) -> Result<Rows, ExecutionError> {
         match query {
             AltStmt::Table(stmt) => self.execute_alt_table_stmt(stmt),
         }
 
     }
 
-    fn execute_alt_table_stmt(&mut self, stmt: AlterTableStmt) -> Result<(), ExecutionError> {
+    fn execute_alt_table_stmt(&mut self, stmt: AlterTableStmt) -> Result<Rows, ExecutionError> {
         let table = try!(self.get_table(&stmt.tid));
         match stmt.op {
-            AlterOp::Add(columninfo) => Ok(()),
-            AlterOp::Drop(column) => Ok(()),
-            AlterOp::Modify(columninfo) => Ok(()),
+            AlterOp::Add(columninfo) => Ok(generate_rows_dummy()),
+            AlterOp::Drop(column) => Ok(generate_rows_dummy()),
+            AlterOp::Modify(columninfo) => Ok(generate_rows_dummy()),
         }
 
 
     }
 
-    fn execute_insert_stmt(&mut self, stmt: InsertStmt) -> Result<(), ExecutionError> {
-        let table = self.get_table(&stmt.tid);
-        if !stmt.col.is_empty() {
-            return Err(ExecutionError::DebugError("Not implemented:
-            Insert just some values into some columns.
-            Use insert into table values (_,....) instead".into()))
-        }
-        
-        Ok(())
 
-    }
 
 
 
@@ -187,10 +200,17 @@ impl<'a> Executor<'a> {
         let dbase = try!(self.get_own_database());
         Ok(try!(dbase.load_table(table)))
     }
+
+
 }
 
 
-
+fn generate_rows_dummy() -> Rows {
+    Rows {
+    data: Vec::new(),
+    columns: Vec::new(),
+}
+}
 
 
 

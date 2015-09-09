@@ -28,7 +28,7 @@ fn execute(query: &str, user: & mut auth::User) {
         Ok(tree) => {
                 println!("{:?}", tree);
                 match query::execute_from_ast(tree, user) {
-                    Ok(s) => (),
+                    Ok(s) => println!("Resultset: {:?}", s),
                     Err(error) => println!("{:?}", error),
                 };
             },
