@@ -57,6 +57,8 @@ impl SqlType {
     /// Returns Error::InvalidType if type of DataSrc does not match expected
     /// type.
     /// Returns byteorder::Error, if data could not be written to buf.
+    /// DataSrc: contains data to write to buf
+    /// buf: target of write operation.
     pub fn encode_into<W: Write>(&self, mut buf: &mut W, data: &DataSrc)
     -> Result<u32, Error>
     {
@@ -216,5 +218,24 @@ impl FromSql for u16 {
     fn from_sql(mut data: &[u8]) -> Result<Self, Error> {
         let u = try!(data.read_u16::<BigEndian>());
         Ok(u)
+    }
+}
+
+impl FromSql for String {
+    fn from_sql(mut data: &[u8]) -> Result<Self, Error> {
+
+        let mut s = String::new();
+        try!(data.read_to_string(&mut s));
+        Ok(s)
+    }
+}
+
+impl FromSql for bool {
+    fn from_sql(mut data: &[u8]) -> Result<Self, Error> {
+        let b = try!(data.read_u8());
+        if b == 0 {
+            return Ok(false)
+        }
+        Ok(true)
     }
 }

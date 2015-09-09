@@ -18,6 +18,8 @@ use super::Engine;
 use super::Error;
 use super::engine::FlatFile;
 use super::types::Column;
+use super::data::Rows;
+use super::super::parse::ast::DataSrc;
 
 /// constants
 const MAGIC_NUMBER: u64 = 0x6561742073686974; // secret
@@ -285,6 +287,58 @@ impl<'a> Table<'a> {
     fn get_path(database: &str, name: &str, ext: &str) -> String {
          format!("{}/{}.{}", database, name, ext)
     }
+
+    pub fn get_description(&self) -> Result<Rows, Error> {
+        let mut data = Vec::<u8>::new();
+
+        let mut columns = Vec::<Column>::new();
+        columns.push(Column::new("Name", SqlType::VarChar(255), false, "description", false));
+        columns.push(Column::new("SqlType", SqlType::VarChar(255), false, "SqlType", false));
+        columns.push(Column::new("allow_null", SqlType::Bool, false, "description", false));
+        columns.push(Column::new("is_primary_key", SqlType::Bool, false, "description", false));
+        columns.push(Column::new("description", SqlType::VarChar(255), false, "description", false));
+
+        for c in &self.columns()[..] {
+            let mut datasrc = DataSrc::String(c.name.clone());
+            SqlType::VarChar(255).encode_into(&mut data, &datasrc);
+
+            datasrc = DataSrc::String(format!("{:?}", c.sql_type));
+            SqlType::VarChar(255).encode_into(&mut data, &datasrc);
+
+            if c.is_primary_key == true {
+                datasrc = DataSrc::Bool(1);
+            }
+            else {
+                datasrc = DataSrc::Bool(0);
+            }
+
+            SqlType::Bool.encode_into(&mut data, &datasrc);
+
+            if c.allow_null == true {
+                datasrc = DataSrc::Bool(1);
+            }
+            else {
+                datasrc = DataSrc::Bool(0);
+            }
+
+            SqlType::Bool.encode_into(&mut data, &datasrc);
+
+            datasrc = DataSrc::String(c.description.clone());
+            SqlType::VarChar(255).encode_into(&mut data, &datasrc);
+        }
+        Ok(Rows {data: data, columns: columns})
+    }
+
+/*
+    pub name: String, // name of column
+    pub sql_type: SqlType, // name of the data type that is contained in this column
+    pub is_primary_key: bool, // defines if column is PK
+    pub allow_null: bool, // defines if cloumn allows null
+    pub description: String //Displays text describing this column.
+*/
+
+
+
 
  /*   fn get_primary_key(&self) -> Column {
         match self.meta_data.columns.iter().find(|x| x.name == self.meta_data.primary_key) {

@@ -7,25 +7,32 @@ use super::types::Column;
 use super::types::FromSql;
 use byteorder::{BigEndian, ReadBytesExt};
 
+/// Contains binary data
 #[derive(Debug)]
 pub struct Rows {
     pub data: Vec<u8>,
     pub columns: Vec<Column>,
 }
 
+/// Represents a single row in a Rows struct
 pub struct Row<'a> {
     owner: &'a Rows,
-    column_data: Vec<Vec<u8>>,
+    // Contains one vector per column. Each vector contains
+    // a vector with the column data.
+    pub column_data: Vec<Vec<u8>>,
 }
 
 impl<'a> Row<'a> {
+    /// Creates a new Row
+    /// rows: the data struct containing the column definitions
+    /// row_data: The binary data representing the row.
     pub fn new(rows: &'a Rows, row_data: &[u8]) -> Row<'a> {
         let mut row = Row {owner: rows, column_data: Vec::<Vec<u8>>::new()};
         row.load_data(row_data);
         row
     }
 
-
+    /// returns the number of columns of the row.
     fn column_count(&self) -> u32 {
         self.owner.columns.len() as u32
     }
@@ -33,10 +40,12 @@ impl<'a> Row<'a> {
     //fn get_value_by_name<T: FromSql>(&self, col_name: &str) -> T {
 
     //}
-
-   // fn get_value<T: FromSql>(&self, index: u32) -> FromSql -> T {
-
-   // }
+    /// Gets the value of column index converted to type T
+    /// Returns an error, if column type is not compatible with T
+    pub fn get_value<T: FromSql>(&self, index: usize) -> Result<T, Error> {
+        let v = &self.column_data[index];
+        T::from_sql(v)
+    }
 
     fn load_data(&mut self, row_data: &[u8]) -> Result<(), Error> {
         let columns = &self.owner.columns;
@@ -95,7 +104,6 @@ impl<'a> Iterator for RowsIter<'a> {
     type Item = Row<'a>;
 
     fn next(&mut self) -> Option<Row<'a>> {
-
         if self.iter_pos >= self.rows.data.len() {
             return None;
         }
@@ -124,52 +132,4 @@ impl<'a> Iterator for RowsIter<'a> {
 
         Some(Row::new(self.rows, &self.rows.data[start_of_row..self.iter_pos]))
     }
-
-    /*
-    fn next(&mut self) -> Option<Vec<DataSrc>> {
-
-        if self.iter_pos >= self.rows.data.len() as u32 {
-            return None;
-        }
-
-        let columns = self.rows.table.columns();
-        let mut result = Vec::<DataSrc>::new();
-
-        for i in 0..columns.len() {
-            let mut col_data = match columns[i].get_sql_type() {
-                &SqlType::VarChar(_) => {
-
-                    let mut buf = &self.rows.data[(self.iter_pos as usize)
-                            ..(self.iter_pos + 2) as usize];
-
-                    let len = match buf.read_u16::<BigEndian>() {
-                        Ok(len) => len,
-                        Err(e) => return None
-                    };
-
-                    self.iter_pos = self.iter_pos + 2;
-
-                    buf = &self.rows.data[(self.iter_pos as usize)
-                        ..((self.iter_pos + len as u32) as usize)];
-                    self.iter_pos = self.iter_pos + len as u32;
-                    buf
-                },
-                _ => {
-                    let mut buf =
-                        &self.rows.data[(self.iter_pos as usize)
-                        ..((self.iter_pos + columns[i].get_size()) as usize)];
-                    self.iter_pos = self.iter_pos + columns[i].get_size();
-                    buf
-                }
-            };
-
-            let datasrc = match columns[i].sql_type.decode_from(&mut col_data) {
-                Ok(d) => d,
-                Err(e) => return None
-            };
-            result.push(datasrc);
-        }
-
-        Some(result)
-    }*/
 }

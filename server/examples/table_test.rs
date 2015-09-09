@@ -63,14 +63,32 @@ fn main() {
 
     let t = db.load_table("storage_team").unwrap();
 
+    let descriptions = t.get_description().unwrap();
+
+    for i in descriptions.iter() {
+        print!("{}", i.get_value::<String>(0).unwrap());
+        print!(", {}", i.get_value::<String>(1).unwrap());
+        print!(", {}", i.get_value::<bool>(2).unwrap());
+        print!(", {}", i.get_value::<bool>(3).unwrap());
+        println!(", {}", i.get_value::<String>(4).unwrap());
+    }
+
     let mut engine = t.create_engine();
     //engine.create_table();
     engine.insert_row(&my_data);
     let rows = engine.full_scan().unwrap();
 
+
     for i in rows.iter() {
-        // println!("{:?}", i);
+        print!("{}", i.get_value::<i32>(0).unwrap());
+        print!(", {}", i.get_value::<bool>(1).unwrap());
+        print!(", {}", i.get_value::<String>(2).unwrap());
+        println!(", {}", i.get_value::<String>(3).unwrap());
     }
+
+
+
+
 
 
 
