@@ -8,8 +8,7 @@ use server::parse;
 
 fn main() {
 
-    let mut p = parse::Parser::create("select s.* as AllesStudenten,
-         h.* as AllesHoeren from Studenten s, hoeren h where s.matrNr = h.matrNr Limit 0,100");
+    let mut p = parse::Parser::create("select * from foo limit 30,3");
     println!("{:?}",p.parse());
 
 }
