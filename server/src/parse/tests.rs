@@ -43,7 +43,6 @@ fn test_create_table_content() {
         }
     ];
 
-
     assert_eq!(p.parse().unwrap(), Query::DefStmt(DefStmt::Create(
         CreateStmt::Table(CreateTableStmt {
             tid: "foo".to_string(), cols: vec }))))
@@ -260,27 +259,22 @@ fn test_mult_where_blocks() {
                             rhs: CondType::Literal(Lit::Str("peng".to_string())),
                             }
                         )
-                    ),
-                        Box::new(
-                            Conditions::And(Box::new(
-                                Conditions::Leaf(Condition {
-                                    aliascol: None,
-                                    col: "fname".to_string(),
-                                    op: CompType::Equ,
-                                    aliasrhs: None,
-                                    rhs: CondType::Literal(Lit::Str("peter".to_string())),
-                                    }
-                                )
-                            ),
-                                Box::new(Conditions::Leaf(Condition{
-                                        aliascol: None,
-                                        col: "lname".to_string(),
-                                        op: CompType::Equ,
-                                        aliasrhs: None,
-                                        rhs: CondType::Literal(Lit::Str("pan".to_string())),
-                                        }
-                                    )
-                                )
+                    ), Box::new(
+                        Conditions::And(Box::new(
+                            Conditions::Leaf(Condition {
+                                aliascol: None,
+                                col: "fname".to_string(),
+                                op: CompType::Equ,
+                                aliasrhs: None,
+                                rhs: CondType::Literal(Lit::Str("peter".to_string())),
+                                }
+                            )), Box::new(Conditions::Leaf(Condition{
+                                aliascol: None,
+                                col: "lname".to_string(),
+                                op: CompType::Equ,
+                                aliasrhs: None,
+                                rhs: CondType::Literal(Lit::Str("pan".to_string())),
+                                }))
                             )
                         )
                     )
