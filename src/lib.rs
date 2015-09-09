@@ -13,7 +13,6 @@ use bincode::rustc_serialize::{EncodingError, DecodingError,
 use types::*;
 
 // const PROTOCOL_VERSION : u8 = 1;
-
 pub enum Error {
     AddrParse(AddrParseError),
     Io(io::Error),

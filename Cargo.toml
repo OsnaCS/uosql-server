@@ -11,6 +11,10 @@ path = "src/lib.rs"
 name = "uosql-client"
 path = "src/client/main.rs"
 
+[[bin]]
+name = "web-client"
+path = "src/webclient/main.rs"
+
 [dependencies]
 log = "*"
 byteorder = "0.3"
@@ -20,3 +24,6 @@ rustc-serialize = "0.3"
 
 [dependencies.server]
 path = "server"
+
+[dependencies.iron]
+version = "*"
