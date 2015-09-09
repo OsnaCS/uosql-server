@@ -21,8 +21,8 @@ e.g. "uosql-server --bind=192.168.1.59 --port=30" to automatically connect on
 startup to the given ip at the specified port. Parameters can be applied in any
 order. Incorrect or missing parameters will result in input prompt by client
 in order to obtain the needed information. If no further input is provided by
-pressing "return", default values will be used to establish a connection to
-local host (127.0.0.1 at Port 4242).
+pressing "return", default values will be used to establish a connection.
+Default IP is 127.0.0.1, default Port is 4242
 
 --bind=<address>    Change the bind address. Standard format is "w.x.y.z" with
                     w,x,y,z consisting of one up to three digits.
