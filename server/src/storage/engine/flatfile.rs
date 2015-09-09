@@ -1,13 +1,15 @@
-
 use super::super::meta::{Table};
 use super::super::{Engine, Error};
 use std::fs::OpenOptions;
+use std::io::Read;
 use super::super::super::parse::ast;
 use super::super::types::SqlType;
 
 //---------------------------------------------------------------
 // FlatFile-Engine
 //---------------------------------------------------------------
+use super::super::data::{Rows};
+use std::fs;
 
 pub struct FlatFile<'a> {
     table: Table<'a>,
@@ -66,7 +68,7 @@ impl<'a> Engine for FlatFile<'a> {
         // simultaneously and get either the given data or a
         // defaul type
         info!("starting encodeding of data");
-        for (d, meta) in data.iter().zip(self.table().columns()) {
+        for (d, meta) in data.iter().zip(self.table.columns()) {
             // Entry contains default or given value
             let entry = d.as_ref().unwrap_or(match meta.sql_type {
                 SqlType::Int => &defaults[0],
@@ -81,5 +83,24 @@ impl<'a> Engine for FlatFile<'a> {
         }
         info!("finished encoding");
         Ok(())
+    }
+
+    fn full_scan(&self) -> Result<Rows, Error> {
+        let bytes_to_read =
+            try!(fs::metadata(&self.table.get_table_data_path())).len();
+
+        let mut file = try!(OpenOptions::new()
+                            .read(true)
+                            .open(&self.table.get_table_data_path()));
+
+        let mut buf = Vec::<u8>::new();
+
+        let bytes_read = try!(file.read_to_end(&mut buf)) as u64;
+
+        if bytes_to_read != bytes_read {
+            return Err(Error::InterruptedRead);
+        }
+
+        Ok(Rows{data: buf, table: self.table()})
     }
 }
