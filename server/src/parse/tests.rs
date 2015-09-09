@@ -226,12 +226,12 @@ fn test_delete_row() {
             })),
     })));
 }
+
 #[test]
 fn test_delete_full_with_alias() {
     let mut p = parser::Parser::create("delete from foo bar");
     let mut aliashm = HashMap::new();
     aliashm.insert("bar".to_string(), "foo".to_string());
-
 
     assert_eq!(p.parse().unwrap(), Query::ManipulationStmt(
         ManipulationStmt::Delete(DeleteStmt {
@@ -240,6 +240,7 @@ fn test_delete_full_with_alias() {
             cond: None,
     })));
 }
+
 #[test]
 fn test_mult_where_blocks() {
     let mut p = parser::Parser::create("delete from foo where lname = 'peng' or
@@ -249,46 +250,40 @@ fn test_mult_where_blocks() {
         ManipulationStmt::Delete(DeleteStmt {
             tid: "foo".to_string(),
             alias: HashMap::new(),
-            cond: Some(
-                    Conditions::Or(Box::new(
-                        Conditions::Leaf(Condition {
-                            aliascol: None,
-                            col: "lname".to_string(),
-                            op: CompType::Equ,
-                            aliasrhs: None,
-                            rhs: CondType::Literal(Lit::Str("peng".to_string())),
-                            }
-                        )
-                    ), Box::new(
-                        Conditions::And(Box::new(
-                            Conditions::Leaf(Condition {
-                                aliascol: None,
-                                col: "fname".to_string(),
-                                op: CompType::Equ,
-                                aliasrhs: None,
-                                rhs: CondType::Literal(Lit::Str("peter".to_string())),
-                                }
-                            )), Box::new(Conditions::Leaf(Condition{
-                                aliascol: None,
-                                col: "lname".to_string(),
-                                op: CompType::Equ,
-                                aliasrhs: None,
-                                rhs: CondType::Literal(Lit::Str("pan".to_string())),
-                                }))
-                            )
-                        )
+            cond: Some(Conditions::Or(Box::new(
+                Conditions::Leaf(Condition {
+                    aliascol: None,
+                    col: "lname".to_string(),
+                    op: CompType::Equ,
+                    aliasrhs: None,
+                    rhs: CondType::Literal(Lit::Str("peng".to_string())),
+                    }
+                )
+            ), Box::new(Conditions::And(Box::new(
+                    Conditions::Leaf(Condition {
+                        aliascol: None,
+                        col: "fname".to_string(),
+                        op: CompType::Equ,
+                        aliasrhs: None,
+                        rhs: CondType::Literal(Lit::Str("peter".to_string())),
+                        }
+                    )), Box::new(Conditions::Leaf(Condition{
+                        aliascol: None,
+                        col: "lname".to_string(),
+                        op: CompType::Equ,
+                        aliasrhs: None,
+                        rhs: CondType::Literal(Lit::Str("pan".to_string())),
+                        }))
                     )
                 )
-            }
-        ))
+            ))
+        }))
     );
 }
 
 // ============================================================================
 // Result::Err unittest
 // ============================================================================
-
-
 
 #[test]
 fn test_create_table_error1() {
