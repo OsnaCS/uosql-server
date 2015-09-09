@@ -103,15 +103,37 @@ pub struct SelectStmt {
     pub tid: Vec<String>,
     pub alias: HashMap<String, String>,
     pub cond: Option<Conditions>,
-    pub spec_op: Option<SpecOps>
+    //pub groupby: Option<GroupBy>,
+    //pub orderby: Option<OrderBy>,
+    pub spec_op: Option<SpecOps>,
+    pub limit: Option<Limit>,
 }
 
 /// Information for data selection
 #[derive(Debug, Clone, PartialEq)]
 pub struct Target {
     pub alias: Option<String>,
-    pub col: String,
+    pub col: Col,
     pub rename: Option<String>,
+}
+
+/// Information for data selection in select
+#[derive(Debug, Clone, PartialEq)]
+pub enum Col {
+    // select a specified column
+    Specified(String),
+    // for example: table.* => select every column in table
+    Every
+
+}
+
+/// Information for data output limiting
+#[derive(Debug, Clone, PartialEq)]
+pub struct Limit {
+    //limit the count of the output
+    pub count: Option<i64>,
+    //offset the output: 0 = no offset, n = display from the nth row
+    pub offset: Option<i64>,
 }
 
 /// Information for data insertion

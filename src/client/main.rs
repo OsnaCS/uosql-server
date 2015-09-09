@@ -5,11 +5,36 @@ extern crate log;
 extern crate uosql;
 extern crate bincode;
 extern crate byteorder;
+extern crate docopt;
+extern crate rustc_serialize;
 
 use std::io::{self, stdout, Write};
+use std::str::FromStr;
 use uosql::logger;
 use uosql::Error;
 use uosql::Connection;
+use docopt::Docopt;
+use std::net::Ipv4Addr;
+
+/// For console input, manages flags and arguments
+const USAGE: &'static str = "
+Usage: uosql-client [--bind=<address>] [--port=<port>] [--name=<username>]
+        [--pwd=<password>]
+
+Options:
+    --bind=<address>    Change the bind address.
+    --port=<port>       Change the port.
+    --name=<username>   Login with given username.
+    --pwd=<password>    Login with given password.
+";
+
+#[derive(Debug, RustcDecodable)]
+struct Args {
+   flag_bind: Option<String>,
+   flag_port: Option<u16>,
+   flag_name: Option<String>,
+   flag_pwd:  Option<String>
+}
 
 fn main() {
 
@@ -17,10 +42,54 @@ fn main() {
         .with_logfile(std::path::Path::new("log.txt"))
         .enable().unwrap();
 
-    // IP, Port, Username, Passwort einlesen
+    // Getting the information for a possible configuration
+    let args : Args = Docopt::new(USAGE).and_then(|d| d.decode())
+                                        .unwrap_or_else(|e| e.exit());
 
-    let mut conn = match Connection::connect("127.0.0.1".into(), 4242,
-        "hallo".into(), "bla".into())
+    // Change the bind address if flag is set
+    let address = {
+        match args.flag_bind {
+            Some(a) => {
+                if Ipv4Addr::from_str(&a).is_ok() { a }
+                else { read_address() }
+            },
+            None => {
+                read_address()
+            }
+        }
+    };
+
+    // Change port if flag is set
+    let port = {
+        match args.flag_port {
+            Some(p) => {
+                if p > 1024 {
+                    p
+                } else {
+                    read_port()
+                }
+            },
+            None => read_port()
+        }
+    };
+
+    // Set username for connection
+    let username = {
+        match args.flag_name {
+            Some(u) => u,
+            None => read_string("Username")
+        }
+    };
+
+    // Set password for connection
+    let password = {
+        match args.flag_pwd {
+            Some(p) => p,
+            None => read_string("Password")
+        }
+    };
+
+    let mut conn = match Connection::connect(address, port, username, password)
     {
         Ok(conn) => conn,
         Err(e) => {
@@ -75,17 +144,8 @@ fn main() {
     }
 }
 
-/// Read from command line and return trimmed string
-/// If an error occurs reading from stdin loop until a valid String was read
-fn read_line() -> String {
-    let mut input = String::new();
-    loop {
-        match io::stdin().read_line(&mut input) {
-            Ok(_) => { return input.trim().into() },
-            _ => { }
-        }
-    }
-}
+
+
 
 /// Process commandline-input from user
 fn process_input(input: &str, conn: &mut Connection) -> bool {
@@ -162,4 +222,89 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
         }
     }
     true
+}
+
+/// Read from command line and return trimmed string
+/// If an error occurs reading from stdin loop until a valid String was read
+fn read_line() -> String {
+    let mut input = String::new();
+    loop {
+        match io::stdin().read_line(&mut input) {
+            Ok(_) => {
+                match &*input {
+                    "\n" => return input,
+                    _ => return input.trim().into()
+                }
+            },
+            _ => { }
+        }
+    }
+}
+
+/// Read IP-address to connect to from command-line
+/// In case no input given ("\n") the default address "127.0.0.1" is returned
+pub fn read_address() -> String {
+    loop {
+        print!("IP: ");
+        let e = stdout().flush();
+        match e {
+            Ok(_) => {},
+            Err(_) => info!("")
+        }
+        let a = read_line();
+        match &*a {
+            "\n" => return "127.0.0.1".into(),
+            _ => {
+                if Ipv4Addr::from_str(&a).is_ok() {
+                    return a
+                }
+            }
+        }
+    }
+}
+
+/// Read Port number to connect to from command-line
+/// In case no input given ("\n") the default port "4242" is returned
+pub fn read_port() -> u16 {
+    loop {
+        print!("Port: ");
+        let e = stdout().flush();
+        match e {
+            Ok(_) => {},
+            Err(_) => info!("")
+        }
+        let a = read_line();
+        match &*a {
+            "\n" => return 4242,
+            _ => {
+                let p: Option<u16> = a.trim().parse::<u16>().ok();
+                match p {
+                    Some(p) => {
+                        if p > 1024 {
+                            return p
+                        } else {
+                            warn!("Valid port range: 1024 < port <= 65535")
+                        }
+                    },
+                    None => {}
+                }
+            }
+        }
+    }
+}
+
+pub fn read_string(msg: &str) -> String {
+    loop {
+        print!("{}: ", msg);
+        let e = stdout().flush();
+        match e {
+            Ok(_) => {},
+            Err(_) => info!("")
+        }
+        let r = read_line();
+        match &*r {
+            "\n" => {},
+            _ => return r.trim().to_string()
+        }
+    }
 }
