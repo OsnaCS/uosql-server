@@ -2,7 +2,7 @@
 use super::token;
 use super::super::storage::SqlType;
 use std::collections::HashMap;
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Query {
     Dummy, // For Compiling
     DefStmt(DefStmt),
@@ -10,7 +10,7 @@ pub enum Query {
 }
 
 /// All Data Definition Statements
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum DefStmt {
     Create(CreateStmt),
     Alter(AltStmt),
@@ -18,7 +18,7 @@ pub enum DefStmt {
 }
 
 /// All Data Manipulation Statements
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ManipulationStmt {
     Update(UpdateStmt),
     Select(SelectStmt),
@@ -29,7 +29,7 @@ pub enum ManipulationStmt {
 }
 
 /// Split between creatable content (only Tables yet)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum CreateStmt {
     Table(CreateTableStmt),
     // View
@@ -37,7 +37,7 @@ pub enum CreateStmt {
 }
 
 /// Split between alterable content (only Tables yet)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum AltStmt {
     Table(AlterTableStmt)
     //Column(String)
@@ -45,27 +45,27 @@ pub enum AltStmt {
 }
 
 /// Split between drop-able content (only Tables yet)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum DropStmt {
     Table(String),
     //Index(String)
     Database(String)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum UseStmt {
     Database(String)
 }
 
 /// Information for table creation
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CreateTableStmt {
     pub tid: String,
     pub cols: Vec<ColumnInfo>,
 }
 
 /// Information for column creation
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ColumnInfo {
     pub cid: String,
     pub datatype: SqlType,
@@ -73,14 +73,14 @@ pub struct ColumnInfo {
 }
 
 /// Information for table alteration
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AlterTableStmt {
     pub tid: String,
     pub op: AlterOp
 }
 
 /// Possible operations for table alterations
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum AlterOp {
     Add(ColumnInfo),
     Drop(String),
@@ -88,7 +88,7 @@ pub enum AlterOp {
 }
 
 /// Information for table update
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct UpdateStmt {
     pub tid: String,
     pub alias: HashMap<String, String>,
@@ -97,7 +97,7 @@ pub struct UpdateStmt {
 }
 
 /// Information for data selection
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SelectStmt {
     pub target: Vec<Target>,
     pub tid: Vec<String>,
@@ -137,7 +137,7 @@ pub struct Limit {
 }
 
 /// Information for data insertion
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct InsertStmt {
     pub tid: String,
     pub col: Vec<String>,
@@ -145,7 +145,7 @@ pub struct InsertStmt {
 }
 
 /// Information for data deletion
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DeleteStmt {
     pub tid: String,
     pub alias: HashMap<String, String>,
@@ -153,7 +153,7 @@ pub struct DeleteStmt {
 }
 
 /// Additional operations for ordering and limiting
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum SpecOps {
     OrderByAsc(String),
     OrderByDesc(String),
@@ -162,7 +162,7 @@ pub enum SpecOps {
 }
 
 /// Conditions for managing AND/OR where-clauses
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Conditions {
     Leaf(Condition),
     And(Box<Conditions>, Box<Conditions>),
@@ -170,7 +170,7 @@ pub enum Conditions {
 }
 
 /// Information for the where-clause
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Condition {
     pub aliascol: Option<String>,
     pub col: String,
@@ -184,7 +184,7 @@ pub struct Condition {
 }
 
 /// Allowed operators for where-clause
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum CompType {
     Equ,
     NEqu,
@@ -195,13 +195,13 @@ pub enum CompType {
 }
 
 /// Allowed data types for where-clause
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum CondType {
     Literal(token::Lit),
     Word(String)
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum DataSrc  {
     Int(i64),
     String(String),

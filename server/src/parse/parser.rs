@@ -528,7 +528,7 @@ impl<'a> Parser<'a> {
         {
             self.bump();
             let tableid = try!(self.expect_word());
-            if !self.check_next_keyword(&[Keyword::Where])
+            if !self.check_next_keyword(&[Keyword::Where, Keyword::Limit, Keyword::Group])
             && !self.check_next_token(&[Token::Comma]) {
                 self.bump();
                 match self.expect_word() {
@@ -542,6 +542,7 @@ impl<'a> Parser<'a> {
             tidvec.push(tableid);
             if !self.check_next_token(&[Token::Comma]) {
                 done = true;
+                self.bump();
             } else {
                 self.bump();
             }
@@ -549,10 +550,8 @@ impl<'a> Parser<'a> {
 
         let mut conditions;
         // optional where statement
-        if self.check_next_keyword(&[Keyword::Where]) {
-            self.bump();
+        if self.expect_keyword(&[Keyword::Where]).is_ok() {
             conditions = Some(try!(self.parse_where_part()));
-
         } else {
             conditions = None;
         }
@@ -571,6 +570,7 @@ impl<'a> Parser<'a> {
         let mut limit = None;
 
         if self.expect_keyword(&[Keyword::Limit]).is_ok() {
+
             self.bump();
             let tmp = match try!(self.expect_number()) {
                 Lit::Int(i) => i ,
@@ -696,8 +696,6 @@ impl<'a> Parser<'a> {
             Some(found_keyword) => checkkeyword.contains(&found_keyword),
             None => false
         }
-
-
     }
 
     // aprses a single condition
@@ -1087,7 +1085,7 @@ pub enum Keyword {
     Key,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ParseError {
     //general errors
     UnknownError,

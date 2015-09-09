@@ -6,7 +6,7 @@ use byteorder::{BigEndian, WriteBytesExt, ReadBytesExt};
 
 
 /// General enums in SQL
-#[derive(Debug, Clone, Copy, RustcDecodable, RustcEncodable)]
+#[derive(Debug, Clone, Copy, RustcDecodable, RustcEncodable, PartialEq)]
 pub enum SqlType {
     Int,
     Bool,
