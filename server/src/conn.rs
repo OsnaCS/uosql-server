@@ -6,6 +6,9 @@ use auth;
 use parse::parser;
 use super::query;
 use net::types::*;
+use storage::{Rows};
+use storage::types::{SqlType, Column};
+use net::Error;
 
 pub fn handle(mut stream: TcpStream) {
     // Logging about the new connection
@@ -85,14 +88,22 @@ pub fn handle(mut stream: TcpStream) {
                         Ok(tree) => {
                             println!("{:?}", tree);
                             query::execute_from_ast(tree, Some("testbase".into()));
-                        },
-                        Err(error) => println!("{:?}", error),
-                    }
 
-                    // TODO: Definition of response missing
-                    match net::send_info_package(&mut stream, PkgType::Ok) {
-                        Ok(_) => { },
-                        Err(_) => warn!("Failed to send packet.")
+                            // Dummy Row
+                            let r: Rows = Rows { data: vec![], columns: vec![Column::new("student", SqlType::Int, false, "hallo", false)]};
+                            // Send response package
+                            match net::send_response_package(&mut stream, r) {
+                                Ok(_) => { },
+                                Err(_) => warn!("Failed to send packet.")
+                            }
+                        },
+                        Err(error) => {
+                            println!("{:?}", error);
+                            match net::send_error_package(&mut stream, Error::UnEoq(error).into()) {
+                                Ok(_) => {},
+                                Err(_) => warn!("Failed to send error.")
+                            }
+                        }
                     }
                     continue
                 }

@@ -48,6 +48,10 @@ impl From<super::Error> for ClientErrMsg {
             super::Error::Decode(_) => ClientErrMsg {
                 code: 5,
                 msg: "decoding error".into()
+            },
+            super::Error::UnEoq(e) => ClientErrMsg {
+                code: 6,
+                msg: "Parse error".into()
             }
         }
     }

@@ -7,7 +7,7 @@ use super::types::Column;
 use super::types::FromSql;
 use byteorder::{BigEndian, ReadBytesExt};
 
-#[derive(Debug)]
+#[derive(Debug, RustcEncodable, RustcDecodable)]
 pub struct Rows {
     pub data: Vec<u8>,
     pub columns: Vec<Column>,

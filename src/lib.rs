@@ -11,6 +11,7 @@ use bincode::SizeLimit;
 use bincode::rustc_serialize::{EncodingError, DecodingError,
     decode_from, encode_into};
 use types::*;
+use server::storage::Rows;
 
 // const PROTOCOL_VERSION : u8 = 1;
 
@@ -136,13 +137,17 @@ impl Connection {
     }
 
     // TODO: Return results (response-package)
-    pub fn execute(&mut self, query: String) -> Result<(), Error> {
+    pub fn execute(&mut self, query: String) -> Result<Rows, Error> {
         match send_cmd(&mut self.tcp, Command::Query(query), 1024) {
             Ok(_) => {},
             Err(e) => return Err(e)
         };
-        match receive(&mut self.tcp, PkgType::Ok) {
-            Ok(_) => Ok(()),
+        match receive(&mut self.tcp, PkgType::Response) {
+            Ok(_) => {
+                let rows: Rows =
+                    try!(decode_from(&mut self.tcp, SizeLimit::Infinite));
+                Ok(rows)
+            },
             Err(err) => Err(err)
         }
     }
@@ -181,8 +186,20 @@ fn receive(s: &mut TcpStream, cmd: PkgType) -> Result<(), Error> {
     let status: PkgType = try!(decode_from(s, SizeLimit::Bounded(1024)));
 
     if status != cmd {
-        return Err(Error::UnexpectedPkg("Received
-            unexpected package".into()))
+        match status {
+            PkgType::Ok => {},
+            PkgType::Response => {
+                let _ : Rows = try!(decode_from(s, SizeLimit::Infinite));
+            },
+            PkgType::Error => {
+                let _ : ClientErrMsg = try!(decode_from(s, SizeLimit::Infinite));
+            },
+            PkgType::Greet => {
+                let _ : Greeting = try!(decode_from(s, SizeLimit::Infinite));
+            },
+            _ => {}
+        }
+        return Err(Error::UnexpectedPkg("Received unexpected package".into()))
     }
     Ok(())
 }
