@@ -292,11 +292,31 @@ impl<'a> Table<'a> {
         let mut data = Vec::<u8>::new();
 
         let mut columns = Vec::<Column>::new();
-        columns.push(Column::new("Name", SqlType::VarChar(255), false, "description", false));
-        columns.push(Column::new("SqlType", SqlType::VarChar(255), false, "SqlType", false));
-        columns.push(Column::new("allow_null", SqlType::Bool, false, "description", false));
-        columns.push(Column::new("is_primary_key", SqlType::Bool, false, "description", false));
-        columns.push(Column::new("description", SqlType::VarChar(255), false, "description", false));
+        columns.push(Column::new("Name",
+                                 SqlType::VarChar(255),
+                                 false,
+                                 "description",
+                                 false));
+        columns.push(Column::new("SqlType",
+                                 SqlType::VarChar(255),
+                                 false,
+                                 "SqlType",
+                                 false));
+        columns.push(Column::new("allow_null",
+                                 SqlType::Bool,
+                                 false,
+                                 "description",
+                                 false));
+        columns.push(Column::new("is_primary_key",
+                                 SqlType::Bool,
+                                 false,
+                                 "description",
+                                 false));
+        columns.push(Column::new("description",
+                                 SqlType::VarChar(255),
+                                 false,
+                                 "description",
+                                 false));
 
         for c in &self.columns()[..] {
             let mut datasrc = DataSrc::String(c.name.clone());
