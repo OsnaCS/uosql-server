@@ -68,8 +68,12 @@ fn main() {
     engine.insert_row(&my_data);
     let rows = engine.full_scan().unwrap();
 
-    let row = rows.get_row(0).unwrap();
-    println!("{:?}", row);
+    for i in rows.iter() {
+        println!("{:?}", i);
+    }
+
+
+
 
 
     //let _e  = engine.create_table();

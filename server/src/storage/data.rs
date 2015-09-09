@@ -2,11 +2,18 @@ use std::vec::Vec;
 use super::Table;
 use super::Error;
 use super::super::parse::ast::DataSrc;
+use super::types::SqlType;
+use byteorder::{BigEndian, ReadBytesExt};
 
 #[derive(Debug)]
 pub struct Rows<'a> {
     pub data: Vec<u8>,
     pub table: &'a Table<'a>,
+}
+
+pub struct RowsIter<'a> {
+    rows : &'a Rows<'a>,
+    iter_pos: u32,
 }
 
 /// Represents the lines read from file.
@@ -25,32 +32,63 @@ impl<'a> Rows<'a> {
         size as u64
     }
 
+    /// Returns an iterator
+    pub fn iter(&self) -> RowsIter {
+        RowsIter {
+            rows: self,
+            iter_pos: 0
+        }
+    }
+}
 
-    /// Gets index' row in data.
-    pub fn get_row(&self, index : u64) -> Result<Vec<DataSrc>, Error> {
+/// Implementation of Iterator
+impl<'a> Iterator for RowsIter<'a> {
+    type Item = Vec<DataSrc>;
 
-        let row_size = self.get_row_size();
-        let mut result = Vec::<DataSrc>::new();
+    fn next(&mut self) -> Option<Vec<DataSrc>> {
 
-        let mut field_start = index * row_size;
-
-        if field_start >= (self.data.len() as u64) {
-            return Err(Error::OutOfBounds);
+        if self.iter_pos >= self.rows.data.len() as u32 {
+            return None;
         }
 
-        let columns = self.table.columns();
+        let columns = self.rows.table.columns();
+        let mut result = Vec::<DataSrc>::new();
 
         for i in 0..columns.len() {
-            // this is a slice ;-)
-            let mut col_data =
-                &self.data[(field_start as usize)
-                ..((field_start + columns[i].get_size()) as usize)];
+            let mut col_data = match columns[i].get_sql_type() {
+                &SqlType::VarChar(_) => {
 
-            field_start = field_start + columns[i].get_size();
-            let datasrc = try!(columns[i].sql_type.decode_from(&mut col_data));
+                    let mut buf = &self.rows.data[(self.iter_pos as usize)
+                            ..(self.iter_pos + 2) as usize];
+
+                    let len = match buf.read_u16::<BigEndian>() {
+                        Ok(len) => len,
+                        Err(e) => return None
+                    };
+
+                    self.iter_pos = self.iter_pos + 2;
+
+                    buf = &self.rows.data[(self.iter_pos as usize)
+                        ..((self.iter_pos + len as u32) as usize)];
+                    self.iter_pos = self.iter_pos + len as u32;
+                    buf
+                },
+                _ => {
+                    let mut buf =
+                        &self.rows.data[(self.iter_pos as usize)
+                        ..((self.iter_pos + columns[i].get_size()) as usize)];
+                    self.iter_pos = self.iter_pos + columns[i].get_size();
+                    buf
+                }
+            };
+
+            let datasrc = match columns[i].sql_type.decode_from(&mut col_data) {
+                Ok(d) => d,
+                Err(e) => return None
+            };
             result.push(datasrc);
         }
 
-        Ok(result)
+        Some(result)
     }
 }
