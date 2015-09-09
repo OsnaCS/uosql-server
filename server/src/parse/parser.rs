@@ -638,9 +638,11 @@ impl<'a> Parser<'a> {
             if self.check_next_keyword(&[Keyword::Or,Keyword::And]) {
                 self.bump();
                 if self.expect_keyword(&[Keyword::Or]).is_ok() {
-                    cond = Conditions::Or(Box::new(cond),Box::new(try!(self.parse_where_part())));
+                    cond = Conditions::Or(
+                        Box::new(cond),Box::new(try!(self.parse_where_part())));
                 } else if self.expect_keyword(&[Keyword::And]).is_ok(){
-                    cond = Conditions::And(Box::new(cond),Box::new(try!(self.parse_where_part())));
+                    cond = Conditions::And(
+                        Box::new(cond),Box::new(try!(self.parse_where_part())));
                 };
             }
         } else {
