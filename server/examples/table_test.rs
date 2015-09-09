@@ -69,7 +69,7 @@ fn main() {
     let rows = engine.full_scan().unwrap();
 
     for i in rows.iter() {
-        println!("{:?}", i);
+        // println!("{:?}", i);
     }
 
 

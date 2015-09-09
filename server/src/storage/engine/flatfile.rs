@@ -101,6 +101,6 @@ impl<'a> Engine for FlatFile<'a> {
             return Err(Error::InterruptedRead);
         }
 
-        Ok(Rows{data: buf, table: self.table()})
+        Ok(Rows{data: buf, columns: self.table().columns().to_vec()})
     }
 }

@@ -196,3 +196,25 @@ impl Column {
         self.sql_type.size() as u32
     }
 }
+
+//---------------------------------------------------------------
+// FromSql
+//---------------------------------------------------------------
+
+pub trait FromSql {
+    fn from_sql(data: &[u8]) -> Result<Self, Error>;
+}
+
+impl FromSql for i32 {
+    fn from_sql(mut data: &[u8]) -> Result<Self, Error> {
+        let i = try!(data.read_i32::<BigEndian>());
+        Ok(i)
+    }
+}
+
+impl FromSql for u16 {
+    fn from_sql(mut data: &[u8]) -> Result<Self, Error> {
+        let u = try!(data.read_u16::<BigEndian>());
+        Ok(u)
+    }
+}

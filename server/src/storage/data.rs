@@ -3,35 +3,84 @@ use super::Table;
 use super::Error;
 use super::super::parse::ast::DataSrc;
 use super::types::SqlType;
+use super::types::Column;
+use super::types::FromSql;
 use byteorder::{BigEndian, ReadBytesExt};
 
 #[derive(Debug)]
-pub struct Rows<'a> {
+pub struct Rows {
     pub data: Vec<u8>,
-    pub table: &'a Table<'a>,
+    pub columns: Vec<Column>,
 }
 
+pub struct Row<'a> {
+    owner: &'a Rows,
+    column_data: Vec<Vec<u8>>,
+}
+
+impl<'a> Row<'a> {
+    pub fn new(rows: &'a Rows, row_data: &[u8]) -> Row<'a> {
+        let mut row = Row {owner: rows, column_data: Vec::<Vec<u8>>::new()};
+        row.load_data(row_data);
+        row
+    }
+
+
+    fn column_count(&self) -> u32 {
+        self.owner.columns.len() as u32
+    }
+
+    //fn get_value_by_name<T: FromSql>(&self, col_name: &str) -> T {
+
+    //}
+
+   // fn get_value<T: FromSql>(&self, index: u32) -> FromSql -> T {
+
+   // }
+
+    fn load_data(&mut self, row_data: &[u8]) -> Result<(), Error> {
+        let columns = &self.owner.columns;
+        let mut pos: usize = 0;
+
+        for i in 0..columns.len() {
+            let mut col_data = match columns[i].get_sql_type() {
+                &SqlType::VarChar(_) => {
+
+                    let raw_varchar_len = &row_data[pos..pos + 2];
+                    let varchar_len = try!(u16::from_sql(raw_varchar_len));
+
+                    pos = pos + 2;
+
+                    let buf = &row_data[pos..pos + varchar_len as usize];
+                    pos = pos + varchar_len as usize;
+                    buf
+                },
+                _ => {
+                    let mut buf =
+                        &row_data[pos..pos + columns[i].get_size() as usize];
+                    pos = pos + columns[i].get_size() as usize;
+                    buf
+                }
+            };
+
+
+            let mut v = Vec::<u8>::new();
+            v.extend(col_data.iter().cloned());
+            self.column_data.push(v);
+        }
+        Ok(())
+    }
+}
+
+
+
 pub struct RowsIter<'a> {
-    rows : &'a Rows<'a>,
-    iter_pos: u32,
+    rows: &'a Rows,
+    iter_pos: usize,
 }
 
 /// Represents the lines read from file.
-impl<'a> Rows<'a> {
-    /// Get size of row.
-    fn get_row_size (&self) -> u64 {
-
-        let columns = self.table.columns();
-
-        let mut size = 0;
-
-        for i in 0..columns.len() {
-            size += columns[i].get_size();
-        }
-
-        size as u64
-    }
-
+impl Rows {
     /// Returns an iterator
     pub fn iter(&self) -> RowsIter {
         RowsIter {
@@ -43,8 +92,40 @@ impl<'a> Rows<'a> {
 
 /// Implementation of Iterator
 impl<'a> Iterator for RowsIter<'a> {
-    type Item = Vec<DataSrc>;
+    type Item = Row<'a>;
 
+    fn next(&mut self) -> Option<Row<'a>> {
+
+        if self.iter_pos >= self.rows.data.len() {
+            return None;
+        }
+
+        let columns = &self.rows.columns;
+        let start_of_row = self.iter_pos;
+
+        for i in 0..columns.len() {
+            match columns[i].get_sql_type() {
+                &SqlType::VarChar(_) => {
+
+                    let raw_varchar_len = &self.rows.data[self.iter_pos..self.iter_pos + 2];
+
+                    let varchar_len = match u16::from_sql(raw_varchar_len) {
+                        Ok(u) => u,
+                        Err(e) => return None,
+                    };
+
+                    self.iter_pos = self.iter_pos + varchar_len as usize + 2;
+                },
+                _ => {
+                    self.iter_pos = self.iter_pos + columns[i].get_size() as usize;
+                }
+            };
+        };
+
+        Some(Row::new(self.rows, &self.rows.data[start_of_row..self.iter_pos]))
+    }
+
+    /*
     fn next(&mut self) -> Option<Vec<DataSrc>> {
 
         if self.iter_pos >= self.rows.data.len() as u32 {
@@ -90,5 +171,5 @@ impl<'a> Iterator for RowsIter<'a> {
         }
 
         Some(result)
-    }
+    }*/
 }
