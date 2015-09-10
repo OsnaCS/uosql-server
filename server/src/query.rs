@@ -86,9 +86,7 @@ impl<'a> Executor<'a> {
 
         let n: Vec<_> = stmt.val.iter().map(|l| Some(l.into_DataSrc())).collect();
         let mut engine = table.create_engine();
-        println!("{:?}",n);
         try!(engine.insert_row(&n));
-        println!("DEBUG");
         Ok(generate_rows_dummy())
 
     }
@@ -100,10 +98,13 @@ impl<'a> Executor<'a> {
         if stmt.target[0].col != Col::Every {
             return Err(ExecutionError::DebugError("Select only implemented for select * ".into()));
         }
-        if stmt.target.len() != 1 {
+        if stmt.tid.len() != 1 {
             return Err(ExecutionError::DebugError("Select only implemented for 1 table ".into()));
         }
-        Ok((generate_rows_dummy()))
+        let table = try!(self.get_table(&stmt.tid[0]));
+        let engine = table.create_engine();
+        Ok(try!(engine.full_scan()))
+
     }
     fn execute_describe_stmt(&mut self, query: String) -> Result<Rows, ExecutionError>{
         let table = try!(self.get_table(&query));
