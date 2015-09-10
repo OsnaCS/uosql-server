@@ -91,8 +91,8 @@ pub fn handle(mut stream: TcpStream) {
                                 _name: "DummyUser".into(),
                                 _currentDatabase: None} ).
                                 unwrap_or(
-                                    Rows { data: vec![1], columns: vec![Column::new("error occurred",
-                                        SqlType::Int, false,
+                                    Rows { data: vec![], columns: vec![
+                                        Column::new("error occurred", SqlType::Int, false,
                                         "error mind the error, not an error again, I hate errors",
                                         false)]
                                     }

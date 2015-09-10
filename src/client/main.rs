@@ -334,7 +334,7 @@ pub fn display(row: &Rows) {
 fn display_data(row: &Rows) {
     let mut cols = vec![];
     for i in &row.columns {
-        cols.push(max(12, max(i.name.len(), i.description.len())));
+        cols.push(max(12, i.name.len()));
     }
 
     // column names
