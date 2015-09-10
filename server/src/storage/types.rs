@@ -11,7 +11,6 @@ pub enum SqlType {
     Int,
     Bool,
     Char(u8),
-    VarChar(u16)
 }
 
 
@@ -23,7 +22,6 @@ impl SqlType {
             &SqlType::Int => 4 as u32,
             &SqlType::Bool => 1 as u32,
             &SqlType::Char(len) => (len + 1) as u32,
-            &SqlType::VarChar(len) => (len + 2) as u32
         }
     }
 
@@ -43,11 +41,6 @@ impl SqlType {
                 try!(buf.read_to_string(&mut s));
                 Ok(DataSrc::String(s))
             },
-            &SqlType::VarChar(_) => {
-                let mut s = String::new();
-                try!(buf.read_to_string(&mut s));
-                Ok(DataSrc::String(s))
-            }
         }
     }
 
@@ -102,20 +95,6 @@ impl SqlType {
                     }
                 }
             },
-            &SqlType::VarChar(len) => {
-                match data {
-                    &DataSrc::String(ref a) => {
-                        let mut str_as_bytes = a.to_string().into_bytes();
-                        str_as_bytes.truncate(len as usize);
-                        try!(buf.write_u16::<BigEndian>(str_as_bytes.len() as u16));
-                        try!(buf.write_all(&str_as_bytes));
-                        Ok((str_as_bytes.len() + 2) as u32)
-                    }
-                    _=> {
-                        Err(Error::InvalidType)
-                    }
-                }
-            }
         }
     }
     /// Writes the vector vec to buf.
