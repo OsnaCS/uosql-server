@@ -8,16 +8,16 @@ use std::io::{Write, Read, Seek};
 pub struct Rows <B: Write + Read + Seek> {
     buf: B,
     columns: Vec<Column>,
-    pos: u64,
 }
 
 /// Represents the lines read from file.
 impl<B: Write + Read + Seek> Rows <B> {
 
-    /// sets pos to the beginning of the next non-deleted line
-    /// returns false if no next line could be found
-    pub fn next_row(&mut self) -> bool {
-        false
+    /// reads the next row, which is not marked as deleted
+    /// and writes it into target_buf
+    /// returns true, if the next row could be read successfully
+    pub fn next_row<W: Write>(&mut self, mut target_buf: &W) -> bool {
+        self.buf.read();
     }
 
     /// checks if a next line exists
@@ -33,12 +33,11 @@ impl<B: Write + Read + Seek> Rows <B> {
 
     /// sets position before the first line
     pub fn reset_pos(&mut self) {
-        self.set_pos(OUT_OF_RANGE);
     }
 
     /// sets position to offset
     fn set_pos(&mut self, offset: u64) {
-        self.pos = offset;
+
     }
 
     /// reads the header of the current row
