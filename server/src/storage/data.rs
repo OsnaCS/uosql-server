@@ -2,22 +2,30 @@ use std::vec::Vec;
 use super::Error;
 use super::types::SqlType;
 use super::types::Column;
-use std::io::{Write, Read, Seek};
+use std::io::{Write, Read};
+use std::io::{BufReader, BufWriter};
 
-#[derive(Debug, RustcEncodable, RustcDecodable)]
-pub struct Rows <B: Write + Read + Seek> {
-    buf: B,
+#[derive(Debug)]
+pub struct Rows <B: Write + Read> {
+    buf_steam: BufStream,
     columns: Vec<Column>,
 }
 
 /// Represents the lines read from file.
-impl<B: Write + Read + Seek> Rows <B> {
+impl<'a, B: Write + Read> Rows <'a, B> {
+
+    pub fn new(data_src: B, columns: &[Column]) -> Rows<B> {
+        Rows { buf: data_src,
+               buf_reader: None,
+               buf_writer: None,
+               columns: columns.to_vec() }
+    }
 
     /// reads the next row, which is not marked as deleted
     /// and writes it into target_buf
     /// returns true, if the next row could be read successfully
     pub fn next_row<W: Write>(&mut self, mut target_buf: &W) -> bool {
-        self.buf.read();
+        false
     }
 
     /// checks if a next line exists
@@ -60,6 +68,16 @@ impl<B: Write + Read + Seek> Rows <B> {
     /// returns true if a row can be read
     fn on_row(&self) -> bool {
         false
+    }
+
+    fn get_buf_reader(&mut self) -> &BufReader<B> {
+        match self.buf_reader {
+            None => {
+                self.buf_reader = Some(&BufReader::new(self.buf));
+                &self.buf_reader.unwrap()
+            }
+            Some(v) => { v }
+        }
     }
 
 }
