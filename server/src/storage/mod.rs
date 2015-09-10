@@ -14,10 +14,7 @@ pub use self::types::Column;
 pub use self::types::SqlType;
 pub use parse::ast;
 pub use std::string::FromUtf8Error;
-pub use self::engine::PrimaryKeyMap;
-pub use self::data::Row;
 
-//use super::parse::ast::DataSrc;
 
 use std::io;
 
@@ -99,16 +96,6 @@ pub trait Engine {
     /// returns the table
     fn table(&self) -> &Table;
 
-    /// Writes a row to hard drive
-    fn insert_row(&mut self, data: &[Option<ast::DataSrc>])
-        -> Result<(), Error>;
-
-    fn full_scan(&self) -> Result<Rows, Error>;
-
-    fn get_row_with_primary_key(&self, primary_keys: Vec<PrimaryKeyMap>)
-        -> Result<Rows, Error>;
-
-    fn check_for_primary_key(&self, primary_keys: &Vec<PrimaryKeyMap>) -> Result<bool, Error>;
 }
 
 #[repr(u8)]

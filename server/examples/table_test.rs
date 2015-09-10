@@ -43,13 +43,6 @@ fn main() {
         description: "Dennis".to_string(),
         is_primary_key: true,
     });
-    cols.push(Column {
-        name: "Jana".into(),
-        sql_type: SqlType::VarChar(178),
-        allow_null: false,
-        description: "Jana".to_string(),
-        is_primary_key: false,
-    });
 
     let mut my_data: Vec<Option<DataSrc>> = Vec::new();
     my_data.push(Some(DataSrc::Int(10)));
@@ -62,60 +55,4 @@ fn main() {
     let _storage_team = db.create_table("storage_team", cols, 1).unwrap();
 
     let t = db.load_table("storage_team").unwrap();
-
-    let descriptions = t.get_description().unwrap();
-
-    for i in descriptions.iter() {
-        print!("{}", i.get_value::<String>(0).unwrap());
-        print!(", {}", i.get_value::<String>(1).unwrap());
-        print!(", {}", i.get_value::<bool>(2).unwrap());
-        print!(", {}", i.get_value::<bool>(3).unwrap());
-        println!(", {}", i.get_value::<String>(4).unwrap());
-    }
-
-    let mut engine = t.create_engine();
-    engine.create_table();
-    engine.insert_row(&my_data);
-
-    //data line 2
-    let mut my_row: Vec<Option<DataSrc>> = Vec::new();
-    my_row.push(Some(DataSrc::Int(10)));
-    my_row.push(Some(DataSrc::Bool(1)));
-    my_row.push(Some(DataSrc::String("fuenf".to_string())));
-    my_row.push(
-        Some(DataSrc::String("i am a very long string, at least i think i am".to_string()))
-    );
-    engine.insert_row(&my_row);
-
-    let rows = engine.full_scan().unwrap();
-
-
-    for i in rows.iter() {
-        print!("{}", i.get_value::<i32>(0).unwrap());
-        print!(", {}", i.get_value::<bool>(1).unwrap());
-        print!(", {}", i.get_value::<String>(2).unwrap());
-        println!(", {}", i.get_value::<String>(3).unwrap());
-    }
-    println!("search for primary key Dennis with value fuenf");
-    let mut keymap: Vec<PrimaryKeyMap> = Vec::new();
-    let key: PrimaryKeyMap = PrimaryKeyMap {
-        column_name: "Dennis".to_string(),
-        primary_key_value: DataSrc::String("fuenf".to_string())
-    };
-    keymap.push(key);
-    let key_rows = engine.get_row_with_primary_key(keymap).unwrap();
-    println!("here ṕrimary key rows");
-    println!("{:?}", key_rows);
-    for i in key_rows.iter(){
-        print!("{}", i.get_value::<i32>(0).unwrap());
-        print!(", {}", i.get_value::<bool>(1).unwrap());
-        print!(", {}", i.get_value::<String>(2).unwrap());
-        println!(", {}", i.get_value::<String>(3).unwrap());
-    }
-    //let _e  = engine.create_table();
-    //let t = engine.table();
-
-    //t.delete().unwrap();
-    //db.delete().unwrap();
-
 }

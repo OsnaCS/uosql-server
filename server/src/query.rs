@@ -86,8 +86,9 @@ impl<'a> Executor<'a> {
 
         let n: Vec<_> = stmt.val.iter().map(|l| Some(l.into_DataSrc())).collect();
         let mut engine = table.create_engine();
-        try!(engine.insert_row(&n));
-        Ok(generate_rows_dummy())
+        // try!(engine.insert_row(&n));
+        return Err(ExecutionError::DebugError("engine.insert_row() not implemented ".into()));
+        // Ok(generate_rows_dummy())
 
     }
 
@@ -103,7 +104,8 @@ impl<'a> Executor<'a> {
         }
         let table = try!(self.get_table(&stmt.tid[0]));
         let engine = table.create_engine();
-        Ok(try!(engine.full_scan()))
+        // Ok(try!(engine.full_scan()))
+        return Err(ExecutionError::DebugError("engine.full_scan() not implemented ".into()));
 
     }
     fn execute_describe_stmt(&mut self, query: String) -> Result<Rows, ExecutionError>{
