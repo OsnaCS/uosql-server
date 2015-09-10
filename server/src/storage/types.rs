@@ -132,7 +132,9 @@ impl SqlType {
         }
         v
     }
-
+    /// compare function that lets you logical compare slices of u8
+    /// returns a boolean on success and Error on fail
+    /// uses other compare fn for the actual compare
     pub fn cmp(&self, val: &[u8], val2: &[u8], comp: CompType)
     -> Result<bool, Error>
     {
@@ -171,7 +173,8 @@ impl SqlType {
             },
         }
     }
-
+    /// fn compares slices of u8 byte for byte and returns if both values are equal
+    /// returns boolean on success and Error when given values do not have the same size
     fn compare_byte_for_equal(&self, val: &[u8], val2: &[u8])
     -> Result<bool, Error>
     {
@@ -185,7 +188,9 @@ impl SqlType {
         }
         Ok(true)
     }
-
+    /// fn compares slices of u8 byte for byte and returns
+    /// if first given value is greater than the second one
+    /// returns boolean on success and Error when given values do not have the same size
     fn compare_byte_greater_than(&self, val: &[u8], val2: &[u8])
     -> Result<bool, Error>
     {
@@ -200,6 +205,9 @@ impl SqlType {
         Ok(false)
     }
 
+    /// fn compares slices of u8 byte for byte and returns
+    /// if first given value is lesser than the second one
+    /// returns boolean on success and Error when given values do not have the same size
     fn compare_byte_lesser_than(&self, val: &[u8], val2: &[u8])
     -> Result<bool, Error>
     {
@@ -214,6 +222,9 @@ impl SqlType {
         Ok(false)
     }
 
+    /// fn compares slices of u8 as booleans and returns
+    /// if both both booleans are true
+    /// returns boolean on success and Error when given values do not have the same size
     fn compare_as_bool(&self, val: &[u8], val2: &[u8])
     -> Result<bool, Error>
     {
