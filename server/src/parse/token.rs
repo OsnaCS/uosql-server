@@ -15,7 +15,7 @@ pub enum Lit {
 }
 
 impl Lit {
-    fn into_DataSrc(&self) -> DataSrc {
+    pub fn into_DataSrc(&self) -> DataSrc {
         match self {
             &Lit::Str(ref s) => DataSrc::String(s.clone()),
             &Lit::Int(ref i) => DataSrc::Int(i.clone()),

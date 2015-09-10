@@ -75,13 +75,19 @@ impl<'a> Executor<'a> {
     }
 
     fn execute_insert_stmt(&mut self, stmt: InsertStmt) -> Result<Rows, ExecutionError> {
-        let table = self.get_table(&stmt.tid);
+        let table = try!(self.get_table(&stmt.tid));
+
         if !stmt.col.is_empty() {
             return Err(ExecutionError::DebugError("Not implemented:
             Insert just some values into some columns.
             Use insert into table values (_,....) instead".into()))
         }
 
+        let n: Vec<_> = stmt.val.iter().map(|l| Some(l.into_DataSrc())).collect();
+        let mut engine = table.create_engine();
+        println!("{:?}",n);
+        try!(engine.insert_row(&n));
+        println!("DEBUG");
         Ok(generate_rows_dummy())
 
     }
@@ -115,7 +121,9 @@ impl<'a> Executor<'a> {
             description: "this is a column".to_string(),
              is_primary_key: c.primary,
         }).collect();
-        try!(base.create_table(&query.tid, tmp_vec, 0));
+        let table = try!(base.create_table(&query.tid, tmp_vec, 0));
+        let mut engine = table.create_engine();
+        engine.create_table();
         Ok(generate_rows_dummy())
     }
 

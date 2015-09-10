@@ -3,7 +3,7 @@
 use std::net::TcpStream;
 use net;
 use auth;
-use parse::parser;
+use parse;
 use super::query;
 use net::types::*;
 
@@ -78,8 +78,7 @@ pub fn handle(mut stream: TcpStream) {
 
                     debug!("Query received, dispatch query to parser.");
 
-                    let mut p = parser::Parser::create(&q);
-                    let ast = p.parse();
+                    let ast = parse::parse(&q);
 
                     match ast {
                         Ok(tree) => {
