@@ -7,10 +7,12 @@
 //! - check user permissions for every query
 //!
 
+use super::storage;
 /// Contains information about the user that opened the connection. Is used
 /// for every type of access control.
 pub struct User {
-    _name: String,
+    pub _name: String,
+    pub _currentDatabase: Option<storage::Database>,
 }
 
 /// Errors that may occur during user authentication
@@ -31,5 +33,6 @@ pub fn find_user(_name: &str, _passwd: &str) -> Result<User, AuthError> {
     debug!("User '{}' was succesfully (pseudo-!) authenticated", _name);
     Ok(User {
         _name: _name.into(),
+        _currentDatabase: None,
     })
 }

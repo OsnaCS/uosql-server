@@ -45,7 +45,7 @@ impl DataType {
 //---------------------------------------------------------------
 #[derive(Debug)]
 pub struct Database {
-    name: String,
+    pub name: String,
 }
 
 impl Database {
