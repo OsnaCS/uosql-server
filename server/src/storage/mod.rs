@@ -10,6 +10,7 @@ mod data;
 pub use self::meta::Table;
 pub use self::meta::Database;
 pub use self::data::Rows;
+pub use self::data::Row;
 pub use self::types::Column;
 pub use self::types::SqlType;
 use parse::ast;

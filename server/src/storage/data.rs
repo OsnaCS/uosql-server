@@ -13,9 +13,10 @@ pub struct Rows {
     pub columns: Vec<Column>,
 }
 
+#[derive(Debug)]
 pub struct Row<'a> {
-    owner: &'a Rows,
-    column_data: Vec<Vec<u8>>,
+    pub owner: &'a Rows,
+    pub column_data: Vec<Vec<u8>>,
 }
 
 impl<'a> Row<'a> {
