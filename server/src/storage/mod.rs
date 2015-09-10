@@ -47,6 +47,7 @@ pub enum Error {
     InvalidColumn,
     NotAPrimaryKey,
     NoImplementation,
+    WrongLength,
 }
 
 impl From<FromUtf8Error> for Error {

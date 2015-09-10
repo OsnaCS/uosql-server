@@ -2,6 +2,7 @@ use super::{Error};
 use std::io::Write;
 use std::io::Read;
 use super::super::parse::ast::DataSrc;
+use super::super::parse::ast::CompType;
 use byteorder::{BigEndian, WriteBytesExt, ReadBytesExt};
 
 
@@ -132,6 +133,58 @@ impl SqlType {
         v
     }
 
+    pub fn cmp(&self, val: &[u8], val2: &[u8], comp: CompType)
+    -> Result<bool,Error>
+    {
+        match self {
+            &SqlType::Int => {
+                match comp {
+                    CompType::Equ => { self.compare_byte_for_equal(val, val2) },
+                    CompType::NEqu => { self.compare_byte_for_equal(val, val2).map(|x| !x) },
+                    CompType::GThan => { Err(Error::NoImplementation) },
+                    CompType::SThan => { Err(Error::NoImplementation) },
+                    CompType::GEThan => { Err(Error::NoImplementation) },
+                    CompType::SEThan => { Err(Error::NoImplementation) },
+                }
+            },
+
+            &SqlType::Bool => {
+                match comp {
+                    CompType::Equ => { self.compare_byte_for_equal(val, val2) },
+                    CompType::NEqu => { self.compare_byte_for_equal(val, val2).map(|x| !x) },
+                    CompType::GThan => { Err(Error::NoImplementation) },
+                    CompType::SThan => { Err(Error::NoImplementation) },
+                    CompType::GEThan => { Err(Error::NoImplementation) },
+                    CompType::SEThan => { Err(Error::NoImplementation) },
+                }
+            },
+
+            &SqlType::Char(x) => {
+                match comp {
+                    CompType::Equ => { self.compare_byte_for_equal(val, val2) },
+                    CompType::NEqu => { self.compare_byte_for_equal(val, val2).map(|x| !x) },
+                    CompType::GThan => { Err(Error::NoImplementation) },
+                    CompType::SThan => { Err(Error::NoImplementation) },
+                    CompType::GEThan => { Err(Error::NoImplementation) },
+                    CompType::SEThan => { Err(Error::NoImplementation) },
+                }
+            },
+        }
+    }
+
+    fn compare_byte_for_equal(&self, val: &[u8], val2: &[u8])
+    -> Result<bool, Error>
+    {
+        if val.len() != val2.len() {
+            return Err(Error::WrongLength)
+        }
+        for i in 0 .. val.len() {
+            if val[i] != val2[i] {
+                return Ok(false)
+            }
+        }
+        Ok(true)
+    }
 }
 
 //---------------------------------------------------------------
