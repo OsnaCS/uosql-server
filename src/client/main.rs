@@ -333,7 +333,7 @@ pub fn display(row: Rows) {
         // Column name +---
         print!("+");
         let col_name = "Column name";
-        for i in 0..(col_name.len()+2) {
+        for _ in 0..(col_name.len()+2) {
             print!("-");
         }
 
@@ -349,7 +349,7 @@ pub fn display(row: Rows) {
 
         // format +--
         print!("+");
-        for i in 0..(col_name.len()+2) {
+        for _ in 0..(col_name.len()+2) {
             print!("-");
         }
 
@@ -380,7 +380,7 @@ pub fn display(row: Rows) {
         println!("|");
 
         print!("+");
-        for i in 0..(col_name.len()+2) {
+        for _ in 0..(col_name.len()+2) {
             print!("-");
         }
 

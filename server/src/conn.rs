@@ -3,7 +3,7 @@
 use std::net::TcpStream;
 use net;
 use auth;
-use parse::parser;
+use parse;
 use super::query;
 use net::types::*;
 use storage::{Rows};
@@ -81,33 +81,28 @@ pub fn handle(mut stream: TcpStream) {
 
                     debug!("Query received, dispatch query to parser.");
 
-                    let mut p = parser::Parser::create(&q);
-                    let ast = p.parse();
+                    let ast = parse::parse(&q);
 
                     match ast {
                         Ok(tree) => {
-                            println!("{:?}", tree);
-                            query::execute_from_ast(tree, Some("testbase".into()));
+                            debug!("{:?}", tree);
 
-                            // Dummy Row
-                            let r: Rows = Rows {
-                                data: vec![],
-                                columns: vec![
-                                            Column::new("student", SqlType::Int, false,
-                                                "hallo", false),
-                                            Column::new("professor", SqlType::Char('a' as u8),
-                                                false, "asdlkfjasldfjalksjfdlkajsdfökjasldfkjasödf
-                                                jöaskdjfklsdks", true)
-                                        ]
-                            };
+                            let r = query::execute_from_ast(tree, & mut auth::User {
+                                _name: "DummyUser".into(),
+                                _currentDatabase: None} ).
+                                unwrap_or(
+                                    Rows { data: vec![], columns: vec![Column::new("error occurred",
+                                                    SqlType::Int, false, "error", false)]});
+
                             // Send response package
                             match net::send_response_package(&mut stream, r) {
                                 Ok(_) => { },
                                 Err(_) => warn!("Failed to send packet.")
                             }
                         },
+
                         Err(error) => {
-                            println!("{:?}", error);
+                            error!("{:?}", error);
                             match net::send_error_package(&mut stream, Error::UnEoq(error).into()) {
                                 Ok(_) => {},
                                 Err(_) => warn!("Failed to send error.")
