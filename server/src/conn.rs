@@ -85,15 +85,15 @@ pub fn handle(mut stream: TcpStream) {
 
                     match ast {
                         Ok(tree) => {
-                            println!("{:?}", tree);
+                            debug!("{:?}", tree);
 
                             // Dummy Row
                             let r = query::execute_from_ast(tree, & mut auth::User {
                                 _name: "DummyUser".into(),
                                 _currentDatabase: None} ).
                                 unwrap_or(
-                                    Rows { data: vec![], columns: vec![Column::new("default",
-                                                    SqlType::Int, false, "default", false)]});
+                                    Rows { data: vec![], columns: vec![Column::new("error occurred",
+                                                    SqlType::Int, false, "error", false)]});
 
 
 
@@ -105,7 +105,7 @@ pub fn handle(mut stream: TcpStream) {
                         },
 
                         Err(error) => {
-                            println!("{:?}", error);
+                            error!("{:?}", error);
                             match net::send_error_package(&mut stream, Error::UnEoq(error).into()) {
                                 Ok(_) => {},
                                 Err(_) => warn!("Failed to send error.")
