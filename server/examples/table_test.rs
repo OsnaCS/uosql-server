@@ -54,7 +54,7 @@ fn main() {
     let mut my_data: Vec<Option<DataSrc>> = Vec::new();
     my_data.push(Some(DataSrc::Int(10)));
     my_data.push(Some(DataSrc::Bool(1)));
-    my_data.push(Some(DataSrc::String("fuenf".to_string())));
+    my_data.push(Some(DataSrc::String("sechs".to_string())));
     my_data.push(
         Some(DataSrc::String("i am a very long string, at least i think i am".to_string()))
     );
@@ -76,6 +76,17 @@ fn main() {
     let mut engine = t.create_engine();
     engine.create_table();
     engine.insert_row(&my_data);
+
+    //data line 2
+    let mut my_row: Vec<Option<DataSrc>> = Vec::new();
+    my_row.push(Some(DataSrc::Int(10)));
+    my_row.push(Some(DataSrc::Bool(1)));
+    my_row.push(Some(DataSrc::String("fuenf".to_string())));
+    my_row.push(
+        Some(DataSrc::String("i am a very long string, at least i think i am".to_string()))
+    );
+    engine.insert_row(&my_row);
+
     let rows = engine.full_scan().unwrap();
 
 
@@ -91,9 +102,9 @@ fn main() {
         column_name: "Dennis".to_string(),
         primary_key_value: DataSrc::String("fuenf".to_string())
     };
-
     keymap.push(key);
     let key_rows = engine.get_row_with_primary_key(keymap).unwrap();
+    println!("here ṕrimary key rows");
     println!("{:?}", key_rows);
     for i in key_rows.iter(){
         print!("{}", i.get_value::<i32>(0).unwrap());

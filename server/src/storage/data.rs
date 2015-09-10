@@ -15,6 +15,7 @@ pub struct Rows {
 }
 
 /// Represents a single row in a Rows struct
+
 pub struct Row<'a> {
     owner: &'a Rows,
     // Contains one vector per column. Each vector contains

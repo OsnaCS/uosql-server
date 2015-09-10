@@ -133,7 +133,7 @@ impl<'a> Engine for FlatFile<'a> {
                                 &(pk.column_name.to_string())
                             ));// get value of row with column
 
-                        if !val == (x as i32) {
+                        if !(val == (x as i32)) {
                             continue 'outer // stop checking if one false
                         }
                     }
@@ -150,13 +150,15 @@ impl<'a> Engine for FlatFile<'a> {
                         let val: String = try!(i.get_value_by_name::<String>(
                                 &(pk.column_name.to_string())
                             ));
-
-                        if !(val != *x) {
+                        println!("{:?}", val);
+                        println!("{:?}", x);
+                        if !(val == *x) {
                             continue 'outer
                         }
                     }
                 }
             }
+            info!("found a match gonna push it");
             checked_rows.add_row(i); // push matches to result list
         }
         info!("finished search for match");

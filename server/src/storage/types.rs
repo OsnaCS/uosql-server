@@ -235,7 +235,9 @@ impl FromSql for String {
     fn from_sql(mut data: &[u8]) -> Result<Self, Error> {
 
         let mut s = String::new();
+
         try!(data.read_to_string(&mut s));
+        //s.trim_matches('\0');
         Ok(s)
     }
 }
