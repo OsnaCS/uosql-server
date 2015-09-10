@@ -7,12 +7,14 @@ extern crate bincode;
 extern crate byteorder;
 extern crate docopt;
 extern crate rustc_serialize;
+extern crate server;
 
 use std::io::{self, stdout, Write};
 use std::str::FromStr;
 use uosql::logger;
 use uosql::Error;
 use uosql::Connection;
+use server::storage::Rows;
 use docopt::Docopt;
 use std::net::Ipv4Addr;
 
@@ -117,6 +119,10 @@ fn main() {
                 Error::Auth(e) => {
                     info!("{}", e.to_string());
                     return
+                },
+                Error::Server(e) => {
+                    error!("{}", e.msg);
+                    return
                 }
             }
         }
@@ -193,7 +199,9 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
         _ => {
             // Size
             match conn.execute(input.into()) {
-                Ok(_) => { println!("Query sent. Waiting for response.");},
+                Ok(data) => {
+                    println!("{:?}", data);
+                },
                 Err(e) => {
                     match e {
                         Error::Io(_) => {
@@ -212,6 +220,10 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
                             error!("{}", e.to_string());
                             return true
                         },
+                        Error::Server(e) => {
+                            error!("{}", e.msg);
+                            return true
+                        }
                         _ => {
                             error!("Unexpected behaviour during execute()");
                             return false
@@ -307,4 +319,8 @@ pub fn read_string(msg: &str) -> String {
             _ => return r.trim().to_string()
         }
     }
+}
+
+pub fn display(row: Rows) {
+
 }

@@ -51,6 +51,7 @@ impl<'a> Executor<'a> {
             ManipulationStmt::Use(stmt) => self.execute_use_stmt(stmt),
             ManipulationStmt::Insert(stmt) => self.execute_insert_stmt(stmt),
             ManipulationStmt::Describe(stmt) => self.execute_describe_stmt(stmt),
+            ManipulationStmt::Select(stmt) => self.execute_select_stmt(stmt),
             _ => Err(ExecutionError::DebugError("Feature not implemented yet!".into())),
         }
 
@@ -92,6 +93,18 @@ impl<'a> Executor<'a> {
 
     }
 
+    fn execute_select_stmt(&mut self, stmt: SelectStmt) -> Result<Rows, ExecutionError> {
+        if stmt.target.len() != 1 {
+            return Err(ExecutionError::DebugError("Select only implemented for select * ".into()));
+        }
+        if stmt.target[0].col != Col::Every {
+            return Err(ExecutionError::DebugError("Select only implemented for select * ".into()));
+        }
+        if stmt.target.len() != 1 {
+            return Err(ExecutionError::DebugError("Select only implemented for 1 table ".into()));
+        }
+        Ok((generate_rows_dummy()))
+    }
     fn execute_describe_stmt(&mut self, query: String) -> Result<Rows, ExecutionError>{
         let table = try!(self.get_table(&query));
         let columns = table.columns();
