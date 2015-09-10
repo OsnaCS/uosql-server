@@ -119,6 +119,10 @@ fn main() {
                 Error::Auth(e) => {
                     info!("{}", e.to_string());
                     return
+                },
+                Error::Server(e) => {
+                    error!("{}", e.msg);
+                    return
                 }
             }
         }
@@ -216,6 +220,10 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
                             error!("{}", e.to_string());
                             return true
                         },
+                        Error::Server(e) => {
+                            error!("{}", e.msg);
+                            return true
+                        }
                         _ => {
                             error!("Unexpected behaviour during execute()");
                             return false

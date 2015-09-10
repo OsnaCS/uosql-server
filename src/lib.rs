@@ -22,6 +22,7 @@ pub enum Error {
     Encode(EncodingError),
     Decode(DecodingError),
     Auth(String),
+    Server(ClientErrMsg),
 }
 
 /// Implement the conversion from io::Error to Connection-Error
@@ -49,6 +50,13 @@ impl  From<EncodingError> for Error {
 impl From<DecodingError> for Error {
     fn from(err: DecodingError) -> Error {
         Error::Decode(err)
+    }
+}
+
+/// Implement the conversion from ClientErrMsg to NetworkError
+impl From<ClientErrMsg> for Error {
+    fn from(err: ClientErrMsg) -> Error {
+        Error::Server(err)
     }
 }
 
@@ -185,14 +193,16 @@ fn send_cmd<W: Write>(mut s: &mut W, cmd: Command, size: u64)
 fn receive(s: &mut TcpStream, cmd: PkgType) -> Result<(), Error> {
     let status: PkgType = try!(decode_from(s, SizeLimit::Bounded(1024)));
 
+    if status == PkgType::Error {
+        let err : ClientErrMsg = try!(decode_from(s, SizeLimit::Infinite));
+        return Err(Error::Server(err))
+    }
+
     if status != cmd {
         match status {
             PkgType::Ok => {},
             PkgType::Response => {
                 let _ : Rows = try!(decode_from(s, SizeLimit::Infinite));
-            },
-            PkgType::Error => {
-                let _ : ClientErrMsg = try!(decode_from(s, SizeLimit::Infinite));
             },
             PkgType::Greet => {
                 let _ : Greeting = try!(decode_from(s, SizeLimit::Infinite));

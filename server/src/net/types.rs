@@ -22,7 +22,7 @@ pub enum PkgType {
 #[derive(RustcEncodable, RustcDecodable, Debug)]
 pub struct ClientErrMsg {
     code: u16,
-    msg: String
+    pub msg: String
 }
 
 /// Convert the possible Error to a serializable ClientErrMsg struct
