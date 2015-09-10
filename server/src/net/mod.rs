@@ -16,7 +16,7 @@
 //!
 pub mod types;
 
-use std::io::{Write, Read};
+use std::io::{Write, Read, Seek};
 // to encode and decode the structs to the given stream
 use bincode::rustc_serialize::{EncodingError, DecodingError, decode_from, encode_into};
 use std::io;
@@ -119,12 +119,14 @@ pub fn send_info_package<W: Write>(mut stream: &mut W, pkg: PkgType)
     Ok(())
 }
 
-pub fn send_response_package<W: Write>(mut stream: &mut W, data: Rows)
+pub fn send_response_package<W: Write, B: Write + Read + Seek>(mut stream: &mut W, data: Rows <B>
+    )
     -> Result<(), Error>
 {
     try!(encode_into(&PkgType::Response, stream, SizeLimit::Bounded(1024)));
-    try!(encode_into(&data, stream, SizeLimit::Infinite));
-    Ok(())
+    //try!(encode_into(&data, stream, SizeLimit::Infinite));
+    Err(Error::UnknownCmd("Rows reworked.".into()))
+    //Ok(())
 }
 
 /// Read the sent bytes, extract the kind of command

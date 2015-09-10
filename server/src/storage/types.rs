@@ -4,7 +4,6 @@ use std::io::Read;
 use super::super::parse::ast::DataSrc;
 use byteorder::{BigEndian, WriteBytesExt, ReadBytesExt};
 
-
 /// General enums in SQL
 #[derive(Debug, Clone, Copy, RustcDecodable, RustcEncodable, PartialEq)]
 pub enum SqlType {
