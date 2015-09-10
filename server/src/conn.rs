@@ -90,8 +90,16 @@ pub fn handle(mut stream: TcpStream) {
                             query::execute_from_ast(tree, Some("testbase".into()));
 
                             // Dummy Row
-                            let r: Rows = Rows { data: vec![], columns: vec![Column::new("student",
-                                                    SqlType::Int, false, "hallo", false)]};
+                            let r: Rows = Rows {
+                                data: vec![],
+                                columns: vec![
+                                            Column::new("student", SqlType::Int, false,
+                                                "hallo", false),
+                                            Column::new("professor", SqlType::Char('a' as u8),
+                                                false, "asdlkfjasldfjalksjfdlkajsdfökjasldfkjasödf
+                                                jöaskdjfklsdks", true)
+                                        ]
+                            };
                             // Send response package
                             match net::send_response_package(&mut stream, r) {
                                 Ok(_) => { },

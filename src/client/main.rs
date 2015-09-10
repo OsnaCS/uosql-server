@@ -201,6 +201,7 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
             match conn.execute(input.into()) {
                 Ok(data) => {
                     println!("{:?}", data);
+                    display(data);
                 },
                 Err(e) => {
                     match e {
@@ -322,5 +323,77 @@ pub fn read_string(msg: &str) -> String {
 }
 
 pub fn display(row: Rows) {
+    if row.data.is_empty() {
+        // print meta data
+        let mut cols = vec![];
+        for i in &row.columns {
+            cols.push(i.name.len());
+        }
 
+        // Column name +---
+        print!("+");
+        let col_name = "Column name";
+        for i in 0..(col_name.len()+2) {
+            print!("-");
+        }
+
+        // for every column +---
+        display_seperator(&cols);
+
+        print!("| {} ", col_name);
+        // name of every column
+        for i in 0..(cols.len()) {
+            print!("| {} ", row.columns[i].name);
+        }
+        println!("|");
+
+        // format +--
+        print!("+");
+        for i in 0..(col_name.len()+2) {
+            print!("-");
+        }
+
+        display_seperator(&cols);
+
+        print!("| {1: <0$} ", col_name.len(), "Type");
+        for i in 0..(cols.len()) {
+            print!("| {1: ^0$} ", cols[i], format!("{:?}", row.columns[i].sql_type));
+        }
+        println!("|");
+
+        print!("| {1: <0$} ", col_name.len(), "Primary");
+        for i in 0..(cols.len()) {
+            print!("| {1: ^0$} ", cols[i], row.columns[i].is_primary_key);
+        }
+        println!("|");
+
+        print!("| {1: <0$} ", col_name.len(), "Allow NULL");
+        for i in 0..(cols.len()) {
+            print!("| {1: ^0$} ", cols[i], row.columns[i].allow_null);
+        }
+        println!("|");
+
+        print!("| {1: <0$} ", col_name.len(), "Description");
+        for i in 0..(cols.len()) {
+            print!("| {1: ^0$} ", cols[i], row.columns[i].description);
+        }
+        println!("|");
+
+        print!("+");
+        for i in 0..(col_name.len()+2) {
+            print!("-");
+        }
+
+        display_seperator(&cols);
+    }
+}
+
+pub fn display_seperator(cols: &Vec<usize>) {
+    for i in 0..(cols.len()) {
+        print!("+--");
+        for _ in 0..cols[i] {
+            print!("-");
+        }
+    }
+    println!("+");
 }
