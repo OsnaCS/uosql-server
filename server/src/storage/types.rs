@@ -134,7 +134,7 @@ impl SqlType {
     }
 
     pub fn cmp(&self, val: &[u8], val2: &[u8], comp: CompType)
-    -> Result<bool,Error>
+    -> Result<bool, Error>
     {
         match self {
             &SqlType::Int => {
@@ -150,7 +150,7 @@ impl SqlType {
 
             &SqlType::Bool => {
                 match comp {
-                    CompType::Equ => { self.compare_byte_for_equal(val, val2) },
+                    CompType::Equ => { self.compare_as_bool(val, val2) },
                     CompType::NEqu => { self.compare_byte_for_equal(val, val2).map(|x| !x) },
                     CompType::GThan => { self.compare_byte_greater_than(val, val2) },
                     CompType::SThan => { self.compare_byte_lesser_than(val, val2) },
@@ -187,7 +187,7 @@ impl SqlType {
     }
 
     fn compare_byte_greater_than(&self, val: &[u8], val2: &[u8])
-    -> Result<bool,Error>
+    -> Result<bool, Error>
     {
         if val.len() != val2.len() {
             return Err(Error::WrongLength)
@@ -201,7 +201,7 @@ impl SqlType {
     }
 
     fn compare_byte_lesser_than(&self, val: &[u8], val2: &[u8])
-    -> Result<bool,Error>
+    -> Result<bool, Error>
     {
         if val.len() != val2.len() {
             return Err(Error::WrongLength)
@@ -211,6 +211,32 @@ impl SqlType {
                 return Ok(true)
             }
         }
+        Ok(false)
+    }
+
+    fn compare_as_bool(&self, val: &[u8], val2: &[u8])
+    -> Result<bool, Error>
+    {
+        let mut sov: bool = false;
+        let mut sov2: bool = false;
+        for i in 0 .. val.len() {
+            if val[i] != 0 {
+                sov = true;
+                break;
+            }
+        }
+
+        for i in 0 .. val2.len() {
+            if val2[i] != 0 {
+                sov = true;
+                break;
+            }
+        }
+
+        if sov == sov2 {
+            return Ok(true)
+        }
+
         Ok(false)
     }
 }
