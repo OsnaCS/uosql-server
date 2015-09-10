@@ -250,6 +250,47 @@ impl SqlType {
 
         Ok(false)
     }
+    /// converts value to i32 and compares if equal
+    /// returns boolean if successful returns Error if not
+    fn equal_for_int_with_value(&self, val: &[u8], val2: &[u8])
+    -> Result<bool, Error>
+    {
+        let int1: i32 = try!(i32::from_sql(val));
+        let int2: i32 = try!(i32::from_sql(val2));
+
+        if int1 != int2 {
+            return Ok(false)
+        }
+        Ok(true)
+    }
+
+    /// converts value to i32 and compares if first value is greater
+    /// returns boolean if successful returns Error if not
+    fn greater_than_for_int_with_value(&self, val: &[u8], val2: &[u8])
+    -> Result<bool, Error>
+    {
+        let int1: i32 = try!(i32::from_sql(val));
+        let int2: i32 = try!(i32::from_sql(val2));
+
+        if int1 > int2 {
+            return Ok(true)
+        }
+        Ok(false)
+    }
+
+    /// converts value to i32 and compares if first value is lesser
+    /// returns boolean if successful returns Error if not
+    fn lesser_than_for_int_with_value(&self, val: &[u8], val2: &[u8])
+    -> Result<bool, Error>
+    {
+        let int1: i32 = try!(i32::from_sql(val));
+        let int2: i32 = try!(i32::from_sql(val2));
+
+        if int1 < int2 {
+            return Ok(true)
+        }
+        Ok(false)
+    }
 }
 
 //---------------------------------------------------------------
