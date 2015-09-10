@@ -35,10 +35,16 @@ fn test_create_table_content() {
             cid: "FirstName".to_string(),
             datatype: SqlType::Char(255),
             primary: false,
+            auto_increment: false,
+            not_null: false,
+            comment: None,
         }, ColumnInfo {
             cid: "LastName".to_string(),
             datatype: SqlType::Char(255),
             primary: false,
+            auto_increment: false,
+            not_null: false,
+            comment: None,
         }
     ];
 
@@ -56,13 +62,40 @@ fn test_create_table_content_primary() {
             cid: "FirstName".to_string(),
             datatype: SqlType::Char(255),
             primary: false,
+            auto_increment: false,
+            not_null: false,
+            comment: None,
         }, ColumnInfo {
             cid: "LastName".to_string(),
             datatype: SqlType::Char(255),
             primary: true,
+            auto_increment: false,
+            not_null: false,
+            comment: None,
         }
     ];
 
+
+    assert_eq!(p.parse().unwrap(), Query::DefStmt(DefStmt::Create(
+        CreateStmt::Table(CreateTableStmt {
+            tid: "foo".to_string(), cols: vec }))))
+}
+
+#[test]
+fn test_create_table_FULL() {
+    let mut p = parser::Parser::create(
+        "create table foo (FirstName char(255) not null
+            auto_increment comment 'TEST' primary key)");
+
+    let vec = vec![ColumnInfo {
+            cid: "FirstName".to_string(),
+            datatype: SqlType::Char(255),
+            primary: true,
+            auto_increment: true,
+            not_null: true,
+            comment: Some(Lit::Str("TEST".to_string())),
+        }
+    ];
 
     assert_eq!(p.parse().unwrap(), Query::DefStmt(DefStmt::Create(
         CreateStmt::Table(CreateTableStmt {
@@ -87,6 +120,9 @@ fn test_alter_table_add_column() {
             cid: "bar".to_string(),
             datatype: SqlType::Int,
             primary: false,
+            auto_increment: false,
+            not_null: false,
+            comment: None,
         })
     }))));
 }
@@ -101,6 +137,9 @@ fn test_alter_table_add_column_primary() {
             cid: "bar".to_string(),
             datatype: SqlType::Int,
             primary: true,
+            auto_increment: false,
+            not_null: false,
+            comment: None,
         })
     }))));
 }
@@ -127,6 +166,9 @@ fn test_alter_table_modify() {
             cid: "bar".to_string(),
             datatype: SqlType::Bool,
             primary: false,
+            auto_increment: false,
+            not_null: false,
+            comment: None,
         })
     }))));
 }
@@ -145,6 +187,14 @@ fn test_drop_database() {
 
     assert_eq!(p.parse().unwrap(), Query::DefStmt(DefStmt::Drop(
         DropStmt::Database("foo".to_string()))));
+}
+
+#[test]
+fn test_drop_view() {
+    let mut p = parser::Parser::create("drop view foo");
+
+    assert_eq!(p.parse().unwrap(), Query::DefStmt(DefStmt::Drop(
+        DropStmt::View("foo".to_string()))));
 }
 
 #[test]
@@ -258,6 +308,7 @@ fn test_select_full_with_table_alias() {
             alias: aliashm,
             cond: None,
             spec_op: None,
+            order: Vec::new(),
             limit: None,
     })));
 }
@@ -280,6 +331,7 @@ fn test_select_specific_column() {
             alias: aliashm,
             cond: None,
             spec_op: None,
+            order: Vec::new(),
             limit: None,
     })));
 }
@@ -306,6 +358,7 @@ fn test_select_specific_columns() {
             alias: aliashm,
             cond: None,
             spec_op: None,
+            order: Vec::new(),
             limit: None,
     })));
 }
@@ -332,6 +385,7 @@ fn test_select_specific_columns_alias() {
             alias: aliashm,
             cond: None,
             spec_op: None,
+            order: Vec::new(),
             limit: None,
     })));
 }
@@ -358,6 +412,7 @@ fn test_select_specific_columns_alias_dot() {
             alias: aliashm,
             cond: None,
             spec_op: None,
+            order: Vec::new(),
             limit: None,
     })));
 }
@@ -414,6 +469,7 @@ fn test_select_full_where_clause() {
                 ))
             )),
             spec_op: None,
+            order: Vec::new(),
             limit: None,
     })));
 }
@@ -433,6 +489,7 @@ fn test_select_full_no_where_limit() {
             alias: HashMap::new(),
             cond: None,
             spec_op: None,
+            order: Vec::new(),
             limit: Some(Limit {
                 count: Some(3),
                 offset: Some(30),
@@ -492,6 +549,7 @@ fn test_select_full_where_clause_limit() {
                 ))
             )),
             spec_op: None,
+            order: Vec::new(),
             limit: Some(Limit {
                 count: Some(3),
                 offset: Some(30),
@@ -557,11 +615,135 @@ fn test_select_complete_1() {
                 ))
             )),
             spec_op: None,
+            order: Vec::new(),
             limit: Some(Limit {
                 count: Some(3),
                 offset: Some(30),
             }),
     })));
+}
+
+#[test]
+fn test_select_complete_2_with_order_by() {
+    let mut p = parser::Parser::create("
+        select bar_1.column_1 as X, bar_2.column_2 as Y from foo bar_1, foo_2 bar_2
+        where bar_1.fname = 'Eugene' and bar_1.lname = 'peng'
+        or bar_2.fname = bar_1.fname and bar_2.lname = bar_1.lname
+        order by bar_1.X limit 30,3");
+    let mut aliashm = HashMap::new();
+    aliashm.insert("bar_2".to_string(), "foo_2".to_string());
+    aliashm.insert("bar_1".to_string(), "foo".to_string());
+    let selected_tables = vec!["foo".to_string(), "foo_2".to_string()];
+
+    assert_eq!(p.parse().unwrap(), Query::ManipulationStmt(
+        ManipulationStmt::Select(SelectStmt {
+            target: vec![Target {
+                alias: Some("bar_1".to_string()),
+                col: Col::Specified("column_1".to_string()),
+                rename: Some("X".to_string()),
+            }, Target {
+                alias: Some("bar_2".to_string()),
+                col: Col::Specified("column_2".to_string()),
+                rename: Some("Y".to_string()),
+            }],
+            tid: selected_tables,
+            alias: aliashm,
+            cond: Some(Conditions::Or(
+                Box::new(Conditions::And(
+                    Box::new(Conditions::Leaf(Condition {
+                        aliascol: Some("bar_1".to_string()),
+                        col: "fname".to_string(),
+                        op: CompType::Equ,
+                        aliasrhs: None,
+                        rhs: CondType::Literal(Lit::Str("Eugene".to_string())),
+                    })),
+                    Box::new(Conditions::Leaf(Condition {
+                        aliascol: Some("bar_1".to_string()),
+                        col: "lname".to_string(),
+                        op: CompType::Equ,
+                        aliasrhs: None,
+                        rhs: CondType::Literal(Lit::Str("peng".to_string())),
+                    })))),
+                Box::new(Conditions::And(
+                    Box::new(Conditions::Leaf(Condition {
+                        aliascol: Some("bar_2".to_string()),
+                        col: "fname".to_string(),
+                        op: CompType::Equ,
+                        aliasrhs: Some("bar_1".to_string()),
+                        rhs: CondType::Word("fname".to_string()),
+                    })),
+                    Box::new(Conditions::Leaf(Condition {
+                        aliascol: Some("bar_2".to_string()),
+                        col: "lname".to_string(),
+                        op: CompType::Equ,
+                        aliasrhs: Some("bar_1".to_string()),
+                        rhs: CondType::Word("lname".to_string()),
+                    }))
+                ))
+            )),
+            spec_op: None,
+            order: vec![Sort {
+                alias: Some("bar_1".to_string()),
+                col: "X".to_string(),
+                order: Some(Order::Asc),
+            }],
+            limit: Some(Limit {
+                count: Some(3),
+                offset: Some(30),
+            }),
+    })));
+}
+
+#[test]
+fn test_create_view_1() {
+    let mut p = parser::Parser::create("create view foo as select * from bar");
+
+    assert_eq!(p.parse().unwrap(), Query::DefStmt(DefStmt::Create(
+        CreateStmt::View(CreateViewStmt {
+            name: "foo".to_string(),
+            opt: false,
+            sel: SelectStmt {
+                    target: vec![Target {
+                        alias: None,
+                        col: Col::Every,
+                        rename: None,
+                    }],
+                    tid: vec!["bar".to_string()],
+                    alias: HashMap::new(),
+                    cond: None,
+                    spec_op: None,
+                    order: Vec::new(),
+                    limit: None,
+                },
+            }
+        )
+    )));
+}
+
+#[test]
+fn test_create_view_2() {
+   let mut p = parser::Parser::create("create or replace view foo as select * from bar");
+
+    assert_eq!(p.parse().unwrap(), Query::DefStmt(DefStmt::Create(
+        CreateStmt::View(CreateViewStmt {
+            name: "foo".to_string(),
+            opt: true,
+            sel: SelectStmt {
+                    target: vec![Target {
+                        alias: None,
+                        col: Col::Every,
+                        rename: None,
+                    }],
+                    tid: vec!["bar".to_string()],
+                    alias: HashMap::new(),
+                    cond: None,
+                    spec_op: None,
+                    order: Vec::new(),
+                    limit: None,
+                },
+            }
+        )
+    )));
 }
 
 #[test]
@@ -950,7 +1132,75 @@ fn err_use_1() {
 fn err_use_2() {
     let mut p = parser::Parser::create("use database use");
     let sol = parser::ParseError::ReservedKeyword(Span {
-        lo: 14,
-        hi: 17,
+        lo: 15,
+        hi: 16,
     });
+
+    assert_eq!(p.parse(), Err(sol));
+}
+
+#[test]
+fn err_use_3() {
+    let mut p = parser::Parser::create("use database 1");
+    let sol = parser::ParseError::NotAWord(Span {
+        lo: 14,
+        hi: 14,
+    });
+
+    assert_eq!(p.parse(), Err(sol));
+}
+
+#[test]
+fn err_drop_1() {
+    let mut p = parser::Parser::create("drop foo");
+    let sol = parser::ParseError::NotAKeyword(Span {
+        lo: 7,
+        hi: 8,
+    });
+
+    assert_eq!(p.parse(), Err(sol));
+}
+
+#[test]
+fn err_drop_2() {
+    let mut p = parser::Parser::create("drop table table");
+    let sol = parser::ParseError::ReservedKeyword(Span {
+        lo: 13,
+        hi: 16,
+    });
+
+    assert_eq!(p.parse(), Err(sol));
+}
+
+#[test]
+fn err_drop_3() {
+    let mut p = parser::Parser::create("drop table ]");
+    let sol = parser::ParseError::NotAWord(Span {
+        lo: 12,
+        hi: 12,
+    });
+
+    assert_eq!(p.parse(), Err(sol));
+}
+
+#[test]
+fn err_insert_1() {
+    let mut p = parser::Parser::create("insert a");
+    let sol = parser::ParseError::NotAKeyword(Span {
+        lo: 8,
+        hi: 8,
+    });
+
+    assert_eq!(p.parse(), Err(sol));
+}
+
+#[test]
+fn err_insert_2() {
+    let mut p = parser::Parser::create("insert into into");
+    let sol = parser::ParseError::ReservedKeyword(Span {
+        lo: 14,
+        hi: 16,
+    });
+
+    assert_eq!(p.parse(), Err(sol));
 }

@@ -64,6 +64,7 @@ impl Executor{
             }
 
             CreateStmt::Table(stmt) => self.execute_create_table_stmt(stmt),
+            _ => (),
         }
 
     }

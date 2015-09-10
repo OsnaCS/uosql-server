@@ -8,7 +8,7 @@ use server::parse;
 
 fn main() {
 
-    let mut p = parse::Parser::create("select * from foo limit 30,3");
+    let mut p = parse::Parser::create("create table studenten (asd int asdasd)");
     println!("{:?}",p.parse());
 
 }
