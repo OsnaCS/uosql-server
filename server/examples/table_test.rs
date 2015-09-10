@@ -63,19 +63,44 @@ fn main() {
 
     let t = db.load_table("storage_team").unwrap();
 
+    let descriptions = t.get_description().unwrap();
+
+    for i in descriptions.iter() {
+        print!("{}", i.get_value::<String>(0).unwrap());
+        print!(", {}", i.get_value::<String>(1).unwrap());
+        print!(", {}", i.get_value::<bool>(2).unwrap());
+        print!(", {}", i.get_value::<bool>(3).unwrap());
+        println!(", {}", i.get_value::<String>(4).unwrap());
+    }
+
     let mut engine = t.create_engine();
-    //engine.create_table();
+    engine.create_table();
     engine.insert_row(&my_data);
     let rows = engine.full_scan().unwrap();
 
+
     for i in rows.iter() {
-        // println!("{:?}", i);
+        print!("{}", i.get_value::<i32>(0).unwrap());
+        print!(", {}", i.get_value::<bool>(1).unwrap());
+        print!(", {}", i.get_value::<String>(2).unwrap());
+        println!(", {}", i.get_value::<String>(3).unwrap());
     }
+    println!("search for primary key Dennis with value fuenf");
+    let mut keymap: Vec<PrimaryKeyMap> = Vec::new();
+    let key: PrimaryKeyMap = PrimaryKeyMap {
+        column_name: "Dennis".to_string(),
+        primary_key_value: DataSrc::String("fuenf".to_string())
+    };
 
-
-
-
-
+    keymap.push(key);
+    let key_rows = engine.get_row_with_primary_key(keymap).unwrap();
+    println!("{:?}", key_rows);
+    for i in key_rows.iter(){
+        print!("{}", i.get_value::<i32>(0).unwrap());
+        print!(", {}", i.get_value::<bool>(1).unwrap());
+        print!(", {}", i.get_value::<String>(2).unwrap());
+        println!(", {}", i.get_value::<String>(3).unwrap());
+    }
     //let _e  = engine.create_table();
     //let t = engine.table();
 

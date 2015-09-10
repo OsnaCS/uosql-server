@@ -14,8 +14,8 @@ use super::super::data::{Rows};
 use std::fs;
 
 pub struct PrimaryKeyMap {
-    column_name: String,
-    primary_key_value: DataSrc,
+    pub column_name: String,
+    pub primary_key_value: DataSrc,
 }
 
 pub struct FlatFile<'a> {
@@ -129,7 +129,7 @@ impl<'a> Engine for FlatFile<'a> {
             'inner: for pk in &primary_keys { // inner iterator for keys
                 match &pk.primary_key_value {
                     &DataSrc::Int(x) => {
-                        let val: i32 = try!(i.get_value_by_name(
+                        let val: i32 = try!(i.get_value_by_name::<i32>(
                                 &(pk.column_name.to_string())
                             ));// get value of row with column
 
@@ -138,26 +138,25 @@ impl<'a> Engine for FlatFile<'a> {
                         }
                     }
                     &DataSrc::Bool(x) => {
-                        let val: u8 = try!(i.get_value_by_name(
+                        let val: bool = try!(i.get_value_by_name::<bool>(
                                 &(pk.column_name.to_string())
                             ));
 
-                        if !(DataSrc::to_bool(val) && DataSrc::to_bool(x)) {
+                        if !(val && DataSrc::to_bool(x)) {
                             continue 'outer
                         }
                     }
                     &DataSrc::String(ref x)=> {
-                        let val: String = try!(i.get_value_by_name(
+                        let val: String = try!(i.get_value_by_name::<String>(
                                 &(pk.column_name.to_string())
                             ));
 
-                        if !(val == *x) {
+                        if !(val != *x) {
                             continue 'outer
                         }
                     }
                 }
             }
-            info!("found a match gonna push it");
             checked_rows.add_row(i); // push matches to result list
         }
         info!("finished search for match");
