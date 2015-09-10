@@ -141,10 +141,10 @@ impl SqlType {
                 match comp {
                     CompType::Equ => { self.compare_byte_for_equal(val, val2) },
                     CompType::NEqu => { self.compare_byte_for_equal(val, val2).map(|x| !x) },
-                    CompType::GThan => { Err(Error::NoImplementation) },
-                    CompType::SThan => { Err(Error::NoImplementation) },
-                    CompType::GEThan => { Err(Error::NoImplementation) },
-                    CompType::SEThan => { Err(Error::NoImplementation) },
+                    CompType::GThan => { self.compare_byte_greater_than(val, val2) },
+                    CompType::SThan => { self.compare_byte_lesser_than(val, val2) },
+                    CompType::GEThan => { self.compare_byte_lesser_than(val, val2).map(|x| !x) },
+                    CompType::SEThan => { self.compare_byte_greater_than(val, val2).map(|x| !x) },
                 }
             },
 
@@ -152,10 +152,10 @@ impl SqlType {
                 match comp {
                     CompType::Equ => { self.compare_byte_for_equal(val, val2) },
                     CompType::NEqu => { self.compare_byte_for_equal(val, val2).map(|x| !x) },
-                    CompType::GThan => { Err(Error::NoImplementation) },
-                    CompType::SThan => { Err(Error::NoImplementation) },
-                    CompType::GEThan => { Err(Error::NoImplementation) },
-                    CompType::SEThan => { Err(Error::NoImplementation) },
+                    CompType::GThan => { self.compare_byte_greater_than(val, val2) },
+                    CompType::SThan => { self.compare_byte_lesser_than(val, val2) },
+                    CompType::GEThan => { self.compare_byte_lesser_than(val, val2).map(|x| !x) },
+                    CompType::SEThan => { self.compare_byte_greater_than(val, val2).map(|x| !x) },
                 }
             },
 
@@ -163,10 +163,10 @@ impl SqlType {
                 match comp {
                     CompType::Equ => { self.compare_byte_for_equal(val, val2) },
                     CompType::NEqu => { self.compare_byte_for_equal(val, val2).map(|x| !x) },
-                    CompType::GThan => { Err(Error::NoImplementation) },
-                    CompType::SThan => { Err(Error::NoImplementation) },
-                    CompType::GEThan => { Err(Error::NoImplementation) },
-                    CompType::SEThan => { Err(Error::NoImplementation) },
+                    CompType::GThan => { self.compare_byte_greater_than(val, val2) },
+                    CompType::SThan => { self.compare_byte_lesser_than(val, val2) },
+                    CompType::GEThan => { self.compare_byte_lesser_than(val, val2).map(|x| !x) },
+                    CompType::SEThan => { self.compare_byte_greater_than(val, val2).map(|x| !x) },
                 }
             },
         }
@@ -184,6 +184,34 @@ impl SqlType {
             }
         }
         Ok(true)
+    }
+
+    fn compare_byte_greater_than(&self, val: &[u8], val2: &[u8])
+    -> Result<bool,Error>
+    {
+        if val.len() != val2.len() {
+            return Err(Error::WrongLength)
+        }
+        for i in 0 .. val.len() {
+            if val[i] > val2[i] {
+                return Ok(true)
+            }
+        }
+        Ok(false)
+    }
+
+    fn compare_byte_lesser_than(&self, val: &[u8], val2: &[u8])
+    -> Result<bool,Error>
+    {
+        if val.len() != val2.len() {
+            return Err(Error::WrongLength)
+        }
+        for i in 0 .. val.len() {
+            if val[i] < val2[i] {
+                return Ok(true)
+            }
+        }
+        Ok(false)
     }
 }
 
