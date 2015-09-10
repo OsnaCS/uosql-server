@@ -18,8 +18,7 @@ use std::collections::HashMap;
 
 #[test]
 fn test_create_table_empty() {
-    let mut p = parser::Parser::create("cReAtE table
-        foo");
+    let mut p = parser::Parser::create("cReAtE table \n foo");
 
     assert_eq!(p.parse(), Ok(Query::DefStmt(DefStmt::Create(
         CreateStmt::Table(CreateTableStmt {tid: "foo".to_string(),
@@ -72,10 +71,10 @@ fn test_create_table_content_primary() {
 
 #[test]
 fn test_create_database() {
-    let mut p = parser::Parser::create("create database Database");
+    let mut p = parser::Parser::create("create database foo");
 
     assert_eq!(p.parse().unwrap(), Query::DefStmt(DefStmt::Create(
-        CreateStmt::Database("Database".to_string()))));
+        CreateStmt::Database("foo".to_string()))));
 }
 
 #[test]
@@ -94,7 +93,7 @@ fn test_alter_table_add_column() {
 
 #[test]
 fn test_alter_table_add_column_primary() {
-    let mut p = parser::Parser::create("alter table foo add bar int primary key");
+    let mut p = parser::Parser::create("alter table foo add bar inT primary key");
 
     assert_eq!(p.parse().unwrap(), Query::DefStmt(DefStmt::Alter(
         AltStmt::Table(AlterTableStmt {tid: "foo".to_string(),
@@ -501,6 +500,71 @@ fn test_select_full_where_clause_limit() {
 }
 
 #[test]
+fn test_select_complete_1() {
+    let mut p = parser::Parser::create("
+        select bar_1.column_1 as X, bar_2.column_2 as Y from foo bar_1, foo_2 bar_2
+        where bar_1.fname = 'Eugene' and bar_1.lname = 'peng'
+        or bar_2.fname = bar_1.fname and bar_2.lname = bar_1.lname limit 30,3");
+    let mut aliashm = HashMap::new();
+    aliashm.insert("bar_2".to_string(), "foo_2".to_string());
+    aliashm.insert("bar_1".to_string(), "foo".to_string());
+    let selected_tables = vec!["foo".to_string(), "foo_2".to_string()];
+
+    assert_eq!(p.parse().unwrap(), Query::ManipulationStmt(
+        ManipulationStmt::Select(SelectStmt {
+            target: vec![Target {
+                alias: Some("bar_1".to_string()),
+                col: Col::Specified("column_1".to_string()),
+                rename: Some("X".to_string()),
+            }, Target {
+                alias: Some("bar_2".to_string()),
+                col: Col::Specified("column_2".to_string()),
+                rename: Some("Y".to_string()),
+            }],
+            tid: selected_tables,
+            alias: aliashm,
+            cond: Some(Conditions::Or(
+                Box::new(Conditions::And(
+                    Box::new(Conditions::Leaf(Condition {
+                        aliascol: Some("bar_1".to_string()),
+                        col: "fname".to_string(),
+                        op: CompType::Equ,
+                        aliasrhs: None,
+                        rhs: CondType::Literal(Lit::Str("Eugene".to_string())),
+                    })),
+                    Box::new(Conditions::Leaf(Condition {
+                        aliascol: Some("bar_1".to_string()),
+                        col: "lname".to_string(),
+                        op: CompType::Equ,
+                        aliasrhs: None,
+                        rhs: CondType::Literal(Lit::Str("peng".to_string())),
+                    })))),
+                Box::new(Conditions::And(
+                    Box::new(Conditions::Leaf(Condition {
+                        aliascol: Some("bar_2".to_string()),
+                        col: "fname".to_string(),
+                        op: CompType::Equ,
+                        aliasrhs: Some("bar_1".to_string()),
+                        rhs: CondType::Word("fname".to_string()),
+                    })),
+                    Box::new(Conditions::Leaf(Condition {
+                        aliascol: Some("bar_2".to_string()),
+                        col: "lname".to_string(),
+                        op: CompType::Equ,
+                        aliasrhs: Some("bar_1".to_string()),
+                        rhs: CondType::Word("lname".to_string()),
+                    }))
+                ))
+            )),
+            spec_op: None,
+            limit: Some(Limit {
+                count: Some(3),
+                offset: Some(30),
+            }),
+    })));
+}
+
+#[test]
 fn test_update_full_with_table_alias() {
     let mut p = parser::Parser::create("update foo bar set bar_1 = 1 where bar.bar_2 > 'pleb'");
     let mut aliashm = HashMap::new();
@@ -616,12 +680,15 @@ fn test_mult_where_blocks_priority_4_param() {
     );
 }
 
-#[test]
+/*#[test]
 fn to_do() {
-    let mut p = parser::Parser::create("select * from foo limit 30,3");
+    let mut p = parser::Parser::create("
+        select bar_1.column_1 as X, bar_2.column_2 as Y from foo bar_1, foo_2 bar_2
+        where bar_1.fname = 'Eugene' and bar_1.lname = 'peng'
+        or bar_2.fname = bar_1.fname and bar_2.lname = bar_1.lname limit 30,3");
 
     assert!(p.parse().is_ok());
-}
+}*/
 
 // ============================================================================
 // Result::Err unittest
@@ -638,8 +705,8 @@ fn err_create_table_error1() {
 fn err_create_keyword1() {
     let mut p = parser::Parser::create("   table create");
     let sol = parser::ParseError::WrongKeyword(Span {
-        lo : 5,
-        hi : 10,
+        lo: 5,
+        hi: 10,
     });
 
     assert_eq!(p.parse(), Err(sol));
@@ -647,11 +714,44 @@ fn err_create_keyword1() {
 
 //Missing parentheses in front
 #[test]
-fn err_create_missing_p_front() {
+fn err_create_wrong_token_1() {
     let mut p = parser::Parser::create("create table Studenten )");
     let sol = parser::ParseError::WrongToken(Span {
-        lo : 24,
-        hi : 24,
+        lo: 24,
+        hi: 24,
+    });
+
+    assert_eq!(p.parse(), Err(sol));
+}
+
+#[test]
+fn err_create_wrong_token_2() {
+    let mut p = parser::Parser::create("create table studenten (asd int(");
+    let sol = parser::ParseError::WrongToken(Span {
+        lo: 32,
+        hi: 32,
+    });
+
+    assert_eq!(p.parse(), Err(sol));
+}
+
+#[test]
+fn err_create_wrong_token_3() {
+    let mut p = parser::Parser::create("create table studenten (asd asd)");
+    let sol = parser::ParseError::NotADatatype(Span {
+        lo: 30,
+        hi: 32,
+    });
+
+    assert_eq!(p.parse(), Err(sol));
+}
+
+#[test]
+fn err_create_missing_parenthesis() {
+    let mut p = parser::Parser::create("create table studenten asd int)");
+    let sol = parser::ParseError::WrongToken(Span {
+        lo: 25,
+        hi: 28,
     });
 
     assert_eq!(p.parse(), Err(sol));
@@ -677,4 +777,180 @@ fn err_create_not_a_keyword_2() {
     });
 
     assert_eq!(p.parse(), Err(sol));
+}
+
+#[test]
+fn err_create_invalid_eoq_1() {
+    let mut p = parser::Parser::create("create table studenten (asd int))");
+    let sol = parser::ParseError::InvalidEoq;
+
+    assert_eq!(p.parse(), Err(sol));
+}
+
+#[test]
+fn err_create_invalid_eoq_2() {
+    let mut p = parser::Parser::create("create database studenten(asd int,)");
+    let sol = parser::ParseError::InvalidEoq;
+
+    assert_eq!(p.parse(), Err(sol));
+}
+
+#[test]
+fn err_create_reserved_keyword() {
+    let mut p = parser::Parser::create("create table asd (table bool)");
+    let sol = parser::ParseError::ReservedKeyword(Span {
+        lo: 20,
+        hi: 25,
+    });
+
+    assert_eq!(p.parse(), Err(sol));
+}
+
+#[test]
+fn err_describe() {
+    let mut p = parser::Parser::create("describe ,");
+    let sol = parser::ParseError::NotAWord(Span {
+        lo: 10,
+        hi: 10,
+    });
+
+    assert_eq!(p.parse(), Err(sol));
+}
+
+#[test]
+fn err_describe_2() {
+    let mut p = parser::Parser::create("describe table");
+    let sol = parser::ParseError::ReservedKeyword(Span {
+        lo: 11,
+        hi: 14,
+    });
+
+    assert_eq!(p.parse(), Err(sol));
+}
+
+#[test]
+fn err_alter_1() {
+    let mut p = parser::Parser::create("alter table table add bar int");
+    let sol = parser::ParseError::ReservedKeyword(Span {
+        lo: 14,
+        hi: 19,
+    });
+
+    assert_eq!(p.parse(), Err(sol));
+}
+
+#[test]
+fn err_alter_2() {
+    let mut p = parser::Parser::create("alter table foo add bar foo");
+    let sol = parser::ParseError::NotADatatype(Span {
+        lo: 26,
+        hi: 27,
+    });
+
+    assert_eq!(p.parse(), Err(sol));
+}
+
+#[test]
+fn err_alter_3() {
+    let mut p = parser::Parser::create("alter table foo drop bar_1");
+    let sol = parser::ParseError::NotAKeyword(Span {
+        lo: 23,
+        hi: 26,
+    });
+
+    assert_eq!(p.parse(), Err(sol));
+}
+
+#[test]
+fn err_alter_4() {
+    let mut p = parser::Parser::create("alter table foo drop column drop");
+    let sol = parser::ParseError::ReservedKeyword(Span {
+        lo: 30,
+        hi: 32,
+    });
+
+    assert_eq!(p.parse(), Err(sol));
+}
+
+#[test]
+fn err_alter_5() {
+    let mut p = parser::Parser::create("alter table foo add (bar int");
+    let sol = parser::ParseError::NotAWord(Span {
+        lo: 22,
+        hi: 23,
+    });
+
+    assert_eq!(p.parse(), Err(sol));
+}
+
+#[test]
+fn err_alter_6() {
+    let mut p = parser::Parser::create("alter table foo drop column (");
+    let sol = parser::ParseError::NotAWord(Span {
+        lo: 29,
+        hi: 29,
+    });
+
+    assert_eq!(p.parse(), Err(sol));
+}
+
+#[test]
+fn err_alter_7() {
+    let mut p = parser::Parser::create("alter table foo drop column column");
+    let sol = parser::ParseError::ReservedKeyword(Span {
+        lo: 30,
+        hi: 34,
+    });
+
+    assert_eq!(p.parse(), Err(sol));
+}
+
+#[test]
+fn err_alter_8() {
+    let mut p = parser::Parser::create("alter table foo modify asd");
+    let sol = parser::ParseError::NotAKeyword(Span {
+        lo: 25,
+        hi: 26,
+    });
+
+    assert_eq!(p.parse(), Err(sol));
+}
+
+#[test]
+fn err_alter_9() {
+    let mut p = parser::Parser::create("alter table foo modify column bar asd");
+    let sol = parser::ParseError::NotADatatype(Span {
+        lo: 36,
+        hi: 37,
+    });
+
+    assert_eq!(p.parse(), Err(sol));
+}
+
+#[test]
+fn err_alter_10() {
+    let mut p = parser::Parser::create("alter table foo modify column bar bool )");
+    let sol = parser::ParseError::InvalidEoq;
+
+    assert_eq!(p.parse(), Err(sol));
+}
+
+#[test]
+fn err_use_1() {
+    let mut p = parser::Parser::create("use table foo");
+    let sol = parser::ParseError::WrongKeyword(Span {
+        lo: 6,
+        hi: 11,
+    });
+
+    assert_eq!(p.parse(), Err(sol));
+}
+
+#[test]
+fn err_use_2() {
+    let mut p = parser::Parser::create("use database use");
+    let sol = parser::ParseError::ReservedKeyword(Span {
+        lo: 14,
+        hi: 17,
+    });
 }

@@ -791,7 +791,7 @@ impl<'a> Parser<'a> {
                 Token::Word(ref s) => s,
                 _ => return Err(ParseError::NotADatatype(Span { lo: span_lo , hi: span_hi } ))
             };
-            tmp_datatype = word.to_string();
+            tmp_datatype = word.to_lowercase();
         }
         // checks if token is a correct Datatype
         found_datatype = match &tmp_datatype[..] {
@@ -883,7 +883,11 @@ impl<'a> Parser<'a> {
                  ))
             };
         }
-        Ok(found_word.to_string())
+        if keyword_from_string(found_word).is_some() {
+            Err(ParseError::ReservedKeyword(Span { lo: span_lo , hi: span_hi }))
+        } else {
+            Ok(found_word.to_string())
+        }
     }
        // checks if the current token is a word
     fn expect_literal(&self) -> Result<Lit, ParseError> {
@@ -978,12 +982,12 @@ impl<'a> Parser<'a> {
 
             // checks whether token is a word
             let word = match token.tok {
-                Token::Word(ref s) => s.to_lowercase(),
+                Token::Word(ref s) => s,
                 _ => return Err(ParseError::NotAKeyword(Span { lo: span_lo , hi: span_hi } ))
             };
 
             // checks if word is a keyword
-            found_keyword = match keyword_from_string(&word[..]){
+            found_keyword = match keyword_from_string(&word){
                 Some(keyword) => keyword,
                 None => return Err(ParseError::NotAKeyword(Span { lo: span_lo , hi: span_hi } )),
             };
@@ -998,7 +1002,8 @@ impl<'a> Parser<'a> {
 }
 
 fn keyword_from_string(string: &str) -> Option<Keyword>{
-    match string {
+    let tmp = string.to_lowercase();
+    match &tmp[..]{
                 "create" => Some(Keyword::Create),
                 "drop" => Some(Keyword::Drop),
                 "table" => Some(Keyword::Table),
@@ -1112,6 +1117,7 @@ pub enum ParseError {
     ColumnCountMissmatch,
     MissingParenthesis(Span),
     LimitError,
+    ReservedKeyword(Span),
 
     //Used for debugging
     DebugError(String)
