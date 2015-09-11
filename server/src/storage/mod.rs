@@ -4,6 +4,7 @@
 pub mod engine;
 mod meta;
 pub mod types;
+pub mod bstar;
 
 mod data;
 

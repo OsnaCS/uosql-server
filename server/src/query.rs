@@ -108,11 +108,17 @@ impl<'a> Executor<'a> {
 
 
     fn execute_select_stmt(&mut self, stmt: SelectStmt) -> Result<Rows, ExecutionError> {
-
+        let col2tbl: HashMap<String, String> = HashMap::new();
         let mut tablemap = HashMap::new();
-        for table in stmt.tid.clone() {
-            let rows = try!(self.get_rows(&table));
-            tablemap.insert(table, rows);
+
+        for tablestring in stmt.tid.clone() {
+            let  table = try!(self.get_table(&tablestring));
+            for column in table.columns().clone() {
+
+            }
+            let rows = try!(table.create_engine().full_scan());
+
+            tablemap.insert(tablestring, rows);
         }
 
         if stmt.cond.is_some() {
