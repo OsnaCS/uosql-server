@@ -13,9 +13,9 @@ fn main() {
     print!("Sql Query: ");
     let mut query = read_query();
     while query != "exit" {
-        execute(&query, & mut user);
-        print!("Sql Query: ");
-        query = read_query();
+        //execute(&query, & mut user);
+        //print!("Sql Query: ");
+        //query = read_query();
     }
 
 }
