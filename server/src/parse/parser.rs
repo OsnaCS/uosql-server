@@ -496,7 +496,8 @@ impl<'a> Parser<'a> {
         {
             self.bump();
             let tableid = try!(self.expect_word());
-            if !self.check_next_keyword(&[Keyword::Where, Keyword::Limit, Keyword::Group, Keyword::Order])
+            if !self.check_next_keyword(&[Keyword::Where, Keyword::Limit,
+                Keyword::Group, Keyword::Order])
             && !self.check_next_token(&[Token::Comma]) {
                 self.bump();
                 match self.expect_word() {
