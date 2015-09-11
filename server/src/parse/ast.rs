@@ -201,7 +201,7 @@ pub enum CondType {
     Word(String)
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, RustcDecodable, RustcEncodable)]
 pub enum DataSrc  {
     Int(i64),
     String(String),
@@ -215,32 +215,14 @@ impl DataSrc {
     /// return is true for Bool when Bool is not null
     pub fn is_true(&self) -> bool {
         match self {
-            &DataSrc::Int(x) => {
-                if x != 0 {
-                    return false
-                }
-                true
-            },
-            &DataSrc::String(ref x) => {
-                if x.is_empty() {
-                    return false
-                }
-                true
-            },
-            &DataSrc::Bool(x) => {
-                if x == 0 {
-                    return false
-                }
-                true
-            },
+            &DataSrc::Int(x) => x == 0,
+            &DataSrc::String(ref x) => !x.is_empty(),
+            &DataSrc::Bool(x) => x != 0,
         }
     }
     /// static method to turn u8 into bool
     /// return is true for input when input is not null
     pub fn to_bool(input: u8) -> bool {
-        if input == 0 {
-            return false
-        }
-        true
+        input != 0
     }
 }

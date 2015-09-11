@@ -49,6 +49,7 @@ pub enum Error {
     NotAPrimaryKey,
     NoImplementation,
     WrongLength,
+    NoOperationPossible,
 }
 
 impl From<FromUtf8Error> for Error {

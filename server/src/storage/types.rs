@@ -170,17 +170,9 @@ impl SqlType {
                     CompType::NEqu => {
                         self.compare_byte_for_equal(val, val2).map(|x| !x)
                     },
-                    CompType::GThan => {
-                        self.compare_byte_greater_than(val, val2) },
-                    CompType::SThan => {
-                        self.compare_byte_lesser_than(val, val2)
-                    },
-                    CompType::GEThan => {
-                        self.compare_byte_lesser_than(val, val2).map(|x| !x)
-                    },
-                    CompType::SEThan => {
-                        self.compare_byte_greater_than(val, val2).map(|x| !x)
-                    },
+                    _ => {
+                        Err(Error::NoOperationPossible)
+                    }
                 }
             },
 
@@ -213,7 +205,7 @@ impl SqlType {
     fn compare_byte_for_equal(&self, val: &[u8], val2: &[u8])
     -> Result<bool, Error>
     {
-        if val.len() != val2.len() {
+        if val != val2 {
             return Err(Error::WrongLength)
         }
         info!("start comparing each byte");
@@ -231,7 +223,7 @@ impl SqlType {
     -> Result<bool, Error>
     {
         info!("start comparing each byte");
-        if val.len() != val2.len() {
+        if val != val2 {
             return Err(Error::WrongLength)
         }
         for i in 0 .. val.len() {
@@ -266,28 +258,14 @@ impl SqlType {
     fn compare_as_bool(&self, val: &[u8], val2: &[u8])
     -> Result<bool, Error>
     {
-        info!("start converting to bool");
-        let mut sov: bool = false;
-        let mut sov2: bool = false;
-        for i in 0 .. val.len() {
-            if val[i] != 0 {
-                sov = true;
-                break;
-            }
+        info!("start checking length");
+        if val.len() > 1 || val != val2 {
+            return Err(Error::WrongLength)
         }
-        info!("defined value 1 as bool: {:?}",sov);
-        for i in 0 .. val2.len() {
-            if val2[i] != 0 {
-                sov2 = true;
-                break;
-            }
-        }
-        info!("defined value 2 as bool: {:?}",sov2);
         info!("start comparing bool");
-        if sov == sov2 {
+        if val == val2 {
             return Ok(true)
         }
-
         Ok(false)
     }
     /// converts value to i32 and compares if equal (needs 4 bytes)
@@ -299,10 +277,7 @@ impl SqlType {
         let int1: i32 = try!(i32::from_sql(val));
         let int2: i32 = try!(i32::from_sql(val2));
         info!("start comparing i32");
-        if int1 != int2 {
-            return Ok(false)
-        }
-        Ok(true)
+        Ok(int1 == int2)
     }
 
     /// converts value to i32 and compares if first value is greater (needs 4 bytes)
@@ -314,10 +289,7 @@ impl SqlType {
         let int1: i32 = try!(i32::from_sql(val));
         let int2: i32 = try!(i32::from_sql(val2));
         info!("start comparing i32");
-        if int1 > int2 {
-            return Ok(true)
-        }
-        Ok(false)
+        Ok(int1 == int2)
     }
 
     /// converts value to i32 and compares if first value is lesser (needs 4 bytes)
@@ -495,10 +467,6 @@ impl FromSql for String {
 
 impl FromSql for bool {
     fn from_sql(mut data: &[u8]) -> Result<Self, Error> {
-        let b = try!(data.read_u8());
-        if b == 0 {
-            return Ok(false)
-        }
-        Ok(true)
+        Ok(try!(data.read_u8()) != 0)
     }
 }
