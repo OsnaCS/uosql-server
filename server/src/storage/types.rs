@@ -185,7 +185,7 @@ impl SqlType {
                 }
             },
 
-            &SqlType::Char(x) => {
+            &SqlType::Char(_) => {
                 match comp {
                     CompType::Equ => {
                         self.compare_byte_for_equal(val, val2)
@@ -338,20 +338,20 @@ impl SqlType {
     /// converts each character into value and uses the average of both val
     /// to determin equal or not
     /// returns boolean if successfull returns Error if not
-    fn equal_for_str_with_value(&self, val: &[u8], val2: &[u8])
+    fn _equal_for_str_with_value(&self, val: &[u8], val2: &[u8])
     -> Result<bool, Error>
     {
         let mut value: u64 = 0;
         let mut value2: u64 = 0;
         info!("starting to calculate value of strings");
         for i in 0 .. val.len() {
-            value += (val[i] as u64);
+            value += val[i] as u64;
         }
-        value /= (val.len() as u64);
+        value /= val.len() as u64;
         for i in 0 .. val2.len() {
-            value2 += (val2[i] as u64);
+            value2 += val2[i] as u64;
         }
-        value2 /= (val2.len() as u64);
+        value2 /= val2.len() as u64;
 
         info!("starting to compare the value");
         if value2 == value {
@@ -362,20 +362,20 @@ impl SqlType {
     /// converts each character into value and uses the average of both val
     /// to determin if val is greater than val2
     /// returns boolean if successfull returns Error if not
-    fn greater_than_for_str_with_value(&self, val: &[u8], val2: &[u8])
+    fn _greater_than_for_str_with_value(&self, val: &[u8], val2: &[u8])
     -> Result<bool, Error>
     {
         let mut value: u64 = 0;
         let mut value2: u64 = 0;
         info!("starting to calculate value of strings");
         for i in 0 .. val.len() {
-            value += (val[i] as u64);
+            value += val[i] as u64;
         }
-        value /= (val.len() as u64);
+        value /= val.len() as u64;
         for i in 0 .. val2.len() {
-            value2 += (val2[i] as u64);
+            value2 += val2[i] as u64;
         }
-        value2 /= (val2.len() as u64);
+        value2 /= val2.len() as u64;
         info!("starting to compare the value");
         if value > value2 {
             return Ok(true)
@@ -385,20 +385,20 @@ impl SqlType {
     /// converts each character into value and uses the average of both val
     /// to determin if val is lesser than val2
     /// returns boolean if successfull returns Error if not
-    fn lesser_than_for_str_with_value(&self, val: &[u8], val2: &[u8])
+    fn _lesser_than_for_str_with_value(&self, val: &[u8], val2: &[u8])
     -> Result<bool, Error>
     {
         let mut value: u64 = 0;
         let mut value2: u64 = 0;
         info!("starting to calculate value of strings");
         for i in 0 .. val.len() {
-            value += (val[i] as u64);
+            value += val[i] as u64;
         }
-        value /= (val.len() as u64);
+        value /= val.len() as u64;
         for i in 0 .. val2.len() {
-            value2 += (val2[i] as u64);
+            value2 += val2[i] as u64;
         }
-        value2 /= (val2.len() as u64);
+        value2 /= val2.len() as u64;
         info!("starting to compare the value");
         if value < value2 {
             return Ok(true)
