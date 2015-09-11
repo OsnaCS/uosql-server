@@ -49,9 +49,6 @@ fn main() {
     my_data.push(Some(DataSrc::Int(10)));
     my_data.push(Some(DataSrc::Bool(1)));
     my_data.push(Some(DataSrc::String("sechs".to_string())));
-    my_data.push(
-        Some(DataSrc::String("i am a very long string, at least i think i am".to_string()))
-    );
 
    //let _storage_team = db.create_table("storage_team", cols, 1).unwrap();
 
@@ -61,12 +58,29 @@ fn main() {
     //RRROOOOWWWWSSS
     let v = Vec::<u8>::new();
     let c = Cursor::new(v);
+    let data = vec![1, 2, 3, 4, 1, 0x48, 0x41, 0x4C, 0x4C, 0x4F, 0x00];
 
-    let rows = Rows::new(c, &cols);
-    //rows.add_row(vec![]).unwrap();
+    let mut rows = Rows::new(c, &cols);
+    rows.add_row(&data).unwrap();
+    rows.add_row(&data).unwrap();
+    rows.reset_pos().unwrap();
 
+    let mut d = Vec::<u8>::new();
 
-    //_type_test();
+    rows.next_row(&mut d);
+    println!{"{:?}", d}
+
+    let h = rows.get_value(2);
+    println!{"{:?}", h}
+
+    rows.delete_row();
+
+    rows.reset_pos();
+
+    d.clear();
+
+    rows.next_row(&mut d);
+    println!{"{:?}", d};
 }
 
 

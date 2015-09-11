@@ -21,7 +21,7 @@ impl SqlType {
         match self {
             &SqlType::Int => 4 as u32,
             &SqlType::Bool => 1 as u32,
-            &SqlType::Char(len) => (len + 1) as u32,
+            &SqlType::Char(len) => (len) as u32,
         }
     }
 
