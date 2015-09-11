@@ -55,4 +55,38 @@ fn main() {
     let _storage_team = db.create_table("storage_team", cols, 1).unwrap();
 
     let t = db.load_table("storage_team").unwrap();
+
+    //_type_test();
+}
+
+
+fn _type_test(){
+    let my_int: [u8; 4] = [20, 30, 40, 50]; //0001:0100:0001:1110:0010:1000:0011:0010 -> 337520690
+    let my_other_int: [u8; 4] = [10, 5, 0, 2];//0000:1010:0000:0101:0000:0000:0000:0010 -> 168099842
+
+    let my_bool: [u8; 3] = [0, 0, 0];
+    let my_other_bool: [u8; 3] = [0, 0, 0];
+
+    let my_strin: [u8; 2] = [0, 41];
+    let my_other_strin: [u8; 2] = [0, 41];
+
+    let my_sqltype_int = SqlType::Int;
+    let my_sqltype_bool = SqlType::Bool;
+    let my_sqltype_char = SqlType::Char(7);
+    println!("check for int:");
+
+    println!("is equal: {:?}",my_sqltype_int.cmp(&my_int[0..4], &my_other_int[0..4], CompType::Equ).unwrap());
+    println!("is not equal: {:?}",my_sqltype_int.cmp(&my_int[0..4], &my_other_int[0..4], CompType::NEqu).unwrap());
+    println!("is greater: {:?}",my_sqltype_int.cmp(&my_int[0..4], &my_other_int[0..4], CompType::GThan).unwrap());
+    println!("is lesser: {:?}",my_sqltype_int.cmp(&my_int[0..4], &my_other_int[0..4], CompType::SThan).unwrap());
+    println!("is greater equal: {:?}",my_sqltype_int.cmp(&my_int[0..4], &my_other_int[0..4], CompType::GEThan).unwrap());
+    println!("is lesser equal: {:?}",my_sqltype_int.cmp(&my_int[0..4], &my_other_int[0..4], CompType::SEThan).unwrap());
+
+    println!("check for bool:");
+    println!("is equal: {:?}",my_sqltype_bool.cmp(&my_bool[0..3], &my_other_bool[0..3], CompType::Equ).unwrap());
+    println!("is not equal: {:?}",my_sqltype_bool.cmp(&my_bool[0..3], &my_other_bool[0..3], CompType::NEqu).unwrap());
+
+    println!("check for string:");
+    println!("is equal: {:?}",my_sqltype_char.cmp(&my_strin[0..2], &my_other_strin[0..2], CompType::Equ).unwrap());
+    println!("is not equal: {:?}",my_sqltype_char.cmp(&my_strin[0..2], &my_other_strin[0..2], CompType::NEqu).unwrap());
 }

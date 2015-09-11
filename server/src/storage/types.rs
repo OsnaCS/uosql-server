@@ -138,37 +138,73 @@ impl SqlType {
     pub fn cmp(&self, val: &[u8], val2: &[u8], comp: CompType)
     -> Result<bool, Error>
     {
+        info!("checking Compare type: {:?}", comp);
         match self {
             &SqlType::Int => {
                 match comp {
-                    CompType::Equ => { self.compare_byte_for_equal(val, val2) },
-                    CompType::NEqu => { self.compare_byte_for_equal(val, val2).map(|x| !x) },
-                    CompType::GThan => { self.compare_byte_greater_than(val, val2) },
-                    CompType::SThan => { self.compare_byte_lesser_than(val, val2) },
-                    CompType::GEThan => { self.compare_byte_lesser_than(val, val2).map(|x| !x) },
-                    CompType::SEThan => { self.compare_byte_greater_than(val, val2).map(|x| !x) },
+                    CompType::Equ => {
+                        self.equal_for_int_with_value(val, val2)
+                    },
+                    CompType::NEqu => {
+                        self.equal_for_int_with_value(val, val2).map(|x| !x)
+                    },
+                    CompType::GThan => {
+                        self.greater_than_for_int_with_value(val, val2)
+                    },
+                    CompType::SThan => {
+                        self.lesser_than_for_int_with_value(val, val2)
+                    },
+                    CompType::GEThan => {
+                        self.lesser_than_for_int_with_value(val, val2).map(|x| !x)
+                    },
+                    CompType::SEThan => {
+                        self.greater_than_for_int_with_value(val, val2).map(|x| !x)
+                    },
                 }
             },
 
             &SqlType::Bool => {
                 match comp {
-                    CompType::Equ => { self.compare_as_bool(val, val2) },
-                    CompType::NEqu => { self.compare_byte_for_equal(val, val2).map(|x| !x) },
-                    CompType::GThan => { self.compare_byte_greater_than(val, val2) },
-                    CompType::SThan => { self.compare_byte_lesser_than(val, val2) },
-                    CompType::GEThan => { self.compare_byte_lesser_than(val, val2).map(|x| !x) },
-                    CompType::SEThan => { self.compare_byte_greater_than(val, val2).map(|x| !x) },
+                    CompType::Equ => {
+                        self.compare_as_bool(val, val2)
+                    },
+                    CompType::NEqu => {
+                        self.compare_byte_for_equal(val, val2).map(|x| !x)
+                    },
+                    CompType::GThan => {
+                        self.compare_byte_greater_than(val, val2) },
+                    CompType::SThan => {
+                        self.compare_byte_lesser_than(val, val2)
+                    },
+                    CompType::GEThan => {
+                        self.compare_byte_lesser_than(val, val2).map(|x| !x)
+                    },
+                    CompType::SEThan => {
+                        self.compare_byte_greater_than(val, val2).map(|x| !x)
+                    },
                 }
             },
 
             &SqlType::Char(x) => {
                 match comp {
-                    CompType::Equ => { self.compare_byte_for_equal(val, val2) },
-                    CompType::NEqu => { self.compare_byte_for_equal(val, val2).map(|x| !x) },
-                    CompType::GThan => { self.compare_byte_greater_than(val, val2) },
-                    CompType::SThan => { self.compare_byte_lesser_than(val, val2) },
-                    CompType::GEThan => { self.compare_byte_lesser_than(val, val2).map(|x| !x) },
-                    CompType::SEThan => { self.compare_byte_greater_than(val, val2).map(|x| !x) },
+                    CompType::Equ => {
+                        self.equal_for_str_with_value(val, val2)
+                    },
+                    CompType::NEqu => {
+                        self.equal_for_str_with_value(val, val2).map(|x| !x)
+                    },
+                    CompType::GThan => {
+                        self.greater_than_for_int_with_value(val, val2)
+                    },
+                    CompType::SThan => {
+                        self.lesser_than_for_int_with_value(val, val2)
+                    },
+                    CompType::GEThan => {
+                        self.lesser_than_for_int_with_value(val, val2).map(|x| !x)
+                    },
+                    CompType::SEThan => {
+                        self.greater_than_for_int_with_value(val, val2).map(|x| !x)
+                    },
                 }
             },
         }
@@ -181,6 +217,7 @@ impl SqlType {
         if val.len() != val2.len() {
             return Err(Error::WrongLength)
         }
+        info!("start comparing each byte");
         for i in 0 .. val.len() {
             if val[i] != val2[i] {
                 return Ok(false)
@@ -194,6 +231,7 @@ impl SqlType {
     fn compare_byte_greater_than(&self, val: &[u8], val2: &[u8])
     -> Result<bool, Error>
     {
+        info!("start comparing each byte");
         if val.len() != val2.len() {
             return Err(Error::WrongLength)
         }
@@ -211,6 +249,7 @@ impl SqlType {
     fn compare_byte_lesser_than(&self, val: &[u8], val2: &[u8])
     -> Result<bool, Error>
     {
+        info!("start comparing each byte");
         if val.len() != val2.len() {
             return Err(Error::WrongLength)
         }
@@ -228,6 +267,7 @@ impl SqlType {
     fn compare_as_bool(&self, val: &[u8], val2: &[u8])
     -> Result<bool, Error>
     {
+        info!("start converting to bool");
         let mut sov: bool = false;
         let mut sov2: bool = false;
         for i in 0 .. val.len() {
@@ -236,57 +276,131 @@ impl SqlType {
                 break;
             }
         }
-
+        info!("defined value 1 as bool: {:?}",sov);
         for i in 0 .. val2.len() {
             if val2[i] != 0 {
-                sov = true;
+                sov2 = true;
                 break;
             }
         }
-
+        info!("defined value 2 as bool: {:?}",sov2);
+        info!("start comparing bool");
         if sov == sov2 {
             return Ok(true)
         }
 
         Ok(false)
     }
-    /// converts value to i32 and compares if equal
+    /// converts value to i32 and compares if equal (needs 4 bytes)
     /// returns boolean if successful returns Error if not
     fn equal_for_int_with_value(&self, val: &[u8], val2: &[u8])
     -> Result<bool, Error>
     {
+        info!("start converting to i32");
         let int1: i32 = try!(i32::from_sql(val));
         let int2: i32 = try!(i32::from_sql(val2));
-
+        info!("start comparing i32");
         if int1 != int2 {
             return Ok(false)
         }
         Ok(true)
     }
 
-    /// converts value to i32 and compares if first value is greater
+    /// converts value to i32 and compares if first value is greater (needs 4 bytes)
     /// returns boolean if successful returns Error if not
     fn greater_than_for_int_with_value(&self, val: &[u8], val2: &[u8])
     -> Result<bool, Error>
     {
+        info!("start converting to i32");
         let int1: i32 = try!(i32::from_sql(val));
         let int2: i32 = try!(i32::from_sql(val2));
-
+        info!("start comparing i32");
         if int1 > int2 {
             return Ok(true)
         }
         Ok(false)
     }
 
-    /// converts value to i32 and compares if first value is lesser
+    /// converts value to i32 and compares if first value is lesser (needs 4 bytes)
     /// returns boolean if successful returns Error if not
     fn lesser_than_for_int_with_value(&self, val: &[u8], val2: &[u8])
     -> Result<bool, Error>
     {
+        info!("start converting to i32");
         let int1: i32 = try!(i32::from_sql(val));
         let int2: i32 = try!(i32::from_sql(val2));
-
+        info!("start comparing i32");
         if int1 < int2 {
+            return Ok(true)
+        }
+        Ok(false)
+    }
+    /// converts each character into value and uses the average of both val
+    /// to determin equal or not
+    /// returns boolean if successfull returns Error if not
+    fn equal_for_str_with_value(&self, val: &[u8], val2: &[u8])
+    -> Result<bool, Error>
+    {
+        let mut value: u64 = 0;
+        let mut value2: u64 = 0;
+        info!("starting to calculate value of strings");
+        for i in 0 .. val.len() {
+            value += (val[i] as u64);
+        }
+        value /= (val.len() as u64);
+        for i in 0 .. val2.len() {
+            value2 += (val2[i] as u64);
+        }
+        value2 /= (val2.len() as u64);
+
+        info!("starting to compare the value");
+        if value2 == value {
+            return Ok(true)
+        }
+        Ok(false)
+    }
+    /// converts each character into value and uses the average of both val
+    /// to determin if val is greater than val2
+    /// returns boolean if successfull returns Error if not
+    fn greater_than_for_str_with_value(&self, val: &[u8], val2: &[u8])
+    -> Result<bool, Error>
+    {
+        let mut value: u64 = 0;
+        let mut value2: u64 = 0;
+        info!("starting to calculate value of strings");
+        for i in 0 .. val.len() {
+            value += (val[i] as u64);
+        }
+        value /= (val.len() as u64);
+        for i in 0 .. val2.len() {
+            value2 += (val2[i] as u64);
+        }
+        value2 /= (val2.len() as u64);
+        info!("starting to compare the value");
+        if value > value2 {
+            return Ok(true)
+        }
+        Ok(false)
+    }
+    /// converts each character into value and uses the average of both val
+    /// to determin if val is lesser than val2
+    /// returns boolean if successfull returns Error if not
+    fn lesser_than_for_str_with_value(&self, val: &[u8], val2: &[u8])
+    -> Result<bool, Error>
+    {
+        let mut value: u64 = 0;
+        let mut value2: u64 = 0;
+        info!("starting to calculate value of strings");
+        for i in 0 .. val.len() {
+            value += (val[i] as u64);
+        }
+        value /= (val.len() as u64);
+        for i in 0 .. val2.len() {
+            value2 += (val2[i] as u64);
+        }
+        value2 /= (val2.len() as u64);
+        info!("starting to compare the value");
+        if value < value2 {
             return Ok(true)
         }
         Ok(false)
