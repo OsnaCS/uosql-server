@@ -263,10 +263,7 @@ impl SqlType {
             return Err(Error::WrongLength)
         }
         info!("start comparing bool");
-        if val == val2 {
-            return Ok(true)
-        }
-        Ok(false)
+        Ok(val == val2)
     }
     /// converts value to i32 and compares if equal (needs 4 bytes)
     /// returns boolean if successful returns Error if not
@@ -301,10 +298,7 @@ impl SqlType {
         let int1: i32 = try!(i32::from_sql(val));
         let int2: i32 = try!(i32::from_sql(val2));
         info!("start comparing i32");
-        if int1 < int2 {
-            return Ok(true)
-        }
-        Ok(false)
+        Ok(int1 < int2)
     }
     /// converts each character into value and uses the average of both val
     /// to determin equal or not
@@ -325,10 +319,7 @@ impl SqlType {
         value2 /= val2.len() as u64;
 
         info!("starting to compare the value");
-        if value2 == value {
-            return Ok(true)
-        }
-        Ok(false)
+        Ok(value2 == value)
     }
     /// converts each character into value and uses the average of both val
     /// to determin if val is greater than val2
@@ -348,10 +339,7 @@ impl SqlType {
         }
         value2 /= val2.len() as u64;
         info!("starting to compare the value");
-        if value > value2 {
-            return Ok(true)
-        }
-        Ok(false)
+        Ok(value > value2)
     }
     /// converts each character into value and uses the average of both val
     /// to determin if val is lesser than val2
@@ -371,10 +359,7 @@ impl SqlType {
         }
         value2 /= val2.len() as u64;
         info!("starting to compare the value");
-        if value < value2 {
-            return Ok(true)
-        }
-        Ok(false)
+        Ok(value < value2)
     }
 }
 
