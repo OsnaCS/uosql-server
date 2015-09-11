@@ -287,6 +287,4 @@ impl<'a> Table<'a> {
     fn get_path(database: &str, name: &str, ext: &str) -> String {
          format!("{}/{}.{}", database, name, ext)
     }
-
-    
 }

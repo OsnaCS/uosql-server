@@ -13,6 +13,7 @@ pub use self::data::Rows;
 pub use self::types::Column;
 pub use self::types::SqlType;
 pub use parse::ast;
+pub use parse::ast::CompType;
 pub use std::string::FromUtf8Error;
 
 
@@ -47,6 +48,8 @@ pub enum Error {
     InvalidColumn,
     NotAPrimaryKey,
     NoImplementation,
+    WrongLength,
+    NoOperationPossible,
 }
 
 impl From<FromUtf8Error> for Error {

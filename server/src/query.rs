@@ -60,7 +60,9 @@ impl<'a> Executor<'a> {
 
     }
 
-    fn execute_def_stmt<B: Write + Read + Seek>(&mut self, query: DefStmt) -> Result<Rows<B>, ExecutionError> {
+    fn execute_def_stmt<B: Write + Read + Seek>(&mut self, query: DefStmt)
+    -> Result<Rows<B>, ExecutionError>
+    {
         match query {
             DefStmt::Create(stmt) => self.execute_create_stmt(stmt),
             DefStmt::Drop(stmt) =>  self.execute_drop_stmt(stmt),
@@ -68,7 +70,9 @@ impl<'a> Executor<'a> {
         }
     }
 
-    fn execute_use_stmt<B: Write + Read + Seek>(&mut self, query: UseStmt) -> Result<Rows<B>, ExecutionError> {
+    fn execute_use_stmt<B: Write + Read + Seek>(&mut self, query: UseStmt)
+    -> Result<Rows<B>, ExecutionError>
+    {
         match query {
             UseStmt::Database(querybase) => {
                 self.user._currentDatabase = Some(try!(Database::load(&querybase)));
@@ -78,7 +82,9 @@ impl<'a> Executor<'a> {
         }
     }
 
-    fn execute_insert_stmt<B: Write + Read + Seek>(&mut self, stmt: InsertStmt) -> Result<Rows<B>, ExecutionError> {
+    fn execute_insert_stmt<B: Write + Read + Seek>(&mut self, stmt: InsertStmt)
+    -> Result<Rows<B>, ExecutionError>
+    {
         let table = try!(self.get_table(&stmt.tid));
 
         if !stmt.col.is_empty() {
@@ -90,12 +96,14 @@ impl<'a> Executor<'a> {
         let n: Vec<_> = stmt.val.iter().map(|l| Some(l.into_DataSrc())).collect();
         let mut engine = table.create_engine();
         // try!(engine.insert_row(&n));
-        return Err(ExecutionError::DebugError("engine.insert_row() not implemented ".into()));
+        Err(ExecutionError::DebugError("engine.insert_row() not implemented ".into()))
         // Ok(generate_rows_dummy())
 
     }
 
-    fn execute_select_stmt<B: Write + Read + Seek>(&mut self, stmt: SelectStmt) -> Result<Rows<B>, ExecutionError> {
+    fn execute_select_stmt<B: Write + Read + Seek>(&mut self, stmt: SelectStmt)
+    -> Result<Rows<B>, ExecutionError>
+    {
         if stmt.target.len() != 1 {
             return Err(ExecutionError::DebugError("Select only implemented for select * ".into()));
         }
@@ -108,20 +116,24 @@ impl<'a> Executor<'a> {
         let table = try!(self.get_table(&stmt.tid[0]));
         let engine = table.create_engine();
         // Ok(try!(engine.full_scan()))
-        return Err(ExecutionError::DebugError("engine.full_scan() not implemented ".into()));
+        Err(ExecutionError::DebugError("engine.full_scan() not implemented ".into()))
 
     }
-    fn execute_describe_stmt<B: Write + Read + Seek>(&mut self, query: String) -> Result<Rows<B>, ExecutionError>{
+    fn execute_describe_stmt<B: Write + Read + Seek>(&mut self, query: String)
+    -> Result<Rows<B>, ExecutionError>
+    {
         let table = try!(self.get_table(&query));
         let columns = table.columns();
         let mut columnvec = Vec::new();
 
         columnvec.extend(columns.iter().cloned());
         //Ok(Rows { data: Vec::new(), columns: columnvec } )
-        return Err(ExecutionError::DebugError("Not implemented.".into()));
+        Err(ExecutionError::DebugError("Not implemented.".into()))
     }
 
-    fn execute_create_stmt<B: Write + Read + Seek>(&mut self, query: CreateStmt) -> Result<Rows<B>, ExecutionError> {
+    fn execute_create_stmt<B: Write + Read + Seek>(&mut self, query: CreateStmt)
+        -> Result<Rows<B>, ExecutionError>
+        {
         match query {
             CreateStmt::Database(s) => {
                 self.user._currentDatabase = Some(try!(Database::create(&s)));
@@ -132,7 +144,8 @@ impl<'a> Executor<'a> {
     }
 
     fn execute_create_table_stmt<B: Write + Read + Seek>(&mut self, query: CreateTableStmt)
-         -> Result<Rows<B>, ExecutionError> {
+    -> Result<Rows<B>, ExecutionError>
+    {
         let base = try!(self.get_own_database());
         let tmp_vec : Vec<_> = query.cols.into_iter().map(|c| Column {
             name: c.cid,
@@ -145,10 +158,12 @@ impl<'a> Executor<'a> {
         let mut engine = table.create_engine();
         engine.create_table();
         //Ok(generate_rows_dummy())
-        return Err(ExecutionError::DebugError("Not implemented.".into()));
+        Err(ExecutionError::DebugError("Not implemented.".into()))
     }
 
-    fn execute_drop_stmt<B: Write + Read + Seek>(&mut self, query: DropStmt) -> Result<Rows<B>, ExecutionError> {
+    fn execute_drop_stmt<B: Write + Read + Seek>(&mut self, query: DropStmt)
+    -> Result<Rows<B>, ExecutionError>
+    {
         match query {
             DropStmt::Table(s) => {
                 let base = try!(self.get_own_database());
@@ -177,14 +192,18 @@ impl<'a> Executor<'a> {
         }
     }
 
-    fn execute_alt_stmt<B: Write + Read + Seek>(&mut self, query: AltStmt) -> Result<Rows<B>, ExecutionError> {
+    fn execute_alt_stmt<B: Write + Read + Seek>(&mut self, query: AltStmt)
+    -> Result<Rows<B>, ExecutionError>
+    {
         match query {
             AltStmt::Table(stmt) => self.execute_alt_table_stmt(stmt),
         }
 
     }
 
-    fn execute_alt_table_stmt<B: Write + Read + Seek>(&mut self, stmt: AlterTableStmt) -> Result<Rows<B>, ExecutionError> {
+    fn execute_alt_table_stmt<B: Write + Read + Seek>(&mut self, stmt: AlterTableStmt)
+    -> Result<Rows<B>, ExecutionError>
+    {
         let table = try!(self.get_table(&stmt.tid));
         match stmt.op {
             AlterOp::Add(columninfo) => Ok(generate_rows_dummy()),
