@@ -1,7 +1,8 @@
-// Code from snake-ncurses by Johannes Schickling <schickling.j@gmail.com>
+// Code from snake-ncurses by Johannes Schickling <schickling.j@gmail.com>,
+// https://github.com/schickling/rust-examples/tree/master/snake-ncurses
 // minor revisions accoring to changed rust-spedicifactions were made in
-// order to successfully compile the code.
-//
+// order to successfully compile the code. Snake-Ncurses was published under
+// MIT license.
 
 extern crate rand;
 
@@ -49,7 +50,8 @@ impl Clone for Vector {
     }
 
     fn clone_from(&mut self, source: &Self) {
-
+        self.x = source.x;
+        self.y = source.y;
     }
 
 }

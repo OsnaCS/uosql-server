@@ -205,7 +205,8 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
         ":snake" => {
             println!("Not on a plane, but on your terminal");
             println!("Thanks for Snake-Code to Johannes Schickling
-                 <schickling.j@gmail.com>)");
+                <schickling.j@gmail.com>) via github
+                /schickling/rust-examples/tree/master/snake-ncurses");
             specialcrate::snake();
         }
         _ => {
