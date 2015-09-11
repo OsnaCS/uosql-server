@@ -50,6 +50,7 @@ pub enum Error {
     NoImplementation,
     WrongLength,
     NoOperationPossible,
+    InvalidState,
 }
 
 impl From<FromUtf8Error> for Error {

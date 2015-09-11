@@ -7,6 +7,7 @@ use bincode::rustc_serialize::{encode_into};
 use bincode::SizeLimit;
 use server::logger;
 use server::parse::ast::DataSrc;
+use std::io::Cursor;
 
 fn main() {
 
@@ -19,7 +20,7 @@ fn main() {
     let _ = encode_into(&ty, &mut v, SizeLimit::Infinite);
 
     //let db = Database::create("storage_team").unwrap();
-    let db = Database::load("storage_team").unwrap();
+    //let db = Database::load("storage_team").unwrap();
 
     let mut cols = Vec::new();
     cols.push(Column {
@@ -52,9 +53,18 @@ fn main() {
         Some(DataSrc::String("i am a very long string, at least i think i am".to_string()))
     );
 
-    let _storage_team = db.create_table("storage_team", cols, 1).unwrap();
+   // let _storage_team = db.create_table("storage_team", cols, 1).unwrap();
 
-    let t = db.load_table("storage_team").unwrap();
+   // let t = db.load_table("storage_team").unwrap();
+
+
+    //RRROOOOWWWWSSS
+    let v = Vec::<u8>::new();
+    let c = Cursor::new(v);
+
+    let rows = Rows::new(c, &cols);
+    //rows.add_row(vec![]).unwrap();
+
 
     //_type_test();
 }
@@ -109,4 +119,5 @@ fn _type_test(){
     println!("is not equal: {:?}",my_sqltype_char.cmp(
         &my_strin[0..2], &my_other_strin[0..2], CompType::NEqu).unwrap()
     );
+
 }
