@@ -20,6 +20,8 @@ use server::storage::Rows;
 use docopt::Docopt;
 use std::net::Ipv4Addr;
 use std::cmp::{max, min};
+use std::fs::File;
+use std::io::Read;
 
 /// For console input, manages flags and arguments
 const USAGE: &'static str = "
@@ -159,7 +161,6 @@ fn main() {
 /// Process commandline-input from user
 fn process_input(input: &str, conn: &mut Connection) -> bool {
     let input_low = input.to_lowercase();
-
     match &*input_low {
         ":quit" => {
             match conn.quit() {
@@ -201,7 +202,64 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
         },
         ":hello" => {
             println!("Hello, Dave. You're looking well today.");
-        }
+        },
+        ":load" => {
+            //loads the file script.sql and execute all queries in the file.
+            let mut f = match File::open("script.sql") {
+                Ok(file) => file,
+                Err(_) => {
+                    println!("Could not open file");
+                    return true
+                }
+            };
+
+            let mut s = String::new();
+            match f.read_to_string(&mut s) {
+                Ok(str) => str,
+                Err(_) => {
+                    println!("Could not read from file");
+                    return true
+                }
+            };
+            let statem: Vec<&str> = s.split(";").collect();
+
+            for i in statem {
+                match conn.execute(i.into()) {
+                    Ok(data) => {
+                    // show data belonging to executed query
+                        display(&data);
+                    },
+                    Err(e) => {
+                        match e {
+                            Error::Io(_) => {
+                                error!("Connection failure. Try again later.");
+                                return true
+                            },
+                            Error::Decode(_) => {
+                                error!("Could not read data from server.");
+                                return true
+                            }
+                            Error::Encode(_) => {
+                                error!("Could not send data to server.");
+                                return true
+                            }
+                                Error::UnexpectedPkg(e) => {
+                                error!("{}", e.to_string());
+                                return true
+                            },
+                            Error::Server(e) => {
+                                error!("{}", e.msg);
+                                return true
+                            }
+                            _ => {
+                                error!("Unexpected behaviour during execute()");
+                                return false
+                            }
+                        }
+                    }
+                }
+            }
+        },
         ":snake" => {
             println!("Not on a plane, but on your terminal");
             println!("Thanks for Snake-Code (MIT License) to Johannes Schickling
