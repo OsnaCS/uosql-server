@@ -75,18 +75,38 @@ fn _type_test(){
     let my_sqltype_char = SqlType::Char(7);
     println!("check for int:");
 
-    println!("is equal: {:?}",my_sqltype_int.cmp(&my_int[0..4], &my_other_int[0..4], CompType::Equ).unwrap());
-    println!("is not equal: {:?}",my_sqltype_int.cmp(&my_int[0..4], &my_other_int[0..4], CompType::NEqu).unwrap());
-    println!("is greater: {:?}",my_sqltype_int.cmp(&my_int[0..4], &my_other_int[0..4], CompType::GThan).unwrap());
-    println!("is lesser: {:?}",my_sqltype_int.cmp(&my_int[0..4], &my_other_int[0..4], CompType::SThan).unwrap());
-    println!("is greater equal: {:?}",my_sqltype_int.cmp(&my_int[0..4], &my_other_int[0..4], CompType::GEThan).unwrap());
-    println!("is lesser equal: {:?}",my_sqltype_int.cmp(&my_int[0..4], &my_other_int[0..4], CompType::SEThan).unwrap());
+    println!("is equal: {:?}",my_sqltype_int.cmp(
+        &my_int[0..4], &my_other_int[0..4], CompType::Equ).unwrap()
+    );
+    println!("is not equal: {:?}",my_sqltype_int.cmp(
+        &my_int[0..4], &my_other_int[0..4], CompType::NEqu).unwrap()
+    );
+    println!("is greater: {:?}",my_sqltype_int.cmp(
+        &my_int[0..4], &my_other_int[0..4], CompType::GThan).unwrap()
+    );
+    println!("is lesser: {:?}",my_sqltype_int.cmp(
+        &my_int[0..4], &my_other_int[0..4], CompType::SThan).unwrap()
+    );
+    println!("is greater equal: {:?}",my_sqltype_int.cmp(
+        &my_int[0..4], &my_other_int[0..4], CompType::GEThan).unwrap()
+    );
+    println!("is lesser equal: {:?}",my_sqltype_int.cmp(
+        &my_int[0..4], &my_other_int[0..4], CompType::SEThan).unwrap()
+    );
 
     println!("check for bool:");
-    println!("is equal: {:?}",my_sqltype_bool.cmp(&my_bool[0..3], &my_other_bool[0..3], CompType::Equ).unwrap());
-    println!("is not equal: {:?}",my_sqltype_bool.cmp(&my_bool[0..3], &my_other_bool[0..3], CompType::NEqu).unwrap());
+    println!("is equal: {:?}",my_sqltype_bool.cmp(
+        &my_bool[0..3], &my_other_bool[0..3], CompType::Equ).unwrap()
+    );
+    println!("is not equal: {:?}",my_sqltype_bool.cmp(
+        &my_bool[0..3], &my_other_bool[0..3], CompType::NEqu).unwrap()
+    );
 
     println!("check for string:");
-    println!("is equal: {:?}",my_sqltype_char.cmp(&my_strin[0..2], &my_other_strin[0..2], CompType::Equ).unwrap());
-    println!("is not equal: {:?}",my_sqltype_char.cmp(&my_strin[0..2], &my_other_strin[0..2], CompType::NEqu).unwrap());
+    println!("is equal: {:?}",my_sqltype_char.cmp(
+        &my_strin[0..2], &my_other_strin[0..2], CompType::Equ).unwrap()
+    );
+    println!("is not equal: {:?}",my_sqltype_char.cmp(
+        &my_strin[0..2], &my_other_strin[0..2], CompType::NEqu).unwrap()
+    );
 }
