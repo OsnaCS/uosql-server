@@ -18,6 +18,7 @@ pub use std::string::FromUtf8Error;
 
 
 use std::io;
+use std::io::{Write, Read, Seek, SeekFrom, Cursor};
 
 //use self::meta::Table;
 
@@ -100,6 +101,10 @@ pub trait Engine {
     /// returns the table
     fn table(&self) -> &Table;
 
+    fn full_scan(&self) -> Result<Rows<Cursor<Vec<u8>>>, Error>;
+
+    fn lookup(&self, column_index: usize, value: &[u8], comp: CompType)
+    -> Result<Rows<Cursor<Vec<u8>>>, Error>;
 }
 
 #[repr(u8)]

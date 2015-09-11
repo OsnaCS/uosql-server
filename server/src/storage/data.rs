@@ -111,7 +111,7 @@ impl<B: Write + Read + Seek> Rows <B> {
         Ok(self.current_row[s..e].to_vec())
     }
 
-    fn get_column(&self, index: usize) -> &Column {
+    pub fn get_column(&self, index: usize) -> &Column {
         &self.columns[index]
     }
 

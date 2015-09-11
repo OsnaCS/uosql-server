@@ -1,8 +1,9 @@
 use super::super::meta::{Table};
 use super::super::{Engine, Error};
-use std::fs::OpenOptions;
-use std::io::Read;
+use std::fs::{OpenOptions, File};
+use std::io::{Write, Read, Seek, SeekFrom, Cursor};
 use super::super::super::parse::ast;
+use super::super::super::parse::ast::CompType;
 use super::super::types::SqlType;
 
 //---------------------------------------------------------------
@@ -13,6 +14,7 @@ use std::fs;
 
 pub struct FlatFile<'a> {
     table: Table<'a>,
+
 }
 
 impl<'a> FlatFile<'a> {
@@ -20,6 +22,15 @@ impl<'a> FlatFile<'a> {
     pub fn new<'b>(table: Table<'b>) -> FlatFile<'b> {
         info!("new flatfile with table: {:?}", table);
         FlatFile { table: table }
+    }
+
+    fn get_reader(&self) -> Result<Rows<File>, Error> {
+        let mut file = try!(OpenOptions::new()
+            .read(true)
+            .open(&self.table.get_table_data_path()));
+        info!("opened file {:?}", file);
+
+        Ok(Rows::new(file, &self.table.meta_data.columns))
     }
 }
 
@@ -46,6 +57,38 @@ impl<'a> Engine for FlatFile<'a> {
     /// returns own table
     fn table(&self) -> &Table {
         &self.table
+    }
+
+    fn full_scan(&self) -> Result<Rows<Cursor<Vec<u8>>>, Error> {
+        let mut reader = try!(self.get_reader());
+        let vec: Vec<u8> = Vec::new();
+        let cursor = Cursor::new(vec);
+        let mut rows = Rows::new(cursor, &self.table.meta_data.columns);
+        let mut buf: Vec<u8> = Vec::new();
+
+        while try!(reader.next_row(&mut buf)) != 0 {
+            rows.add_row(& buf);
+        }
+        Ok(rows)
+    }
+
+    fn lookup(&self, column_index: usize, value: &[u8], comp: CompType)
+    -> Result<Rows<Cursor<Vec<u8>>>, Error>
+    {
+        let mut reader = try!(self.get_reader());
+        let vec: Vec<u8> = Vec::new();
+        let cursor = Cursor::new(vec);
+        let mut rows = Rows::new(cursor, &self.table.meta_data.columns);
+        let mut buf: Vec<u8> = Vec::new();
+
+        while try!(reader.next_row(&mut buf)) != 0 {
+            let col = reader.get_column(column_index);
+            if try!(col.sql_type.cmp(&try!(reader.get_value(column_index)), value, comp)) {
+                rows.add_row(& buf);
+            }
+        }
+
+        Ok(rows)
     }
 
 }

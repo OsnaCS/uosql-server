@@ -53,9 +53,9 @@ fn main() {
         Some(DataSrc::String("i am a very long string, at least i think i am".to_string()))
     );
 
-   // let _storage_team = db.create_table("storage_team", cols, 1).unwrap();
+   //let _storage_team = db.create_table("storage_team", cols, 1).unwrap();
 
-   // let t = db.load_table("storage_team").unwrap();
+   //let t = db.load_table("storage_team").unwrap();
 
 
     //RRROOOOWWWWSSS
