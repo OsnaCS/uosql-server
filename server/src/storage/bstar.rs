@@ -62,8 +62,6 @@ impl Bstar {
         try!(self.src.seek(SeekFrom::Start(self.root)));
         let mut list = SortedList::with_capacity((self.order * 2) as usize);
         list.insert(KeyAddr::new(key, addr));
-        list.insert(KeyAddr::new(key, addr));
-        list.insert(KeyAddr::new(key, addr));
         let node = Bnode { node_list: list, father: 0, is_leaf: 1 };
         try!(node.write(&mut self.src, self.order, self.root));
         Ok(node)
@@ -76,7 +74,7 @@ impl Bstar {
 
 #[derive(Debug,RustcDecodable, RustcEncodable)]
 pub struct Bnode {
-    pub node_list: SortedList<KeyAddr>,
+    pub node_list: SortedList<KeyAddr<u64>>,
     pub father: u64,
     // 0 = no leaf, else leaf
     pub is_leaf: u8,
@@ -125,13 +123,13 @@ impl Bnode {
 
 
 #[derive(Debug,RustcDecodable, RustcEncodable)]
-pub struct SortedList<T: Comparable> {
+pub struct SortedList<T: PartialOrd> {
     pub list: Vec<T>,
     pub elementcount: u64,
 
 }
 
-impl<T: Comparable> SortedList<T> {
+impl<T: PartialOrd> SortedList<T> {
     pub fn new() -> SortedList<T> {
         SortedList { list: Vec::new(), elementcount: 0}
     }
@@ -161,30 +159,25 @@ impl<T: Comparable> SortedList<T> {
 
 
 #[derive(Debug,RustcDecodable, RustcEncodable, Clone)]
-pub struct KeyAddr {
-    pub key: u64,
+pub struct KeyAddr<T: PartialOrd> {
+    pub key: T,
     pub addr: u64,
 }
 
-impl KeyAddr {
-    pub fn new(key: u64, addr: u64) -> KeyAddr {
+impl<T: PartialOrd> KeyAddr<T> {
+    pub fn new(key: T, addr: u64) -> KeyAddr<T> {
         KeyAddr { key: key, addr: addr}
     }
 }
 
-impl Comparable for KeyAddr {
-    fn cmp(&self, other:&Self) -> CompRes {
-        CompRes::Sthan
+impl<T: PartialOrd> PartialOrd for KeyAddr<T> {
+    fn partial_cmp(&self, other:&Self) -> Option<Ordering> {
+        self.key.partial_cmp(&other.key)
     }
 }
 
-
-pub enum CompRes {
-    Equ,
-    Gthan,
-    Sthan
-}
-
-pub trait Comparable {
-    fn cmp(&self, &Self) -> CompRes;
+impl<T: PartialOrd> PartialEq for KeyAddr<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.key.eq(&other.key)
+    }
 }
