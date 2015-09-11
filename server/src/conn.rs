@@ -88,20 +88,21 @@ pub fn handle(mut stream: TcpStream) {
                             debug!("{:?}", tree);
 
                             // Dummy Row
-                            let r = query::execute_from_ast(tree, & mut auth::User {
-                                _name: "DummyUser".into(),
-                                _currentDatabase: None} ).
-                                unwrap_or(
-                                    Rows { data: vec![], columns: vec![Column::new("error occurred",
-                                                    SqlType::Int, false, "error", false)]});
+                            // let r = query::execute_from_ast(tree, & mut auth::User {
+                            //     _name: "DummyUser".into(),
+                            //     _currentDatabase: None} ).
+                            //     unwrap_or(
+                            //         Rows { data: vec![], columns: vec![Column::new("error occurred",
+                            //                         SqlType::Int, false, "error", false)]}
+                            //         );
 
 
 
-                            // Send response package
-                            match net::send_response_package(&mut stream, r) {
-                                Ok(_) => { },
-                                Err(_) => warn!("Failed to send packet.")
-                            }
+                            // // Send response package
+                            // match net::send_response_package(&mut stream, r) {
+                            //     Ok(_) => { },
+                            //     Err(_) => warn!("Failed to send packet.")
+                            // }
                         },
 
                         Err(error) => {

@@ -5,7 +5,6 @@ use super::super::parse::ast::DataSrc;
 use super::super::parse::ast::CompType;
 use byteorder::{BigEndian, WriteBytesExt, ReadBytesExt};
 
-
 /// General enums in SQL
 #[derive(Debug, Clone, Copy, RustcDecodable, RustcEncodable, PartialEq)]
 pub enum SqlType {
