@@ -8,6 +8,7 @@ use bincode::SizeLimit;
 use server::logger;
 use server::parse::ast::DataSrc;
 use std::io::Cursor;
+//use server::storage::engine::flatfile::FlatFile;
 
 fn main() {
 
@@ -78,12 +79,56 @@ fn main() {
 
     d.clear();
 
-    let result = rows.next_row(&mut d);
-    println!{"{:?}", result};
+    rows.next_row(&mut d);
+    println!{"{:?}", d};
+
+    flat_file_test();
+
 }
 
+fn flat_file_test() {
+    println!("start flat file test");
 
-fn _type_test(){
+    let data = Database::load("storage_team").unwrap();
+
+    {
+        let t = data.load_table("storage_team").unwrap();
+        let engine = FlatFile::new(t);
+
+        let mut rows_myfile = engine.get_reader().unwrap();
+
+        let mut rnd_data = vec![0, 0, 0, 1, 1, 0x48, 0x41, 0x4C, 0x4C, 0x4F, 0x00];
+        rows_myfile.add_row(&rnd_data).unwrap();
+        rnd_data = vec![0, 0, 0, 1, 1, 0x48, 0x41, 0x4C, 0x4C, 0x4F, 0x00];
+        rows_myfile.add_row(&rnd_data).unwrap();
+    }
+
+    let t = data.load_table("storage_team").unwrap();
+    let engine = FlatFile::new(t);
+
+    let rows = engine.full_scan().unwrap();
+
+    println!("the rows: {:?}", rows);
+
+    println!("starting lookup.....");
+    let my_int: [u8; 4] = [0, 0, 0, 1];
+    let mut rows = engine.lookup(0,&my_int[0..4],CompType::Equ).unwrap();
+    rows.reset_pos();
+
+
+    let mut vec: Vec<u8> = Vec::new();
+
+    rows.next_row(&mut vec).unwrap();
+    println!("the rows: {:?}", vec);
+    vec.clear();
+    rows.next_row(&mut vec).unwrap();
+    println!("the rows: {:?}", vec);
+    vec.clear();
+    rows.next_row(&mut vec).unwrap();
+    println!("the rows: {:?}", vec);
+}
+
+fn _type_test() {
     let my_int: [u8; 4] = [20, 30, 40, 50]; //0001:0100:0001:1110:0010:1000:0011:0010 -> 337520690
     let my_other_int: [u8; 4] = [10, 5, 0, 2];//0000:1010:0000:0101:0000:0000:0000:0010 -> 168099842
 

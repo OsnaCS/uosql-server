@@ -24,9 +24,10 @@ impl<'a> FlatFile<'a> {
         FlatFile { table: table }
     }
 
-    fn get_reader(&self) -> Result<Rows<File>, Error> {
+    pub fn get_reader(&self) -> Result<Rows<File>, Error> {
         let mut file = try!(OpenOptions::new()
             .read(true)
+            .write(true)
             .open(&self.table.get_table_data_path()));
         info!("opened file {:?}", file);
 
@@ -59,6 +60,7 @@ impl<'a> Engine for FlatFile<'a> {
         &self.table
     }
 
+
     fn full_scan(&self) -> Result<Rows<Cursor<Vec<u8>>>, Error> {
         let mut reader = try!(self.get_reader());
         let vec: Vec<u8> = Vec::new();
@@ -66,8 +68,18 @@ impl<'a> Engine for FlatFile<'a> {
         let mut rows = Rows::new(cursor, &self.table.meta_data.columns);
         let mut buf: Vec<u8> = Vec::new();
 
-        while try!(reader.next_row(&mut buf)) != 0 {
-            rows.add_row(& buf);
+        while true {
+            match reader.next_row(&mut buf) {
+                Ok(_) => {
+                        rows.add_row(& buf);
+                },
+                Err(e) => {
+                    match e {
+                        Error::EndOfFile => break,
+                        _ => return Err(e)
+                    }
+                },
+            }
         }
         Ok(rows)
     }
@@ -81,10 +93,20 @@ impl<'a> Engine for FlatFile<'a> {
         let mut rows = Rows::new(cursor, &self.table.meta_data.columns);
         let mut buf: Vec<u8> = Vec::new();
 
-        while try!(reader.next_row(&mut buf)) != 0 {
-            let col = reader.get_column(column_index);
-            if try!(col.sql_type.cmp(&try!(reader.get_value(column_index)), value, comp)) {
-                rows.add_row(& buf);
+        while true {
+            match reader.next_row(&mut buf) {
+                Ok(_) => {
+                    let col = reader.get_column(column_index);
+                    if try!(col.sql_type.cmp(&try!(reader.get_value(column_index)), value, comp)) {
+                        rows.add_row(& buf);
+                    }
+                },
+                Err(e) => {
+                    match e {
+                        Error::EndOfFile => break,
+                        _ => return Err(e)
+                    }
+                },
             }
         }
 

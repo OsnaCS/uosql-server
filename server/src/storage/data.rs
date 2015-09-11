@@ -164,6 +164,14 @@ impl<B: Write + Read + Seek> Rows <B> {
             Err(e) => return Err(Error::Io(e))
         }
     }
+
+    /// Inserts a new row with row_data.
+    /// Returns the number of rows inserted.
+    pub fn insert_row(&mut self, row_data: &[u8]) -> Result<u64, Error> {
+        self.set_pos(SeekFrom::End(0));
+        try!(self.add_row(row_data));
+        Ok(1)
+    }
 }
 
 pub struct RowHeader {

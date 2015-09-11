@@ -15,7 +15,7 @@ pub use self::types::SqlType;
 pub use parse::ast;
 pub use parse::ast::CompType;
 pub use std::string::FromUtf8Error;
-
+pub use self::engine::FlatFile;
 
 use std::io;
 use std::io::{Write, Read, Seek, SeekFrom, Cursor};
