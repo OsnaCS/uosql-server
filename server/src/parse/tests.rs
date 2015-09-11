@@ -82,7 +82,7 @@ fn test_create_table_content_primary() {
 }
 
 #[test]
-fn test_create_table_FULL() {
+fn test_create_table_full() {
     let mut p = parser::Parser::create(
         "create table foo (FirstName char(255) not null
             auto_increment comment 'TEST' primary key)");
@@ -1201,6 +1201,25 @@ fn err_insert_2() {
         lo: 14,
         hi: 16,
     });
+
+    assert_eq!(p.parse(), Err(sol));
+}
+
+#[test]
+fn err_insert_3() {
+    let mut p = parser::Parser::create("insert into foo bar ('⊂(▀¯▀⊂)', 420, 'lel'");
+    let sol = parser::ParseError::NotAKeyword(Span {
+        lo: 18,
+        hi: 21,
+    });
+
+    assert_eq!(p.parse(), Err(sol));
+}
+
+#[test]
+fn err_insert_4() {
+    let mut p = parser::Parser::create("insert into foo values ('⊂(▀¯▀⊂)', 420, 'lel'");
+    let sol = parser::ParseError::UnexpectedEoq;
 
     assert_eq!(p.parse(), Err(sol));
 }

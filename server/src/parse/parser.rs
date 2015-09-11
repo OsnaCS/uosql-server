@@ -539,7 +539,6 @@ impl<'a> Parser<'a> {
                 };
                 let o_col = try!(self.expect_word());
                 let mut o_order = Some(Order::Asc);
-                
                 if self.check_next_keyword(&[Keyword::Asc]) {
                     self.bump();
                 } else if self.check_next_keyword(&[Keyword::Desc]) {
@@ -734,9 +733,9 @@ impl<'a> Parser<'a> {
                 self.bump();
                 try!(self.expect_keyword(&[Keyword::Key]));
                 colprimary = true;
-            } else if self.check_next_keyword(&[Keyword::Auto_Increment]) {
+            } else if self.check_next_keyword(&[Keyword::AutoIncrement]) {
                 self.bump();
-                try!(self.expect_keyword(&[Keyword::Auto_Increment]));
+                try!(self.expect_keyword(&[Keyword::AutoIncrement]));
                 auto_increment = true;
             } else if self.check_next_keyword(&[Keyword::Not]) {
                 self.bump();
@@ -1012,7 +1011,7 @@ fn keyword_from_string(string: &str) -> Option<Keyword> {
                 "asc" => Some(Keyword::Asc),
                 "limit" => Some(Keyword::Limit),
                 "replace" => Some(Keyword::Replace),
-                "auto_increment" => Some(Keyword::Auto_Increment),
+                "auto_increment" => Some(Keyword::AutoIncrement),
                 "not" => Some(Keyword::Not),
                 "null" => Some(Keyword::Null),
                 "comment" => Some(Keyword::Comment),
@@ -1066,7 +1065,7 @@ pub enum Keyword {
     Primary,
     Key,
     Replace,
-    Auto_Increment,
+    AutoIncrement,
     Not,
     Null,
     Comment,
