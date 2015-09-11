@@ -522,6 +522,7 @@ impl<'a> Parser<'a> {
         if self.expect_keyword(&[Keyword::Group]).is_ok() {
             self.bump();
             try!(self.expect_keyword(&[Keyword::By]));
+            self.bump();
             return Err(ParseError::DebugError("GroupBy part needs implementation!".to_string()));
         }
         if self.expect_keyword(&[Keyword::Order]).is_ok() {

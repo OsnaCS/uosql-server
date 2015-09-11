@@ -20,7 +20,8 @@ pub struct Span {
 
 /// Main function of this module: Takes a sql query as string and returns
 /// the parsed AST.
-pub fn parse(query: &str) -> ast::Query {
+pub fn parse(query: &str) -> Result<ast::Query,parser::ParseError> {
 
-    ast::Query::Dummy
+    Parser::create(query).parse()
+
 }

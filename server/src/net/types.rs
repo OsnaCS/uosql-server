@@ -22,7 +22,7 @@ pub enum PkgType {
 #[derive(RustcEncodable, RustcDecodable, Debug)]
 pub struct ClientErrMsg {
     code: u16,
-    msg: String
+    pub msg: String
 }
 
 /// Convert the possible Error to a serializable ClientErrMsg struct
@@ -48,6 +48,10 @@ impl From<super::Error> for ClientErrMsg {
             super::Error::Decode(_) => ClientErrMsg {
                 code: 5,
                 msg: "decoding error".into()
+            },
+            super::Error::UnEoq(e) => ClientErrMsg {
+                code: 6,
+                msg: "Parse error".into()
             }
         }
     }

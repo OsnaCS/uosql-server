@@ -22,8 +22,8 @@ impl SqlType {
         match self {
             &SqlType::Int => 4 as u32,
             &SqlType::Bool => 1 as u32,
-            &SqlType::Char(len) => (len) as u32,
-            &SqlType::VarChar(len) => (len) as u32
+            &SqlType::Char(len) => (len + 1) as u32,
+            &SqlType::VarChar(len) => (len + 2) as u32
         }
     }
 
@@ -91,8 +91,9 @@ impl SqlType {
             &SqlType::Char(len) => {
                 match data {
                     &DataSrc::String(ref a) => {
-                        let str_as_bytes = Self::to_bytes(&a, len as u32);
-                        Ok(try!(Self::write_to_buf(buf, &str_as_bytes)))
+                        let str_as_bytes = Self::to_nul_terminated_bytes(&a, (len + 1) as u32);
+                        try!(buf.write_all(&str_as_bytes));
+                        Ok(self.size())
                     }
                     _=> {
                         Err(Error::InvalidType)
@@ -102,8 +103,11 @@ impl SqlType {
             &SqlType::VarChar(len) => {
                 match data {
                     &DataSrc::String(ref a) => {
-                        let str_as_bytes = Self::to_bytes(&a, len as u32);
-                        Ok(try!(Self::write_to_buf(buf, &str_as_bytes)))
+                        let mut str_as_bytes = a.to_string().into_bytes();
+                        str_as_bytes.truncate(len as usize);
+                        try!(buf.write_u16::<BigEndian>(str_as_bytes.len() as u16));
+                        try!(buf.write_all(&str_as_bytes));
+                        Ok((str_as_bytes.len() + 2) as u32)
                     }
                     _=> {
                         Err(Error::InvalidType)
@@ -136,7 +140,7 @@ impl SqlType {
     /// l bytes.
     /// Otherwise the returned vector will be filled with \0
     /// until it contains l bytes.
-    fn to_bytes(s : &str, l: u32) -> Vec<u8> {
+    fn to_nul_terminated_bytes(s : &str, l: u32) -> Vec<u8> {
         let mut v = s.to_string().into_bytes();
 
         v.truncate((l - 1) as usize);
@@ -188,7 +192,29 @@ impl Column {
         &self.sql_type
     }
 
-    pub fn get_size(&self) -> u64 {
-        self.sql_type.size() as u64
+    pub fn get_size(&self) -> u32 {
+        self.sql_type.size() as u32
+    }
+}
+
+//---------------------------------------------------------------
+// FromSql
+//---------------------------------------------------------------
+
+pub trait FromSql {
+    fn from_sql(data: &[u8]) -> Result<Self, Error>;
+}
+
+impl FromSql for i32 {
+    fn from_sql(mut data: &[u8]) -> Result<Self, Error> {
+        let i = try!(data.read_i32::<BigEndian>());
+        Ok(i)
+    }
+}
+
+impl FromSql for u16 {
+    fn from_sql(mut data: &[u8]) -> Result<Self, Error> {
+        let u = try!(data.read_u16::<BigEndian>());
+        Ok(u)
     }
 }
