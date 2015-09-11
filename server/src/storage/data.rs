@@ -90,14 +90,16 @@ impl RowHeader{
 
     /// returns true if the current row is marked as deleted
     pub fn is_deleted(&self) -> bool {
-        false
+        info!("check for delete bit");
+        (self.data & 1 as u8) == 1
     }
 
     /// marks row as deleted
     pub fn set_deleted(&mut self) {
-
+        info!("set delete bit");
+        self.data |= 1 as u8
     }
-
+    /// returns size of RowHeader
     pub fn size() -> u64 {
         1
     }

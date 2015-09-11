@@ -241,7 +241,7 @@ impl SqlType {
     -> Result<bool, Error>
     {
         info!("start comparing each byte");
-        if val.len() != val2.len() {
+        if val != val2 {
             return Err(Error::WrongLength)
         }
         for i in 0 .. val.len() {
