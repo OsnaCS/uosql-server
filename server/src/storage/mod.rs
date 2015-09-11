@@ -51,6 +51,7 @@ pub enum Error {
     WrongLength,
     NoOperationPossible,
     InvalidState,
+    EndOfFile,
 }
 
 impl From<FromUtf8Error> for Error {
