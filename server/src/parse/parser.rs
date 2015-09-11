@@ -528,7 +528,7 @@ impl<'a> Parser<'a> {
         {
             self.bump();
             let tableid = try!(self.expect_word());
-            if !self.check_next_keyword(&[Keyword::Where])
+            if !self.check_next_keyword(&[Keyword::Where, Keyword::Limit, Keyword::Group])
             && !self.check_next_token(&[Token::Comma]) {
                 self.bump();
                 match self.expect_word() {
@@ -542,6 +542,7 @@ impl<'a> Parser<'a> {
             tidvec.push(tableid);
             if !self.check_next_token(&[Token::Comma]) {
                 done = true;
+                self.bump();
             } else {
                 self.bump();
             }
@@ -549,10 +550,8 @@ impl<'a> Parser<'a> {
 
         let mut conditions;
         // optional where statement
-        if self.check_next_keyword(&[Keyword::Where]) {
-            self.bump();
+        if self.expect_keyword(&[Keyword::Where]).is_ok() {
             conditions = Some(try!(self.parse_where_part()));
-
         } else {
             conditions = None;
         }
@@ -561,6 +560,7 @@ impl<'a> Parser<'a> {
         if self.expect_keyword(&[Keyword::Group]).is_ok(){
             self.bump();
             try!(self.expect_keyword(&[Keyword::By]));
+            self.bump();
             return Err(ParseError::DebugError("GroupBy part needs implementation!".to_string()));
         }
 
@@ -571,6 +571,7 @@ impl<'a> Parser<'a> {
         let mut limit = None;
 
         if self.expect_keyword(&[Keyword::Limit]).is_ok() {
+
             self.bump();
             let tmp = match try!(self.expect_number()) {
                 Lit::Int(i) => i ,
@@ -696,8 +697,6 @@ impl<'a> Parser<'a> {
             Some(found_keyword) => checkkeyword.contains(&found_keyword),
             None => false
         }
-
-
     }
 
     // aprses a single condition
@@ -792,7 +791,7 @@ impl<'a> Parser<'a> {
                 Token::Word(ref s) => s,
                 _ => return Err(ParseError::NotADatatype(Span { lo: span_lo , hi: span_hi } ))
             };
-            tmp_datatype = word.to_string();
+            tmp_datatype = word.to_lowercase();
         }
         // checks if token is a correct Datatype
         found_datatype = match &tmp_datatype[..] {
@@ -884,7 +883,11 @@ impl<'a> Parser<'a> {
                  ))
             };
         }
-        Ok(found_word.to_string())
+        if keyword_from_string(found_word).is_some() {
+            Err(ParseError::ReservedKeyword(Span { lo: span_lo , hi: span_hi }))
+        } else {
+            Ok(found_word.to_string())
+        }
     }
        // checks if the current token is a word
     fn expect_literal(&self) -> Result<Lit, ParseError> {
@@ -979,12 +982,12 @@ impl<'a> Parser<'a> {
 
             // checks whether token is a word
             let word = match token.tok {
-                Token::Word(ref s) => s.to_lowercase(),
+                Token::Word(ref s) => s,
                 _ => return Err(ParseError::NotAKeyword(Span { lo: span_lo , hi: span_hi } ))
             };
 
             // checks if word is a keyword
-            found_keyword = match keyword_from_string(&word[..]){
+            found_keyword = match keyword_from_string(&word){
                 Some(keyword) => keyword,
                 None => return Err(ParseError::NotAKeyword(Span { lo: span_lo , hi: span_hi } )),
             };
@@ -999,7 +1002,8 @@ impl<'a> Parser<'a> {
 }
 
 fn keyword_from_string(string: &str) -> Option<Keyword>{
-    match string {
+    let tmp = string.to_lowercase();
+    match &tmp[..]{
                 "create" => Some(Keyword::Create),
                 "drop" => Some(Keyword::Drop),
                 "table" => Some(Keyword::Table),
@@ -1087,7 +1091,7 @@ pub enum Keyword {
     Key,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ParseError {
     //general errors
     UnknownError,
@@ -1113,6 +1117,7 @@ pub enum ParseError {
     ColumnCountMissmatch,
     MissingParenthesis(Span),
     LimitError,
+    ReservedKeyword(Span),
 
     //Used for debugging
     DebugError(String)

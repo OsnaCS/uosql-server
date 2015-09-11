@@ -22,6 +22,8 @@ use bincode::rustc_serialize::{EncodingError, DecodingError, decode_from, encode
 use std::io;
 use bincode::SizeLimit;
 use self::types::*;
+use storage::Rows;
+use parse::parser::ParseError;
 
 const PROTOCOL_VERSION: u8 = 1;
 
@@ -33,6 +35,7 @@ pub enum Error {
     UnknownCmd(String),
     Encode(EncodingError),
     Decode(DecodingError),
+    UnEoq(ParseError),
 }
 
 /// Implement the conversion from io::Error to NetworkError
@@ -53,6 +56,13 @@ impl  From<EncodingError> for Error {
 impl From<DecodingError> for Error {
     fn from(err: DecodingError) -> Error {
         Error::Decode(err)
+    }
+}
+
+/// Implement the conversion from ParseError to NetworkError
+impl From<ParseError> for Error {
+    fn from(err: ParseError) -> Error {
+        Error::UnEoq(err)
     }
 }
 
@@ -106,6 +116,14 @@ pub fn send_info_package<W: Write>(mut stream: &mut W, pkg: PkgType)
     -> Result<(), Error>
 {
     try!(encode_into(&pkg, stream, SizeLimit::Bounded(1024)));
+    Ok(())
+}
+
+pub fn send_response_package<W: Write>(mut stream: &mut W, data: Rows)
+    -> Result<(), Error>
+{
+    try!(encode_into(&PkgType::Response, stream, SizeLimit::Bounded(1024)));
+    try!(encode_into(&data, stream, SizeLimit::Infinite));
     Ok(())
 }
 
