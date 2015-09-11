@@ -211,7 +211,7 @@ impl<'a> Executor<'a> {
 }
 
 
-fn generate_rows_dummy<'a, B: Write + Read + Seek>() -> Rows<'a, B>{
+fn generate_rows_dummy<'a, B: Write + Read + Seek>() -> Rows<B>{
     /*Rows {
         data: Cursor::<B>::new(Vec::<u8>::new()),
         columns: Vec::new(),
