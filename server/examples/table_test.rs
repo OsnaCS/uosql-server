@@ -62,7 +62,6 @@ fn main() {
 
     let mut rows = Rows::new(c, &cols);
     rows.add_row(&data).unwrap();
-    rows.add_row(&data).unwrap();
     rows.reset_pos().unwrap();
 
     let mut d = Vec::<u8>::new();
@@ -79,8 +78,8 @@ fn main() {
 
     d.clear();
 
-    rows.next_row(&mut d);
-    println!{"{:?}", d};
+    let result = rows.next_row(&mut d);
+    println!{"{:?}", result};
 }
 
 

@@ -140,16 +140,15 @@ impl<B: Write + Read + Seek> Rows <B> {
         let result = reader.read_to_end(&mut target_buf);
         let bytes_read = match result {
             Ok(n) => {
+                if n == 0 {
+                    return Err(Error::EndOfFile);
+                };
                 if n as u64 != bytes_to_read {
                     info!("bytes_read {:?} bytes_to_read {:?}", n, bytes_to_read);
                     return Err(Error::InterruptedRead);
                 };
                 n
             },
-            // Err(io::IoError{kind:io::EndOfFile, ..}) => {
-            //     println!("end of file");
-            //     return Ok(9);
-            // },
             Err(e) => {
                 return Err(Error::Io(e));
             }
