@@ -9,6 +9,8 @@ extern crate docopt;
 extern crate rustc_serialize;
 extern crate server;
 
+mod specialcrate;
+
 use std::io::{self, stdout, Write};
 use std::str::FromStr;
 use uosql::logger;
@@ -197,7 +199,17 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
             let help = include_str!("readme.txt");
             println!("{}", help);
         },
+        ":hello" => {
+            println!("Hello, Dave. You're looking well today.");
+        }
+        ":snake" => {
+            println!("Not on a plane, but on your terminal");
+            println!("Thanks for Snake-Code to Johannes Schickling
+                 <schickling.j@gmail.com>)");
+            specialcrate::snake();
+        }
         _ => {
+
             // Size
             match conn.execute(input.into()) {
                 Ok(data) => {

@@ -17,6 +17,8 @@ byteorder = "0.3"
 bincode = "0.4.0"
 docopt = "0.6"
 rustc-serialize = "0.3"
+ncurses = "5.73.0"
+rand = "*"
 
 [dependencies.server]
 path = "server"
