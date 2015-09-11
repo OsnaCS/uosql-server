@@ -21,9 +21,12 @@ byteorder = "0.3"
 bincode = "0.4.0"
 docopt = "0.6"
 rustc-serialize = "0.3"
+nickel = "*"
+plugin = "*"
+typemap = "*"
+hyper = "*"
+cookie = "0.1"
+url = "*"
 
 [dependencies.server]
 path = "server"
-
-[dependencies.iron]
-version = "*"
