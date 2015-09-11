@@ -63,9 +63,16 @@ impl<B: Write + Read + Seek> Rows <B> {
         Ok(self.current_row.len() as u64)
     }
 
-    pub fn skip_row(&mut self) -> Result<u64, Error> {
+    /// sets pos to the beginning of the next row
+    fn skip_row(&mut self) -> Result<u64, Error> {
         let columns_size = self.columns_size as i64;
         self.set_pos(SeekFrom::Current(columns_size))
+    }
+
+    /// sets pos to the beginning of the previous row
+    fn prev_row(&mut self) -> Result<u64, Error> {
+        let columns_size = self.columns_size as i64;
+        self.set_pos(SeekFrom::Current(-(columns_size+(RowHeader::size()) as i64)))
     }
 
     /// sets position before the first line
@@ -97,8 +104,14 @@ impl<B: Write + Read + Seek> Rows <B> {
         let new_row_header = RowHeader::new(0);
         try!(self.write_bytes(&new_row_header.to_raw_data()));
         Ok(try!(self.write_bytes(&data)))
+    }
 
-
+    pub fn delete_row(&mut self) -> Result<(), Error> {
+        self.prev_row();
+        let row_header = RowHeader::new(1);
+        try!(self.write_bytes(&row_header.to_raw_data()));
+        self.skip_row();
+        Ok(())
     }
 
     /// returns the value of the column_index' column of the current row
@@ -133,6 +146,10 @@ impl<B: Write + Read + Seek> Rows <B> {
                 };
                 n
             },
+            // Err(io::IoError{kind:io::EndOfFile, ..}) => {
+            //     println!("end of file");
+            //     return Ok(9);
+            // },
             Err(e) => {
                 return Err(Error::Io(e));
             }
@@ -151,15 +168,18 @@ impl<B: Write + Read + Seek> Rows <B> {
 }
 
 pub struct RowHeader {
-     data: u8,
+     pub data: u8,
 }
 
 impl RowHeader{
 
-    pub fn new(data: u8) -> RowHeader {
-        RowHeader {
+    pub fn new(deleted: u8) -> RowHeader {
+        let data = 0 as u8;
+        let mut h = RowHeader {
             data: data,
-        }
+        };
+        h.set_deleted(deleted);
+        h
     }
 
     /// returns true if the current row is marked as deleted
@@ -169,9 +189,14 @@ impl RowHeader{
     }
 
     /// marks row as deleted
-    pub fn set_deleted(&mut self) {
+    pub fn set_deleted(&mut self, value: u8) {
         info!("set delete bit");
-        self.data |= 1 as u8
+        if value == 1 {
+            self.data |= 1 as u8
+        }
+        else {
+            self.data &= 0xFE as u8
+        }
     }
     /// returns size of RowHeader
     pub fn size() -> u64 {

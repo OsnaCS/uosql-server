@@ -62,6 +62,7 @@ fn main() {
 
     let mut rows = Rows::new(c, &cols);
     rows.add_row(&data).unwrap();
+    rows.add_row(&data).unwrap();
     rows.reset_pos().unwrap();
 
     let mut d = Vec::<u8>::new();
@@ -72,10 +73,14 @@ fn main() {
     let h = rows.get_value(2);
     println!{"{:?}", h}
 
+    rows.delete_row();
 
+    rows.reset_pos();
 
+    d.clear();
 
-    //_type_test();
+    rows.next_row(&mut d);
+    println!{"{:?}", d};
 }
 
 
