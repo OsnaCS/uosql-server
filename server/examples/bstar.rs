@@ -1,5 +1,5 @@
 extern crate server;
-use server::storage::bstar::{ Bstar, Bnode };
+use server::storage::bstar::{ Bstar, Bnode, SortedList };
 use std::fs::File;
 use std::io::*;
 use std::fs::OpenOptions;
@@ -33,12 +33,32 @@ fn main() {
                             h()));*/
     */
 
-
+    /*
     let mut tree = Bstar::create("star.b", 10).unwrap();
     tree.insert(111,222);
     println!("{:?}", tree);
     tree = Bstar::load("star.b").unwrap();
     println!("{:?}", tree);
     println!("{:?}", tree.get_root() );
+    */
 
+    let mut list = SortedList::new();
+
+    println!("{:?}", list);
+    list.insert(7);
+    println!("{:?}", list);
+    list.insert(4);
+    println!("{:?}", list);
+    list.insert(5);
+    println!("{:?}", list);
+    list.insert(3);
+    println!("{:?}", list);
+    list.insert(15);
+    println!("{:?}", list);
+    list.insert(0);
+    println!("{:?}", list);
+    list.insert(6);
+    println!("{:?}", list);
+    println!("{:?}",list.delete(&5));
+    println!("{:?}", list);
 }
