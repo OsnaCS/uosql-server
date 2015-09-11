@@ -188,22 +188,22 @@ impl SqlType {
             &SqlType::Char(x) => {
                 match comp {
                     CompType::Equ => {
-                        self.equal_for_str_with_value(val, val2)
+                        self.compare_byte_for_equal(val, val2)
                     },
                     CompType::NEqu => {
-                        self.equal_for_str_with_value(val, val2).map(|x| !x)
+                        self.compare_byte_for_equal(val, val2).map(|x| !x)
                     },
                     CompType::GThan => {
-                        self.greater_than_for_int_with_value(val, val2)
+                        self.compare_byte_greater_than(val, val2)
                     },
                     CompType::SThan => {
-                        self.lesser_than_for_int_with_value(val, val2)
+                        self.compare_byte_lesser_than(val, val2)
                     },
                     CompType::GEThan => {
-                        self.lesser_than_for_int_with_value(val, val2).map(|x| !x)
+                        self.compare_byte_lesser_than(val, val2).map(|x| !x)
                     },
                     CompType::SEThan => {
-                        self.greater_than_for_int_with_value(val, val2).map(|x| !x)
+                        self.compare_byte_greater_than(val, val2).map(|x| !x)
                     },
                 }
             },
