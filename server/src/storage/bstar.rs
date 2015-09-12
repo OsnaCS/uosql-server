@@ -203,6 +203,8 @@ impl<T: PartialOrd> SortedList<T> {
                 return (true, hi)
             }
             return (false, hi)
+        } else if hi < lo {
+            return (false, ( hi + lo ) /2)
         }
 
         let mid = (lo + hi + 1) / 2;

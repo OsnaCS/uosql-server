@@ -44,21 +44,19 @@ fn main() {
 
     let mut list = SortedList::new();
 
-    println!("{:?}", list);
-    list.insert(7);
-    println!("{:?}", list);
-    list.insert(4);
-    println!("{:?}", list);
     list.insert(5);
-    println!("{:?}", list);
-    list.insert(3);
-    println!("{:?}", list);
-    list.insert(15);
-    println!("{:?}", list);
-    list.insert(0);
-    println!("{:?}", list);
-    list.insert(6);
-    println!("{:?}", list);
     println!("{:?}",list.delete(&5));
+    println!("{:?}", list);
+    println!("{:?}", list.insert(5));
+    println!("{:?}", list.insert(5));
+     println!("{:?}", list.insert(2));
+     for i in 0..100 {
+        list.insert(100-i);
+
+     }
+
+    println!("{:?}",list.delete(&37) );
+    println!("{:?}", list);
+    println!("{:?}",list.delete(&37) );
     println!("{:?}", list);
 }
