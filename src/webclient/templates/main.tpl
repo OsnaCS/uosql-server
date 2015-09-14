@@ -18,5 +18,11 @@
         <textarea name="sql" rows="5" cols="50"></textarea><br>
         <input type = "submit" value="Query">
     </form>
-    {{ result }}
+    <p>
+        <pre>
+            <font size=5>
+                {{ result }}
+            </font>
+        </pre>
+    </p>
 </body>

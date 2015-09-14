@@ -9,6 +9,7 @@ extern crate uosql;
 extern crate rustc_serialize;
 extern crate cookie;
 extern crate url;
+extern crate server;
 
 use uosql::Connection;
 use std::io::Read;
@@ -26,6 +27,8 @@ use url::form_urlencoded as urlencode;
 use std::net::Ipv4Addr;
 use std::str::FromStr;
 use nickel::QueryString;
+use server::storage::Rows;
+use std::cmp::{max, min};
 
 // Dummy key for typemap
 struct ConnKey;
@@ -207,10 +210,13 @@ fn main() {
 
         data.insert("name", con.get_username().to_string());
 
-        con.quit();
+        match con.quit(){
+            Ok(_) => { },
+            Err(_) => error!("Connection could not be quit."),
+        }
 
         // Remove Cookie
-        let sess = match req.origin.headers.get::<Cookie>() {
+        match req.origin.headers.get::<Cookie>() {
 
             None => { }
             Some(cs) => {
@@ -224,53 +230,49 @@ fn main() {
     });
 
         // Greeting page
-    server.get("/", middleware! { |req, response|
+    server.get("/", middleware! { |req, res|
 
         // Look for connection
         let tmp = req.extensions().get::<ConnKey>().unwrap().clone();
         let mut con = tmp.lock().unwrap();
 
+        let mut data = HashMap::new();
+
         let query = req.query().get("sql");
         if !query.is_none() {
-            println!("{:?}", query.unwrap());
-            match con.execute(query.unwrap().to_string()) {
-                Ok(m) => println!("{:?}", m),
+            let result = match con.execute(query.unwrap().to_string()) {
+                Ok(r) => r,
                 Err(e) => {
-                    match e {
-                        Error::Io(_) => {
-                            error!("Connection failure. Try again later.");
-                        },
-                        Error::Decode(_) => {
-                            error!("Could not read data from server.");
-                        }
-                        Error::Encode(_) => {
-                            error!("Could not send data to server.");
-                        }
-                        Error::UnexpectedPkg => {
-                            error!("{}", e.to_string());
-                        },
-                        Error::Server(e) => {
-                            error!("{}", e.msg);
-                        }
-                        _ => {
-                            error!("Unexpected behaviour during execute()");
-                        }
-                    }
+                    let errstr = match e {
+                        Error::Io(_) => "Connection failure. Try again later.",
+                        Error::Decode(_) => "Could not read data from server.",
+                        Error::Encode(_) => "Could not send data to server.",
+                        Error::UnexpectedPkg => "Received unexpected package.",
+                        Error::Server(_) => "Server error.",
+                        _ => "Unexpected behaviour during execute().",
+                    };
+                    let mut data = HashMap::new();
+                    data.insert("err", errstr);
+                    return res.render("src/webclient/templates/error.tpl", &data);
                 }
-            }
+            };
+            // let s = format!("{:?}", result);
+            // data.insert("result", s.to_string());
+            let res_output = display(&result);
+            println!("{}", res_output);
+            data.insert("result", res_output);
         }
 
         // Current display with short welcome message
         let version = con.get_version().to_string();
         let port = con.get_port().to_string();
-        let mut data = HashMap::new();
 
-        data.insert("name", con.get_username());
-        data.insert("version", &version);
-        data.insert("bind", con.get_ip());
-        data.insert("port", &port);
-        data.insert("msg", con.get_message());
-        return response.render("src/webclient/templates/main.tpl", &data);
+        data.insert("name", con.get_username().to_string());
+        data.insert("version", version);
+        data.insert("bind", con.get_ip().to_string());
+        data.insert("port", port);
+        data.insert("msg", con.get_message().to_string());
+        return res.render("src/webclient/templates/main.tpl", &data);
     });
 
     server.listen("127.0.0.1:6767");
@@ -284,4 +286,130 @@ fn test_bind (bind : &str) -> bool {
         }
     };
     result
+}
+
+fn display (rows: &Rows) -> String {
+    if rows.data.is_empty() {
+        display_meta(&rows)
+    } else {
+        display_data(&rows)
+    }
+}
+
+fn display_data(row: &Rows) -> String {
+
+    let mut result = String::new();
+
+    let mut cols = vec![];
+    for i in &row.columns {
+        cols.push(max(12, i.name.len()));
+    }
+
+    // column names
+    result.push_str(&display_seperator(&cols));
+
+    for i in 0..(cols.len()) {
+        if row.columns[i].name.len() > 27 {
+            result.push_str(&format!("| {}... ", &row.columns[i].name[..27]));
+        } else {
+            result.push_str(&format!("| {1: ^0$} ", min(30, cols[i]), row.columns[i].name));
+        }
+    }
+    result.push_str("|\n");
+
+    result.push_str(&display_seperator(&cols));
+
+    result
+}
+
+fn display_meta(row: &Rows) -> String{
+
+    let mut result = String::new();
+    result.trim();
+
+    // print meta data
+    let mut cols = vec![];
+    for i in &row.columns {
+        cols.push(max(12, max(i.name.len(), i.description.len())));
+    }
+
+    // // Column name +---
+    result.push_str("\n");
+    result.push_str("+");
+    let col_name = "Column name";
+    for _ in 0..(col_name.len()+2) {
+        result.push_str("-");
+    }
+
+    // for every column +---
+    result.push_str(&display_seperator(&cols));
+
+    result.push_str(&format!("| {} ", col_name));
+    // name of every column
+    for i in 0..(cols.len()) {
+        if row.columns[i].name.len() > 27 {
+            result.push_str(&format!("| {}... ", &row.columns[i].name[..27]));
+        } else {
+            result.push_str(&format!("| {1: ^0$} ", min(30, cols[i]), row.columns[i].name));
+        }
+    }
+    result.push_str("|\n");
+
+    // format +--
+    result.push_str("+");
+    for _ in 0..(col_name.len()+2) {
+        result.push_str("-");
+    }
+
+    result.push_str(&display_seperator(&cols));
+
+    result.push_str(&format!("| {1: <0$} ", col_name.len(), "Type"));
+    for i in 0..(cols.len()) {
+        result.push_str(&format!("| {1: ^0$} ", min(30, cols[i]), format!("{:?}", row.columns[i].sql_type)));
+    }
+    result.push_str("|\n");
+
+    result.push_str(&format!("| {1: <0$} ", col_name.len(), "Primary"));
+    for i in 0..(cols.len()) {
+        result.push_str(&format!("| {1: ^0$} ", min(30, cols[i]), row.columns[i].is_primary_key));
+    }
+    result.push_str("|\n");
+
+    result.push_str(&format!("| {1: <0$} ", col_name.len(), "Allow NULL"));
+    for i in 0..(cols.len()) {
+        result.push_str(&format!("| {1: ^0$} ", min(30, cols[i]), row.columns[i].allow_null));
+    }
+    result.push_str("|\n");
+
+    result.push_str(&format!("| {1: <0$} ", col_name.len(), "Description"));
+    for i in 0..(cols.len()) {
+        if row.columns[i].description.len() > 27 {
+            //splitten
+            result.push_str(&format!("| {}... ", &row.columns[i].description[..27]));
+        } else {
+            result.push_str("FALSE");
+            result.push_str(&format!("| {1: ^0$} ", min(30, cols[i]), row.columns[i].description));
+        }
+    }
+    result.push_str("|\n");
+
+    result.push_str("+");
+    for _ in 0..(col_name.len()+2) {
+        result.push_str("-");
+    }
+
+    result.push_str(&display_seperator(&cols));
+    result
+}
+
+pub fn display_seperator(cols: &Vec<usize>) -> String{
+    let mut res = String::new();
+    for i in 0..(cols.len()) {
+        res.push_str("+--");
+        for _ in 0..min(30, cols[i]) {
+            res.push_str("-");
+        }
+    }
+    res.push_str("+\n");
+    res
 }
