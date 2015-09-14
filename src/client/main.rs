@@ -293,24 +293,24 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
                     },
                     Err(e) => {
                         match e {
-                            Error::Io(_) => {
-                                error!("Connection failure. Try again later.");
+                            uosql::Error::Io(_) => {
+                                error!("{}", e.description());
                                 return true
                             },
-                            Error::Decode(_) => {
-                                error!("Could not read data from server.");
+                            uosql::Error::Decode(_) => {
+                                error!("{}", e.description());
+                                return true
+                            }
+                            uosql::Error::Encode(_) => {
+                                error!("{}", e.description());
+                                return true
+                            }
+                            uosql::Error::UnexpectedPkg => {
+                                error!("{}", e.description());
                                 return true
                             },
-                            Error::Encode(_) => {
-                                error!("Could not send data to server.");
-                                return true
-                            },
-                                Error::UnexpectedPkg(e) => {
-                                error!("{}", e.to_string());
-                                return true
-                            },
-                            Error::Server(e) => {
-                                error!("{}", e.msg);
+                            uosql::Error::Server(_) => {
+                                error!("{}", e.description());
                                 return true
                             }
                             _ => {
