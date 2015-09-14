@@ -12,16 +12,40 @@ use bincode::rustc_serialize::{EncodingError, DecodingError,
     decode_from, encode_into};
 use types::*;
 use server::storage::Rows;
+use std::fmt;
 
 // const PROTOCOL_VERSION : u8 = 1;
+#[derive(Debug)]
 pub enum Error {
     AddrParse(AddrParseError),
     Io(io::Error),
-    UnexpectedPkg(String),
+    UnexpectedPkg,
     Encode(EncodingError),
     Decode(DecodingError),
-    Auth(String),
+    Auth,
     Server(ClientErrMsg),
+}
+
+/// Implement display for description of Error
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        std::error::Error::description(self).fmt(f)
+    }
+}
+
+/// Implement description for this Error enum
+impl std::error::Error for Error {
+    fn description(&self) -> &str {
+        match self {
+            &Error::AddrParse(_) => "wrong IPv4 address format",
+            &Error::Io(_) => "IO error occured",
+            &Error::UnexpectedPkg => "received unexpected package",
+            &Error::Encode(_) => "could not encode/ send package",
+            &Error::Decode(_) => "could not decode/ receive package",
+            &Error::Auth => "could not authenticate user",
+            &Error::Server(ref e) => { &e.msg }
+        }
+    }
 }
 
 /// Implement the conversion from io::Error to Connection-Error
@@ -113,9 +137,8 @@ impl Connection {
                 Ok(Connection { ip: addr, port: port, tcp: tmp_tcp,
                     greeting: greet, user_data: log} ),
             PkgType::AccDenied =>
-                Err(Error::Auth("Authentication failure.".into())),
-            _ => Err(Error::UnexpectedPkg("Unexpected package
-                    received. Server is INSANE.".into()))
+                Err(Error::Auth),
+            _ => Err(Error::UnexpectedPkg)
         }
     }
 
@@ -208,7 +231,7 @@ fn receive(s: &mut TcpStream, cmd: PkgType) -> Result<(), Error> {
             },
             _ => {}
         }
-        return Err(Error::UnexpectedPkg("Received unexpected package".into()))
+        return Err(Error::UnexpectedPkg)
     }
     Ok(())
 }

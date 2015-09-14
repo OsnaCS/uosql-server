@@ -27,6 +27,8 @@ typemap = "*"
 hyper = "*"
 cookie = "0.1"
 url = "*"
+ncurses = "5.73.0"
+rand = "*"
 
 [dependencies.server]
 path = "server"
