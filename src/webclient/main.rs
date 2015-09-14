@@ -167,10 +167,10 @@ fn main() {
                             Error::Encode(_) => {
                                 "Could not send data to server."
                             },
-                            Error::UnexpectedPkg(_) => {
+                            Error::UnexpectedPkg => {
                                 "Unexpected Package."
                             },
-                            Error::Auth(_) => {
+                            Error::Auth => {
                                 "Authentication failed."
                             },
                             Error::Server(_) => {
@@ -246,7 +246,7 @@ fn main() {
                         Error::Encode(_) => {
                             error!("Could not send data to server.");
                         }
-                        Error::UnexpectedPkg(e) => {
+                        Error::UnexpectedPkg => {
                             error!("{}", e.to_string());
                         },
                         Error::Server(e) => {
@@ -285,42 +285,3 @@ fn test_bind (bind : &str) -> bool {
     };
     result
 }
-
-// fn execute (con : Mutex<Connection>, query : String) -> bool{
-//     match con.execute(query) {
-//         Ok(data) => {
-//             // show data belonging to executed query
-//             // display(&data);
-//             println!("Ok");
-//             return true
-//         },
-//         Err(e) => {
-//             match e {
-//                 Error::Io(_) => {
-//                     error!("Connection failure. Try again later.");
-//                     return true
-//                 },
-//                 Error::Decode(_) => {
-//                     error!("Could not read data from server.");
-//                     return true
-//                 }
-//                 Error::Encode(_) => {
-//                     error!("Could not send data to server.");
-//                     return true
-//                 }
-//                 Error::UnexpectedPkg(e) => {
-//                     error!("{}", e.to_string());
-//                     return true
-//                 },
-//                 Error::Server(e) => {
-//                     error!("{}", e.msg);
-//                     return true
-//                 }
-//                 _ => {
-//                     error!("Unexpected behaviour during execute()");
-//                     return false
-//                 }
-//             }
-//         }
-//     }
-// }
