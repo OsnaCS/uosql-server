@@ -88,29 +88,7 @@ impl<'a> Engine for FlatFile<'a> {
     -> Result<Rows<Cursor<Vec<u8>>>, Error>
     {
         let mut reader = try!(self.get_reader());
-        let vec: Vec<u8> = Vec::new();
-        let cursor = Cursor::new(vec);
-        let mut rows = Rows::new(cursor, &self.table.meta_data.columns);
-        let mut buf: Vec<u8> = Vec::new();
-
-        while true {
-            match reader.next_row(&mut buf) {
-                Ok(_) => {
-                    let col = reader.get_column(column_index);
-                    if try!(col.sql_type.cmp(&try!(reader.get_value(&buf, column_index)), value, comp)) {
-                        rows.add_row(& buf);
-                    }
-                },
-                Err(e) => {
-                    match e {
-                        Error::EndOfFile => break,
-                        _ => return Err(e)
-                    }
-                },
-            }
-        }
-
-        Ok(rows)
+        reader.lookup(column_index, value, comp)
     }
 
     /// Inserts a new row with row_data.

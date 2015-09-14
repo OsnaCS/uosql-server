@@ -169,7 +169,7 @@ impl<'a> Table<'a> {
 
         info!("checking magic number: {:?}", ma_nmbr);
         if ma_nmbr != MAGIC_NUMBER {
-            println!("Magic Number not correct");
+            info!("Magic Number not correct");
             return Err(Error::WrongMagicNmbr)
         }
         let meta_data: TableMetaData = try!(decode_from(&mut file, SizeLimit::Infinite));

@@ -127,7 +127,9 @@ impl<B: Write + Read + Seek> Rows <B> {
 
         let s = self.column_offsets[column_index] as usize;
         let e = s + self.get_column(column_index).get_size() as usize;
-        Ok(row_data[s..e].to_vec())
+        let d = row_data[s..e].to_vec();
+        info!("get value: {:?}", d);
+        Ok(d)
     }
 
     pub fn get_column(&self, index: usize) -> &Column {
@@ -222,28 +224,30 @@ impl<B: Write + Read + Seek> Rows <B> {
         Ok(try!(self.add_row(row_data)))
     }
 
-    pub fn lookup(&mut self, column_index: usize, value: &[u8], comp: CompType)
+   pub fn lookup(&mut self, column_index: usize, value: &[u8], comp: CompType)
     -> Result<Rows<Cursor<Vec<u8>>>, Error>
     {
         let vec: Vec<u8> = Vec::new();
         let cursor = Cursor::new(vec);
         let mut rows = Rows::new(cursor, &self.columns);
-        let mut buf: Vec<u8> = Vec::new();
-        self.reset_pos();
+
         while true {
-            match self.next_row(&mut buf) {
-                Ok(_) => {
-                    let col = self.get_column(column_index);
-                    if try!(col.sql_type.cmp(&try!(self.get_value(&buf, column_index)), value, comp)) {
-                        rows.add_row(& buf);
-                    }
+            let result = self.get_next_row(column_index, value, comp);
+            match result {
+                Ok(r) => {
+                    println!{"Row: {:?}", r};
+                    rows.add_row(&r);
+
                 },
                 Err(e) => {
                     match e {
-                        Error::EndOfFile => break,
+                        Error::EndOfFile => {
+                            info!("reached end of file");
+                            break;
+                        },
                         _ => return Err(e)
                     }
-                },
+                }
             }
         }
 
@@ -293,6 +297,40 @@ impl<B: Write + Read + Seek> Rows <B> {
 
         result
     }
+
+    /// moves the cursor from the current position to the first row
+    /// which fulfills the constraint. Use next_row to read that row.
+    pub fn get_next_row(&mut self, column_index: usize, value: &[u8], comp: CompType)
+    -> Result<Vec<u8>, Error>
+    {
+        let mut row = Vec::<u8>::new();
+        let mut b = true;
+
+        while b {
+            b = match self.next_row(&mut row) {
+                Ok(_) => {
+                    let col = self.get_column(column_index);
+
+                    let row_value: &Vec<u8> = &try!(self.get_value(&row, column_index));
+                    let cmp_result = try!(col.sql_type.cmp(row_value, value, comp));
+
+                    if cmp_result {
+                        false
+                    } else {
+                        row.clear();
+                        true
+                    }
+                },
+                Err(e) => {
+                    return Err(e)
+                }
+            }
+        }
+
+        Ok(row)
+    }
+
+
 }
 
 pub struct RowHeader {

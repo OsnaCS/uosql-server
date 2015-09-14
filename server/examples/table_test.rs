@@ -21,7 +21,7 @@ fn main() {
     let _ = encode_into(&ty, &mut v, SizeLimit::Infinite);
 
     //let db = Database::create("storage_team").unwrap();
-    //let db = Database::load("storage_team").unwrap();
+    let db = Database::load("storage_team").unwrap();
 
     let mut cols = Vec::new();
     cols.push(Column {
@@ -53,7 +53,7 @@ fn main() {
 
    //let _storage_team = db.create_table("storage_team", cols, 1).unwrap();
 
-   //let t = db.load_table("storage_team").unwrap();
+   let _storage_team = db.load_table("storage_team").unwrap();
 
 
     //RRROOOOWWWWSSS
@@ -61,7 +61,7 @@ fn main() {
     let c = Cursor::new(v);
     let data = vec![1, 2, 3, 4, 1, 0x48, 0x41, 0x4C, 0x4C, 0x4F, 0x00];
 
-    let mut rows = Rows::new(c, &cols);
+    let mut rows = Rows::new(c, &_storage_team.columns());
     rows.add_row(&data).unwrap();
     rows.reset_pos().unwrap();
 
@@ -93,18 +93,18 @@ fn flat_file_test() {
 
     {
         let t = data.load_table("storage_team").unwrap();
-        let engine = FlatFile::new(t);
-
+        let mut engine = FlatFile::new(t);
+        engine.create_table();
         let mut rows_myfile = engine.get_reader().unwrap();
 
         let mut rnd_data = vec![0, 0, 0, 1, 1, 0x48, 0x41, 0x4C, 0x4C, 0x4F, 0x00];
         rows_myfile.add_row(&rnd_data).unwrap();
-        rnd_data = vec![0, 0, 0, 1, 1, 0x48, 0x41, 0x4C, 0x4C, 0x4F, 0x00];
+        rnd_data = vec![0, 0, 0, 2, 1, 0x48, 0x41, 0x4C, 0x4C, 0x4F, 0x00];
         rows_myfile.add_row(&rnd_data).unwrap();
     }
 
     let t = data.load_table("storage_team").unwrap();
-    let engine = FlatFile::new(t);
+    let mut engine = FlatFile::new(t);
 
     let rows = engine.full_scan().unwrap();
 
@@ -114,18 +114,17 @@ fn flat_file_test() {
     let my_int: [u8; 4] = [0, 0, 0, 1];
     let mut rows = engine.lookup(0,&my_int[0..4],CompType::Equ).unwrap();
     rows.reset_pos();
-
-
+    println!("engine.lookup rows: {:?}", rows);
     let mut vec: Vec<u8> = Vec::new();
 
     rows.next_row(&mut vec).unwrap();
     println!("the rows: {:?}", vec);
     vec.clear();
-    rows.next_row(&mut vec).unwrap();
-    println!("the rows: {:?}", vec);
-    vec.clear();
-    rows.next_row(&mut vec).unwrap();
-    println!("the rows: {:?}", vec);
+    // rows.next_row(&mut vec).unwrap();
+    // println!("the rows: {:?}", vec);
+    // vec.clear();
+    // rows.next_row(&mut vec).unwrap();
+    // println!("the rows: {:?}", vec);
 }
 
 fn _type_test() {
