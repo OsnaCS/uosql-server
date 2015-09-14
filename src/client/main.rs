@@ -204,7 +204,7 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
             println!("Hello, Dave. You're looking well today.");
         },
         ":load" => {
-            //loads the file script.sql and execute all queries in the file.
+            //loads the file script.sql and executes all queries in the file.
             let mut f = match File::open("script.sql") {
                 Ok(file) => file,
                 Err(_) => {
@@ -221,9 +221,53 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
                     return true
                 }
             };
-            let statem: Vec<&str> = s.split(";").collect();
+
+            let mut comment: bool = false;
+            let mut delim: bool = false;
+            let mut sql: String = "".into();
+
+            let str: Vec<char> = s.chars().collect();
+
+            for i in str.windows(2) {
+
+                //search for delimiter and newline, extract all other characters
+                if !comment {
+                    match i[0] {
+                        '/' => {
+                            if !delim {
+                                match i[1] {
+                                    '*' => comment = true,
+                                     _ => sql.push(i[0])
+                                };
+                            }
+                        },
+                        // filters for newline
+                        '\n' => continue,
+                        _ => sql.push(i[0])
+                    };
+                    delim = false;
+                }
+                // comment-path, scan for limiter, do nothing else
+                else {
+                    match i[0] {
+                        '*' => match i[1] {
+                            '/' => {
+                                comment = false;
+                                delim = true;
+                            },
+                            _ => continue
+                        },
+                        _ => continue
+                    };
+                }
+            }
+
+            // split Strings and collect results in vec
+            let statem: Vec<&str> = sql.split(";").collect();
 
             for i in statem {
+
+                println!("\n Query given was: {}", i);
                 match conn.execute(i.into()) {
                     Ok(data) => {
                     // show data belonging to executed query
@@ -238,11 +282,11 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
                             Error::Decode(_) => {
                                 error!("Could not read data from server.");
                                 return true
-                            }
+                            },
                             Error::Encode(_) => {
                                 error!("Could not send data to server.");
                                 return true
-                            }
+                            },
                                 Error::UnexpectedPkg(e) => {
                                 error!("{}", e.to_string());
                                 return true

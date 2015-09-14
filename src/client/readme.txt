@@ -11,7 +11,9 @@ Commands
 :exit	 	Exit client without terminating server connection.
 :help    	Displays this file.
 :load       Loads script.sql from client-folder and executes querys. Querys are
-            separated by ";" and will be executed in the given order.
+            separated by ";" and will be executed in the given order even if f
+            formatted with multiple newlines within a statement. Comments can
+            be marked: /* this is a comment */
 :ping	 	Checks if server is available and active.
 :quit	 	Terminates connection with server and exits client.
 
