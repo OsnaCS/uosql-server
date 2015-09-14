@@ -110,6 +110,9 @@ pub trait Engine {
     -> Result<Rows<Cursor<Vec<u8>>>, Error>;
 
     fn insert_row(&mut self, row_data: &[u8]) -> Result<u64, Error>;
+
+    fn delete(&self, column_index: usize, value: &[u8], comp: CompType)
+    -> Result<u64, Error>;
 }
 
 #[repr(u8)]

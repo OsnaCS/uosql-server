@@ -24,6 +24,7 @@ impl<'a> FlatFile<'a> {
         FlatFile { table: table }
     }
 
+    /// return a rows object with the table.dat file as data_src
     pub fn get_reader(&self) -> Result<Rows<File>, Error> {
         let mut file = try!(OpenOptions::new()
             .read(true)
@@ -60,7 +61,7 @@ impl<'a> Engine for FlatFile<'a> {
         &self.table
     }
 
-
+    /// returns all rows which are not deleted
     fn full_scan(&self) -> Result<Rows<Cursor<Vec<u8>>>, Error> {
         let mut reader = try!(self.get_reader());
         let vec: Vec<u8> = Vec::new();
@@ -84,6 +85,7 @@ impl<'a> Engine for FlatFile<'a> {
         Ok(rows)
     }
 
+    /// returns an new Rows object which fulfills a constraint
     fn lookup(&self, column_index: usize, value: &[u8], comp: CompType)
     -> Result<Rows<Cursor<Vec<u8>>>, Error>
     {
@@ -96,6 +98,16 @@ impl<'a> Engine for FlatFile<'a> {
     fn insert_row(&mut self, row_data: &[u8]) -> Result<u64, Error> {
         let mut reader = try!(self.get_reader());
         reader.insert_row(row_data)
+    }
+
+    /// delete rows which fulfills a constraint
+    /// returns amount of deleted rows
+    fn delete(&self, column_index: usize, value: &[u8], comp: CompType)
+    -> Result<u64, Error>
+    {
+        info!("Delete row");
+        let mut reader = try!(self.get_reader());
+        reader.delete(column_index, value, comp)
     }
 
 }

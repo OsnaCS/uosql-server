@@ -206,13 +206,7 @@ impl SqlType {
     -> Result<bool, Error>
     {
         if val != val2 {
-            return Err(Error::WrongLength)
-        }
-        info!("start comparing each byte");
-        for i in 0 .. val.len() {
-            if val[i] != val2[i] {
-                return Ok(false)
-            }
+            return Ok(false)
         }
         Ok(true)
     }
@@ -223,7 +217,7 @@ impl SqlType {
     -> Result<bool, Error>
     {
         info!("start comparing each byte");
-        if val != val2 {
+        if val.len() != val2.len() {
             return Err(Error::WrongLength)
         }
         for i in 0 .. val.len() {
@@ -241,7 +235,7 @@ impl SqlType {
     -> Result<bool, Error>
     {
         info!("start comparing each byte");
-        if val != val2 {
+        if val.len() != val2.len() {
             return Err(Error::WrongLength)
         }
         for i in 0 .. val.len() {
@@ -258,10 +252,6 @@ impl SqlType {
     fn compare_as_bool(&self, val: &[u8], val2: &[u8])
     -> Result<bool, Error>
     {
-        info!("start checking length");
-        if val.len() > 1 || val != val2 {
-            return Err(Error::WrongLength)
-        }
         info!("start comparing bool");
         Ok(val == val2)
     }

@@ -33,7 +33,7 @@ impl<B: Write + Read + Seek> Rows <B> {
                 pos: 0
             }
     }
-
+    // returns the sum of the column sizes
     fn get_columns_size(columns: &[Column]) -> u64 {
         let mut size: u64 = 0;
         for c in columns {
@@ -110,11 +110,13 @@ impl<B: Write + Read + Seek> Rows <B> {
         Ok(try!(self.write_bytes(&data)))
     }
 
+    /// set delete bit for one row
     pub fn delete_row(&mut self) -> Result<(), Error> {
         self.prev_row();
         let row_header = RowHeader::new(1);
         try!(self.write_bytes(&row_header.to_raw_data()));
         self.skip_row();
+        info!("Row Deleted");
         Ok(())
     }
 
@@ -132,6 +134,7 @@ impl<B: Write + Read + Seek> Rows <B> {
         Ok(d)
     }
 
+    // returns the columns
     pub fn get_column(&self, index: usize) -> &Column {
         &self.columns[index]
     }
@@ -163,6 +166,8 @@ impl<B: Write + Read + Seek> Rows <B> {
         Ok(bytes_read as u64)
     }
 
+    /// writes data to data_src
+    /// returns bytes written
     fn write_bytes(&mut self, data: &[u8]) -> Result<u64, Error> {
             match self.data_src.write_all(data) {
             Ok(_) => {
@@ -224,6 +229,35 @@ impl<B: Write + Read + Seek> Rows <B> {
         Ok(try!(self.add_row(row_data)))
     }
 
+    /// deletes rows which fulfills a constraint
+    /// return rows deleted
+    pub fn delete(&mut self, column_index: usize, value: &[u8], comp: CompType)
+     -> Result<u64, Error>
+    {
+        let mut count = 0;
+        while true {
+            match self.get_next_row(column_index, value, comp) {
+                Ok(_) => {
+                    count += 1;
+                    self.delete_row();
+                }
+                Err(e) => {
+                    match e {
+                        Error::EndOfFile => {
+                            info!("reached end of file");
+                            break;
+                        },
+                        _ => return Err(e)
+                    }
+                }
+            }
+        }
+
+        Ok(count)
+
+    }
+
+    /// returns an new Rows object which fulfills a constraint
    pub fn lookup(&mut self, column_index: usize, value: &[u8], comp: CompType)
     -> Result<Rows<Cursor<Vec<u8>>>, Error>
     {
@@ -254,6 +288,7 @@ impl<B: Write + Read + Seek> Rows <B> {
         Ok(rows)
     }
 
+    /// returns all rows which are not deleted
     pub fn full_scan(&mut self) -> Result<Rows<Cursor<Vec<u8>>>, Error> {
         let vec: Vec<u8> = Vec::new();
         let cursor = Cursor::new(vec);
@@ -276,6 +311,7 @@ impl<B: Write + Read + Seek> Rows <B> {
         Ok(rows)
     }
 
+    /// returns true if data_src is empty
     pub fn is_empty(&mut self) -> Result <bool, Error> {
         //data_src.is_empty()
         let old_pos = self.pos;
@@ -298,8 +334,9 @@ impl<B: Write + Read + Seek> Rows <B> {
         result
     }
 
-    /// moves the cursor from the current position to the first row
-    /// which fulfills the constraint. Use next_row to read that row.
+    /// moves the cursor from the current position the row after the first row
+    /// which fulfills the constraint.
+    /// Returns the first row which fulfilly the condition.
     pub fn get_next_row(&mut self, column_index: usize, value: &[u8], comp: CompType)
     -> Result<Vec<u8>, Error>
     {

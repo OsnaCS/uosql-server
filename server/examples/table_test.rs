@@ -29,7 +29,7 @@ fn main() {
         sql_type: SqlType::Int,
         allow_null: false,
         description: "Heiner".to_string(),
-        is_primary_key: false,
+        is_primary_key: true,
     });
     cols.push(Column {
         name: "Mathias".into(),
@@ -43,7 +43,7 @@ fn main() {
         sql_type: SqlType::Char(6),
         allow_null: false,
         description: "Dennis".to_string(),
-        is_primary_key: true,
+        is_primary_key: false,
     });
 
     let mut my_data: Vec<Option<DataSrc>> = Vec::new();
@@ -95,27 +95,50 @@ fn flat_file_test() {
         let t = data.load_table("storage_team").unwrap();
         let mut engine = FlatFile::new(t);
         engine.create_table();
-        let mut rows_myfile = engine.get_reader().unwrap();
+        let mut rnd_data = vec![0, 0, 0, 1, 0, 0x48, 0x41, 0x4C, 0x4C, 0x4F, 0x00];
 
-        let mut rnd_data = vec![0, 0, 0, 1, 1, 0x48, 0x41, 0x4C, 0x4C, 0x4F, 0x00];
-        rows_myfile.add_row(&rnd_data).unwrap();
-        rnd_data = vec![0, 0, 0, 2, 1, 0x48, 0x41, 0x4C, 0x4C, 0x4F, 0x00];
-        rows_myfile.add_row(&rnd_data).unwrap();
+        engine.insert_row(&rnd_data).unwrap();
+        rnd_data = vec![0, 0, 0, 2, 0, 0x48, 0x41, 0x4C, 0x4C, 0x4F, 0x00];
+        engine.insert_row(&rnd_data).unwrap();
+
+        rnd_data = vec![0, 0, 0, 3, 0, 0x48, 0x41, 0x4C, 0x4D, 0x4F, 0x00];
+        engine.insert_row(&rnd_data).unwrap();
+
+        rnd_data = vec![0, 0, 0, 4, 1, 0x48, 0x41, 0x4C, 0x4D, 0x4F, 0x00];
+        engine.insert_row(&rnd_data).unwrap();
     }
 
     let t = data.load_table("storage_team").unwrap();
     let mut engine = FlatFile::new(t);
 
     let rows = engine.full_scan().unwrap();
-
     println!("the rows: {:?}", rows);
+
+    let my_bool: [u8; 1] = [0x01];
+    engine.delete(1, &my_bool[..], CompType::Equ).unwrap();
+
+    // let my_char: [u8; 6] = [0x48, 0x41, 0x4C, 0x4D, 0x4F, 0x00];
+    // println!("{:?}", my_char);
+    // engine.delete(2,&my_char[0..6],CompType::Equ).unwrap();
 
     println!("starting lookup.....");
     let my_int: [u8; 4] = [0, 0, 0, 1];
+
     let mut rows = engine.lookup(0,&my_int[0..4],CompType::Equ).unwrap();
     rows.reset_pos();
+
+
+
     println!("engine.lookup rows: {:?}", rows);
     let mut vec: Vec<u8> = Vec::new();
+
+    engine.delete(0,&my_int[0..4],CompType::Equ).unwrap();
+    rows.reset_pos();
+
+    rows = engine.full_scan().unwrap();
+    println!("the rows: {:?}", rows);
+    rows.reset_pos();
+
 
     rows.next_row(&mut vec).unwrap();
     println!("the rows: {:?}", vec);
