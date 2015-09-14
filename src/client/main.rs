@@ -12,12 +12,12 @@ extern crate server;
 use std::io::{self, stdout, Write};
 use std::str::FromStr;
 use uosql::logger;
-use uosql::Error;
 use uosql::Connection;
 use server::storage::Rows;
 use docopt::Docopt;
 use std::net::Ipv4Addr;
 use std::cmp::{max, min};
+use std::error::Error;
 
 /// For console input, manages flags and arguments
 const USAGE: &'static str = "
@@ -97,32 +97,32 @@ fn main() {
         Ok(conn) => conn,
         Err(e) => {
             match e {
-                Error::AddrParse(_) => {
-                    error!("Could not connect to specified server.");
+                uosql::Error::AddrParse(_) => {
+                    error!("{}", e.description());
                     return
                 },
-                Error::Io(_) => {
-                    error!("Connection failure. Try again later.");
+                uosql::Error::Io(_) => {
+                    error!("{}", e.description());
                     return
                 },
-                Error::Decode(_) => {
-                    error!("Could not read data from server.");
+                uosql::Error::Decode(_) => {
+                    error!("{}", e.description());
                     return
                 },
-                Error::Encode(_) => {
-                    error!("Could not send data to server.");
+                uosql::Error::Encode(_) => {
+                    error!("{}", e.description());
                     return
                 },
-                Error::UnexpectedPkg(e) => {
-                    error!("{}", e.to_string());
+                uosql::Error::UnexpectedPkg => {
+                    error!("{}", e.description());
                     return
                 },
-                Error::Auth(e) => {
-                    info!("{}", e.to_string());
+                uosql::Error::Auth => {
+                    info!("{}", e.description());
                     return
                 },
-                Error::Server(e) => {
-                    error!("{}", e.msg);
+                uosql::Error::Server(_) => {
+                    error!("{}", e.description());
                     return
                 }
             }
@@ -162,8 +162,8 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
         ":quit" => {
             match conn.quit() {
                 Ok(_) => return false,
-                Err(_) => {
-                    error!("Sending quit-message failed");
+                Err(e) => {
+                    error!("Quit: {}", e.description());
                     return true
                 }
             }
@@ -174,8 +174,8 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
                     println!("Server still reachable.");
                     return true
                 },
-                Err(_) => {
-                    error!("Sending ping-message failed");
+                Err(e) => {
+                    error!("Ping: {}", e.description());
                     return true
                 }
             }
@@ -187,8 +187,8 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
                     println!("Bye bye.");
                     return false
                 },
-                Err(_) => {
-                    error!("Sending quit-message failed");
+                Err(e) => {
+                    error!("Exit: {}", e.description());
                     return false
                 }
             }
@@ -206,24 +206,24 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
                 },
                 Err(e) => {
                     match e {
-                        Error::Io(_) => {
-                            error!("Connection failure. Try again later.");
+                        uosql::Error::Io(_) => {
+                            error!("{}", e.description());
                             return true
                         },
-                        Error::Decode(_) => {
-                            error!("Could not read data from server.");
+                        uosql::Error::Decode(_) => {
+                            error!("{}", e.description());
                             return true
                         }
-                        Error::Encode(_) => {
-                            error!("Could not send data to server.");
+                        uosql::Error::Encode(_) => {
+                            error!("{}", e.description());
                             return true
                         }
-                        Error::UnexpectedPkg(e) => {
-                            error!("{}", e.to_string());
+                        uosql::Error::UnexpectedPkg => {
+                            error!("{}", e.description());
                             return true
                         },
-                        Error::Server(e) => {
-                            error!("{}", e.msg);
+                        uosql::Error::Server(_) => {
+                            error!("{}", e.description());
                             return true
                         }
                         _ => {
