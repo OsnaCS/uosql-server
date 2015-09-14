@@ -97,7 +97,7 @@ impl<'a> Engine for FlatFile<'a> {
             match reader.next_row(&mut buf) {
                 Ok(_) => {
                     let col = reader.get_column(column_index);
-                    if try!(col.sql_type.cmp(&try!(reader.get_value(column_index)), value, comp)) {
+                    if try!(col.sql_type.cmp(&try!(reader.get_value(&buf, column_index)), value, comp)) {
                         rows.add_row(& buf);
                     }
                 },

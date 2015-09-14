@@ -70,7 +70,7 @@ fn main() {
     rows.next_row(&mut d);
     println!{"{:?}", d}
 
-    let h = rows.get_value(2);
+    let h = rows.get_value(&d, 2);
     println!{"{:?}", h}
 
     rows.delete_row();

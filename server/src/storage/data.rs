@@ -9,7 +9,6 @@ pub struct Rows <B: Write + Read + Seek> {
     data_src: B,
     columns: Vec<Column>,
     columns_size: u64,
-    pub current_row: Vec<u8>,
     pub column_offsets: Vec<u64>,
 }
 
@@ -27,7 +26,6 @@ impl<B: Write + Read + Seek> Rows <B> {
         Rows { data_src: data_src,
                columns: columns.to_vec(),
                columns_size: Self::get_columns_size(columns),
-               current_row: Vec::<u8>::new(),
                column_offsets: column_offsets }
     }
 
@@ -59,8 +57,7 @@ impl<B: Write + Read + Seek> Rows <B> {
         try!(self.read_bytes(columns_size, &mut target_vec));
         try!(target_buf.write_all(&target_vec));
         info!("data read");
-        self.current_row = target_vec;
-        Ok(self.current_row.len() as u64)
+        Ok(target_vec.len() as u64)
     }
 
     /// sets pos to the beginning of the next row
@@ -82,7 +79,6 @@ impl<B: Write + Read + Seek> Rows <B> {
 
     /// sets position to offset
     fn set_pos(&mut self, seek_from: SeekFrom) -> Result<u64, Error> {
-        self.current_row.clear();
         match self.data_src.seek(seek_from) {
             Ok(n) => Ok(n),
             Err(e) => return Err(Error::Io(e))
@@ -116,14 +112,14 @@ impl<B: Write + Read + Seek> Rows <B> {
 
     /// returns the value of the column_index' column of the current row
     /// returns Error::InvalidState if no current row exists
-    pub fn get_value(&self, column_index: usize) -> Result<Vec<u8>, Error> {
-        if self.current_row.len() == 0 {
+    pub fn get_value(&self, row_data: &[u8], column_index: usize) -> Result<Vec<u8>, Error> {
+        if row_data.len() == 0 {
             return Err(Error::InvalidState);
         }
 
         let s = self.column_offsets[column_index] as usize;
         let e = s + self.get_column(column_index).get_size() as usize;
-        Ok(self.current_row[s..e].to_vec())
+        Ok(row_data[s..e].to_vec())
     }
 
     pub fn get_column(&self, index: usize) -> &Column {
