@@ -1,4 +1,6 @@
 #[macro_use]
+extern crate log;
+#[macro_use]
 extern crate nickel;
 extern crate plugin;
 extern crate typemap;
@@ -21,6 +23,9 @@ use nickel::{Nickel, HttpRouter};
 use cookie::Cookie as CookiePair;
 use hyper::method::Method;
 use url::form_urlencoded as urlencode;
+use std::net::Ipv4Addr;
+use std::str::FromStr;
+use nickel::QueryString;
 
 // Dummy key for typemap
 struct ConnKey;
@@ -107,6 +112,8 @@ fn main() {
         let pairs = urlencode::parse(login_data.as_bytes());
         let username = pairs.iter().find(|e| e.0 == "user").map(|e| e.1.clone());
         let password = pairs.iter().find(|e| e.0 == "password").map(|e| e.1.clone());
+        let bind_in = pairs.iter().find(|e| e.0 == "bind").map(|e| e.1.clone());
+        let port_in = pairs.iter().find(|e| e.0 == "port").map(|e| e.1.clone());
 
         // If eihter username or password are empty, return to Login page
         if username.is_none() || password.is_none()  {
@@ -114,6 +121,15 @@ fn main() {
             data.insert("err_msg", "Not all required fields given");
             return res.render("src/webclient/templates/login.tpl", &data);
         }
+
+        let mut connection = "127.0.0.1".to_string();
+        // Bind_in is never none, for inexplicable reasons
+        if bind_in.clone().unwrap().len() > 8 {
+            connection = bind_in.unwrap();
+            test_bind(&connection);
+        }
+
+        let port = port_in.unwrap_or("4242".into()).parse::<u16>().unwrap_or(4242);
 
         // build Login struct
         let login = Login {
@@ -127,10 +143,6 @@ fn main() {
         // Try connect to db server
         // Insert connection and session string into hashmap
         let mut guard = map2.lock().unwrap();
-
-        // DUMMY DATA
-        let connection = "127.0.0.1".to_string();
-        let port = 4242;
 
         // create new connections
         match guard.deref_mut().entry(sess_str.clone()) {
@@ -161,6 +173,9 @@ fn main() {
                             Error::Auth(_) => {
                                 "Authentication failed."
                             },
+                            Error::Server(_) => {
+                                "Network Error."
+                            },
                         };
                         let mut data = HashMap::new();
                         data.insert("err", errstr);
@@ -184,11 +199,66 @@ fn main() {
         return res.send("");
     });
 
-    // Greeting page
+    // Disconnect from server
+    server.get("/logout", middleware! { |req, mut res|
+
+        let mut con = req.extensions().get::<ConnKey>().unwrap().lock().unwrap();
+        let mut data = HashMap::new();
+
+        data.insert("name", con.get_username().to_string());
+
+        con.quit();
+
+        // Remove Cookie
+        let sess = match req.origin.headers.get::<Cookie>() {
+
+            None => { }
+            Some(cs) => {
+                let cj = cs.to_cookie_jar(&[1u8]);
+                cj.remove("UosqlDB");
+                res.headers_mut().set(SetCookie::from_cookie_jar(&cj));
+            },
+        };
+
+        return res.render("src/webclient/templates/logout.tpl", &data);
+    });
+
+        // Greeting page
     server.get("/", middleware! { |req, response|
 
         // Look for connection
-        let con = req.extensions().get::<ConnKey>().unwrap().lock().unwrap();
+        let tmp = req.extensions().get::<ConnKey>().unwrap().clone();
+        let mut con = tmp.lock().unwrap();
+
+        let query = req.query().get("sql");
+        if !query.is_none() {
+            println!("{:?}", query.unwrap());
+            match con.execute(query.unwrap().to_string()) {
+                Ok(m) => println!("{:?}", m),
+                Err(e) => {
+                    match e {
+                        Error::Io(_) => {
+                            error!("Connection failure. Try again later.");
+                        },
+                        Error::Decode(_) => {
+                            error!("Could not read data from server.");
+                        }
+                        Error::Encode(_) => {
+                            error!("Could not send data to server.");
+                        }
+                        Error::UnexpectedPkg(e) => {
+                            error!("{}", e.to_string());
+                        },
+                        Error::Server(e) => {
+                            error!("{}", e.msg);
+                        }
+                        _ => {
+                            error!("Unexpected behaviour during execute()");
+                        }
+                    }
+                }
+            }
+        }
 
         // Current display with short welcome message
         let version = con.get_version().to_string();
@@ -200,9 +270,57 @@ fn main() {
         data.insert("bind", con.get_ip());
         data.insert("port", &port);
         data.insert("msg", con.get_message());
-        return response.render("src/webclient/templates/hello.tpl", &data);
+        return response.render("src/webclient/templates/main.tpl", &data);
     });
-
 
     server.listen("127.0.0.1:6767");
 }
+
+fn test_bind (bind : &str) -> bool {
+    let result = match Ipv4Addr::from_str(bind) {
+        Ok(_) => true,
+        Err(_) => {
+            false
+        }
+    };
+    result
+}
+
+// fn execute (con : Mutex<Connection>, query : String) -> bool{
+//     match con.execute(query) {
+//         Ok(data) => {
+//             // show data belonging to executed query
+//             // display(&data);
+//             println!("Ok");
+//             return true
+//         },
+//         Err(e) => {
+//             match e {
+//                 Error::Io(_) => {
+//                     error!("Connection failure. Try again later.");
+//                     return true
+//                 },
+//                 Error::Decode(_) => {
+//                     error!("Could not read data from server.");
+//                     return true
+//                 }
+//                 Error::Encode(_) => {
+//                     error!("Could not send data to server.");
+//                     return true
+//                 }
+//                 Error::UnexpectedPkg(e) => {
+//                     error!("{}", e.to_string());
+//                     return true
+//                 },
+//                 Error::Server(e) => {
+//                     error!("{}", e.msg);
+//                     return true
+//                 }
+//                 _ => {
+//                     error!("Unexpected behaviour during execute()");
+//                     return false
+//                 }
+//             }
+//         }
+//     }
+// }
