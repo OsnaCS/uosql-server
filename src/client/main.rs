@@ -8,6 +8,7 @@ extern crate byteorder;
 extern crate docopt;
 extern crate rustc_serialize;
 extern crate server;
+extern crate regex;
 
 mod specialcrate;
 
@@ -22,6 +23,7 @@ use std::cmp::{max, min};
 use std::fs::File;
 use std::io::Read;
 use std::error::Error;
+use regex::Regex;
 
 /// For console input, manages flags and arguments
 const USAGE: &'static str = "
@@ -160,6 +162,36 @@ fn main() {
 
 /// Process commandline-input from user
 fn process_input(input: &str, conn: &mut Connection) -> bool {
+
+    let regex_load = match Regex::new(r"(?i):load .+\.sql") {
+        Ok(e) => e,
+        Err(_) => {
+            println!("Could not create regex");
+            return false;
+        }
+    };
+
+    //before conversion to lowercase, check for :load with path
+    if regex_load.is_match(input) {
+
+        let mut path: String = "".into();
+
+        // remove first 6 charakters ("load ")
+        for x in 6..input.len() {
+            path.push(input.to_string().remove(x))
+        }
+
+        println!("{:?}", path);
+        let f = match File::open(path) {
+            Ok(f) => f,
+            Err(_) => {
+                println!("Could not open file");
+                return true
+            }
+        };
+        return execute_sql(f, conn)
+    }
+
     let input_low = input.to_lowercase();
     match &*input_low {
         ":quit" => {
@@ -205,122 +237,14 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
         },
         ":load" => {
             //loads the file script.sql and executes all queries in the file.
-            let mut f = match File::open("script.sql") {
+            let f = match File::open("script.sql") {
                 Ok(file) => file,
                 Err(_) => {
                     println!("Could not open file");
                     return true
                 }
             };
-
-            let mut s = String::new();
-            match f.read_to_string(&mut s) {
-                Ok(str) => str,
-                Err(_) => {
-                    println!("Could not read from file");
-                    return true
-                }
-            };
-
-            let mut comment: bool = false;
-            let mut line_comment = false;
-            let mut delim: bool = false;
-            let mut sql: String = "".into();
-
-            let str: Vec<char> = s.chars().collect();
-
-            for i in str.windows(3) {
-
-                //search for delimiter and newline, extract all other characters
-                if !comment && !line_comment {
-                    match i[0] {
-                        '/' => {
-                            if !delim {
-                                match i[1] {
-                                    '*' => comment = true,
-                                     _ => sql.push(i[0])
-                                };
-                            }
-                        },
-                        '-' => {
-                            match i[1] {
-                                '-' => {
-                                    match i[2] {
-                                        ' ' => line_comment = true,
-                                        _ => sql.push(i[0])
-                                    }
-                                },
-                                 _ => sql.push(i[0])
-                            };
-                        },
-                        '#' => line_comment = true,
-                        '\n' => continue,
-                        _ => sql.push(i[0])
-                    };
-                    delim = false;
-                }
-                // comment-path, scan for limiter, do nothing else
-                else {
-                    match i[0] {
-                        '\n' => {
-                            if line_comment {
-                                line_comment = false;
-                                continue
-                            }
-                        },
-                        '*' => match i[1] {
-                            '/' => {
-                                comment = false;
-                                delim = true;
-                            },
-                            _ => continue
-                        },
-                        _ => continue
-                    };
-                }
-            }
-
-            // split Strings and collect results in vec
-            let statem: Vec<&str> = sql.split(";").collect();
-
-            for i in statem {
-
-                println!("\n Query given was: {}", i);
-                match conn.execute(i.into()) {
-                    Ok(data) => {
-                    // show data belonging to executed query
-                        display(&data);
-                    },
-                    Err(e) => {
-                        match e {
-                            uosql::Error::Io(_) => {
-                                error!("{}", e.description());
-                                return true
-                            },
-                            uosql::Error::Decode(_) => {
-                                error!("{}", e.description());
-                                return true
-                            }
-                            uosql::Error::Encode(_) => {
-                                error!("{}", e.description());
-                                return true
-                            }
-                            uosql::Error::UnexpectedPkg => {
-                                error!("{}", e.description());
-                                return true
-                            },
-                            uosql::Error::Server(_) => {
-                                error!("{}", e.description());
-                                return true
-                            }
-                            _ => {
-                                error!("Unexpected behaviour during execute()");
-                                return false
-                            }
-                        }
-                    }
-                }
-            }
+            execute_sql(f, conn);
         },
         ":snake" => {
             println!("Not on a plane, but on your terminal");
@@ -329,7 +253,6 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
             specialcrate::snake();
         }
         _ => {
-
             // Size
             match conn.execute(input.into()) {
                 Ok(data) => {
@@ -366,9 +289,123 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
                 }
             }
         }
+    };
+    true
+}
+
+/// Reads and executes sql-script from file
+fn execute_sql(mut f: File, conn: &mut Connection) -> bool {
+    let mut s = String::new();
+    match f.read_to_string(&mut s) {
+        Ok(str) => str,
+        Err(_) => {
+            println!("Could not read from file");
+            return true
+        }
+    };
+
+    let mut comment: bool = false;
+    let mut line_comment = false;
+    let mut delim: bool = false;
+    let mut sql: String = "".into();
+
+    let str: Vec<char> = s.chars().collect();
+
+    for i in str.windows(3) {
+
+        //search for delimiter and newline, extract all other characters
+        if !comment && !line_comment {
+            match i[0] {
+                '/' => {
+                    if !delim {
+                        match i[1] {
+                            '*' => comment = true,
+                             _ => sql.push(i[0])
+                        };
+                    }
+                },
+                '-' => {
+                    match i[1] {
+                        '-' => {
+                            match i[2] {
+                                ' ' => line_comment = true,
+                                _ => sql.push(i[0])
+                            }
+                        },
+                         _ => sql.push(i[0])
+                    };
+                },
+                '#' => line_comment = true,
+                '\n' => continue,
+                _ => sql.push(i[0])
+            };
+            delim = false;
+        }
+        // comment-path, scan for limiter, do nothing else
+        else {
+            match i[0] {
+                '\n' => {
+                    if line_comment {
+                        line_comment = false;
+                        continue
+                    }
+                },
+                '*' => match i[1] {
+                    '/' => {
+                        comment = false;
+                        delim = true;
+                    },
+                    _ => continue
+                },
+                _ => continue
+            };
+        }
+    }
+
+    // split Strings and collect results in vec
+    let statem: Vec<&str> = sql.split(";").collect();
+
+    for i in statem {
+
+        println!("\n Query given was: {}", i);
+        match conn.execute(i.into()) {
+            Ok(data) => {
+            // show data belonging to executed query
+                display(&data);
+            },
+            Err(e) => {
+                match e {
+                    uosql::Error::Io(_) => {
+                        error!("{}", e.description());
+                        return true
+                    },
+                    uosql::Error::Decode(_) => {
+                        error!("{}", e.description());
+                        return true
+                    }
+                    uosql::Error::Encode(_) => {
+                        error!("{}", e.description());
+                        return true
+                    }
+                    uosql::Error::UnexpectedPkg => {
+                        error!("{}", e.description());
+                        return true
+                    },
+                    uosql::Error::Server(_) => {
+                        error!("{}", e.description());
+                        return true
+                    }
+                    _ => {
+                        error!("Unexpected behaviour during execute()");
+                        return true
+                    }
+                }
+            }
+        }
     }
     true
 }
+
 
 /// Read from command line and return trimmed string
 /// If an error occurs reading from stdin loop until a valid String was read
