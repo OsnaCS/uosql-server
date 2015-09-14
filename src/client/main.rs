@@ -223,15 +223,16 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
             };
 
             let mut comment: bool = false;
+            let mut line_comment = false;
             let mut delim: bool = false;
             let mut sql: String = "".into();
 
             let str: Vec<char> = s.chars().collect();
 
-            for i in str.windows(2) {
+            for i in str.windows(3) {
 
                 //search for delimiter and newline, extract all other characters
-                if !comment {
+                if !comment && !line_comment {
                     match i[0] {
                         '/' => {
                             if !delim {
@@ -241,7 +242,18 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
                                 };
                             }
                         },
-                        // filters for newline
+                        '-' => {
+                            match i[1] {
+                                '-' => {
+                                    match i[2] {
+                                        ' ' => line_comment = true,
+                                        _ => sql.push(i[0])
+                                    }
+                                },
+                                 _ => sql.push(i[0])
+                            };
+                        },
+                        '#' => line_comment = true,
                         '\n' => continue,
                         _ => sql.push(i[0])
                     };
@@ -250,6 +262,12 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
                 // comment-path, scan for limiter, do nothing else
                 else {
                     match i[0] {
+                        '\n' => {
+                            if line_comment {
+                                line_comment = false;
+                                continue
+                            }
+                        },
                         '*' => match i[1] {
                             '/' => {
                                 comment = false;
