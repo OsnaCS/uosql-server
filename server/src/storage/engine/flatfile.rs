@@ -113,4 +113,11 @@ impl<'a> Engine for FlatFile<'a> {
         Ok(rows)
     }
 
+    /// Inserts a new row with row_data.
+    /// Returns the number of rows inserted.
+    fn insert_row(&mut self, row_data: &[u8]) -> Result<u64, Error> {
+        let mut reader = try!(self.get_reader());
+        reader.insert_row(row_data)
+    }
+
 }

@@ -2,7 +2,9 @@ use std::vec::Vec;
 use super::Error;
 use super::types::SqlType;
 use super::types::Column;
-use std::io::{Write, Read, Seek, SeekFrom};
+use std::io::{Write, Read, Seek, SeekFrom, Cursor};
+use super::super::parse::ast::CompType;
+
 
 #[derive(Debug)]
 pub struct Rows <B: Write + Read + Seek> {
@@ -10,6 +12,7 @@ pub struct Rows <B: Write + Read + Seek> {
     columns: Vec<Column>,
     columns_size: u64,
     pub column_offsets: Vec<u64>,
+    pos: u64,
 }
 
 /// Represents the lines read from file.
@@ -23,10 +26,12 @@ impl<B: Write + Read + Seek> Rows <B> {
             offset += c.get_size() as u64;
         }
 
-        Rows { data_src: data_src,
-               columns: columns.to_vec(),
-               columns_size: Self::get_columns_size(columns),
-               column_offsets: column_offsets }
+        Rows {  data_src: data_src,
+                columns: columns.to_vec(),
+                columns_size: Self::get_columns_size(columns),
+                column_offsets: column_offsets,
+                pos: 0
+            }
     }
 
     fn get_columns_size(columns: &[Column]) -> u64 {
@@ -80,7 +85,10 @@ impl<B: Write + Read + Seek> Rows <B> {
     /// sets position to offset
     fn set_pos(&mut self, seek_from: SeekFrom) -> Result<u64, Error> {
         match self.data_src.seek(seek_from) {
-            Ok(n) => Ok(n),
+            Ok(n) => {
+                self.pos = n;
+                Ok(n)
+            },
             Err(e) => return Err(Error::Io(e))
         }
     }
@@ -149,6 +157,7 @@ impl<B: Write + Read + Seek> Rows <B> {
                 return Err(Error::Io(e));
             }
         };
+        self.pos += bytes_read as u64;
         Ok(bytes_read as u64)
     }
 
@@ -164,9 +173,125 @@ impl<B: Write + Read + Seek> Rows <B> {
     /// Inserts a new row with row_data.
     /// Returns the number of rows inserted.
     pub fn insert_row(&mut self, row_data: &[u8]) -> Result<u64, Error> {
+        let mut pks: Vec<usize> = Vec::new();
+        let mut count: usize = 0;
+        //let mut value: Vec<Vec<u8>> = Vec::new();
+        // get pks
+        {
+            let mut it = self.columns.iter();
+            loop {
+                match it.next() {
+                    Some(x) => {
+                        if x.is_primary_key {
+                            pks.push(count);
+                        }
+                        count += 1;
+                    },
+                    None => break,
+                };
+            }
+        }
+        // do lookups
+        {
+            let mut it = pks.iter();
+            let first = match it.next() {
+                Some(x) => x,
+                None => return Err(Error::FoundNoPrimaryKey),
+            };
+
+            let val = try!(self.get_value(row_data, *first));
+            let mut look = try!(self.lookup(*first, &val, CompType::Equ));
+
+            loop {
+                match it.next() {
+                    Some(x) => {
+                        let value = try!(self.get_value(row_data, *x));
+                        look = try!(look.lookup(*x, &value, CompType::Equ));
+                        if try!(look.is_empty()) {
+                            break;
+                        }
+                    },
+                    None => break,
+                };
+            }
+            if !try!(look.is_empty()) {
+                return Err(Error::PrimaryKeyValueExists);
+            }
+        }
         self.set_pos(SeekFrom::End(0));
-        try!(self.add_row(row_data));
-        Ok(1)
+        Ok(try!(self.add_row(row_data)))
+    }
+
+    pub fn lookup(&mut self, column_index: usize, value: &[u8], comp: CompType)
+    -> Result<Rows<Cursor<Vec<u8>>>, Error>
+    {
+        let vec: Vec<u8> = Vec::new();
+        let cursor = Cursor::new(vec);
+        let mut rows = Rows::new(cursor, &self.columns);
+        let mut buf: Vec<u8> = Vec::new();
+        self.reset_pos();
+        while true {
+            match self.next_row(&mut buf) {
+                Ok(_) => {
+                    let col = self.get_column(column_index);
+                    if try!(col.sql_type.cmp(&try!(self.get_value(&buf, column_index)), value, comp)) {
+                        rows.add_row(& buf);
+                    }
+                },
+                Err(e) => {
+                    match e {
+                        Error::EndOfFile => break,
+                        _ => return Err(e)
+                    }
+                },
+            }
+        }
+
+        Ok(rows)
+    }
+
+    pub fn full_scan(&mut self) -> Result<Rows<Cursor<Vec<u8>>>, Error> {
+        let vec: Vec<u8> = Vec::new();
+        let cursor = Cursor::new(vec);
+        let mut rows = Rows::new(cursor, &self.columns);
+        let mut buf: Vec<u8> = Vec::new();
+
+        while true {
+            match self.next_row(&mut buf) {
+                Ok(_) => {
+                        rows.add_row(& buf);
+                },
+                Err(e) => {
+                    match e {
+                        Error::EndOfFile => break,
+                        _ => return Err(e)
+                    }
+                },
+            }
+        }
+        Ok(rows)
+    }
+
+    pub fn is_empty(&mut self) -> Result <bool, Error> {
+        //data_src.is_empty()
+        let old_pos = self.pos;
+
+        let result: Result<bool, Error> = match self.set_pos(SeekFrom::End(0)) {
+            Ok(n) => {
+                if n == 0 {
+                    Ok(true)
+                } else {
+                    Ok(false)
+                }
+            },
+            Err(e) => {
+                Err(e)
+            },
+        };
+
+        self.pos = old_pos;
+
+        result
     }
 }
 

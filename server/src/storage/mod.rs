@@ -53,6 +53,8 @@ pub enum Error {
     NoOperationPossible,
     InvalidState,
     EndOfFile,
+    PrimaryKeyValueExists,
+    FoundNoPrimaryKey,
 }
 
 impl From<FromUtf8Error> for Error {
@@ -106,6 +108,8 @@ pub trait Engine {
 
     fn lookup(&self, column_index: usize, value: &[u8], comp: CompType)
     -> Result<Rows<Cursor<Vec<u8>>>, Error>;
+
+    fn insert_row(&mut self, row_data: &[u8]) -> Result<u64, Error>;
 }
 
 #[repr(u8)]
