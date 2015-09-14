@@ -163,7 +163,13 @@ fn main() {
 /// Process commandline-input from user
 fn process_input(input: &str, conn: &mut Connection) -> bool {
 
-    let regex_load = try!(Regex::new(r"(?i):load .+\.sql"));
+    let regex_load = match Regex::new(r"(?i):load .+\.sql") {
+        Ok(e) => e,
+        Err(_) => {
+            println!("Could not create regex");
+            return false;
+        }
+    };
 
     //before conversion to lowercase, check for :load with path
     if regex_load.is_match(input) {
@@ -177,7 +183,7 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
 
         println!("{:?}", path);
         let f = match File::open(path) {
-            Ok(file) => file,
+            Ok(f) => f,
             Err(_) => {
                 println!("Could not open file");
                 return true
@@ -283,7 +289,7 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
                 }
             }
         }
-    }
+    };
     true
 }
 
@@ -371,27 +377,27 @@ fn execute_sql(mut f: File, conn: &mut Connection) -> bool {
                 match e {
                     uosql::Error::Io(_) => {
                         error!("{}", e.description());
-                        return false
+                        return true
                     },
                     uosql::Error::Decode(_) => {
                         error!("{}", e.description());
-                        return false
+                        return true
                     }
                     uosql::Error::Encode(_) => {
                         error!("{}", e.description());
-                        return false
+                        return true
                     }
                     uosql::Error::UnexpectedPkg => {
                         error!("{}", e.description());
-                        return false
+                        return true
                     },
                     uosql::Error::Server(_) => {
                         error!("{}", e.description());
-                        return false
+                        return true
                     }
                     _ => {
                         error!("Unexpected behaviour during execute()");
-                        return false
+                        return true
                     }
                 }
             }
