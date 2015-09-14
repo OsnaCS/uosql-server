@@ -32,6 +32,7 @@ impl<B: Write + Read + Seek> Rows <B> {
                 column_offsets: column_offsets,
                 pos: 0
             }
+
     }
     // returns the sum of the column sizes
     fn get_columns_size(columns: &[Column]) -> u64 {
@@ -53,7 +54,7 @@ impl<B: Write + Read + Seek> Rows <B> {
         info!("Reading Header");
         let mut row_header: RowHeader = try!(self.read_header());
         info!("Header Read");
-        while row_header.is_deleted() {
+        while (row_header.is_deleted()) {
             self.skip_row();
             row_header = try!(self.read_header());
         }
@@ -92,7 +93,49 @@ impl<B: Write + Read + Seek> Rows <B> {
             Err(e) => return Err(Error::Io(e))
         }
     }
+/*
+    fn last_not_deleted_row(&mut self) -> Result<u64, Error> {
+        let old_pos = pos;
+        let last_row_pos = try!(set_pos(
+        SeekFrom::End(-(RowHeader::size() + self::get_columns_size(self.columns))
+        ));
+        loop {
 
+
+            let header = self.read_header();
+            if !header.is_deleted() {
+                set_pos(SeekFrom::Start(old_pos));
+                return last_row_pos;
+            }
+
+            if last_row_pos == old_pos {
+                return last_row_pos;
+            }
+
+            if last_row_pos < old_pos {
+                Err(Error::InvalidState);
+            }
+
+            last_row_pos = try!(set_pos(
+            SeekFrom::Current(-(RowHeader::size() + self::get_columns_size(self.columns))
+            ));
+        }
+    }
+
+    fn get_next_deleted_row(&mut self) -> Result<u64, Error> {
+        let old_pos = pos;
+        let mut new_pos = 0;
+        let mut target_vec = Vec::<u8>::new();
+        loop {
+            new_pos = pos;
+            let header = try!(self.read_header());
+            set_pos()
+            try!(self.next_row(&target_vec, false));
+            if header.is_deleted() {
+                return Ok(new_pos);
+            }
+        }
+    }*/
     /// reads the header of the current row
     /// moves the cursor past the header
     /// returns an error if no RowHeader exists
@@ -182,8 +225,8 @@ impl<B: Write + Read + Seek> Rows <B> {
     pub fn insert_row(&mut self, row_data: &[u8]) -> Result<u64, Error> {
         let mut pks: Vec<usize> = Vec::new();
         let mut count: usize = 0;
-        //let mut value: Vec<Vec<u8>> = Vec::new();
         // get pks
+        info!("getting primary keys ....");
         {
             let mut it = self.columns.iter();
             loop {
@@ -199,6 +242,7 @@ impl<B: Write + Read + Seek> Rows <B> {
             }
         }
         // do lookups
+        info!("doing lookups to search for matches ....");
         {
             let mut it = pks.iter();
             let first = match it.next() {
@@ -256,15 +300,15 @@ impl<B: Write + Read + Seek> Rows <B> {
         Ok(count)
 
     }
-
+    /// looks for rows with the given primary key value and comparison
     /// returns an new Rows object which fulfills a constraint
-   pub fn lookup(&mut self, column_index: usize, value: &[u8], comp: CompType)
-    -> Result<Rows<Cursor<Vec<u8>>>, Error>
+    pub fn lookup(&mut self, column_index: usize, value: &[u8], comp: CompType)
+        -> Result<Rows<Cursor<Vec<u8>>>, Error>
     {
         let vec: Vec<u8> = Vec::new();
         let cursor = Cursor::new(vec);
         let mut rows = Rows::new(cursor, &self.columns);
-
+        info!("starting lookup for column {:?}", column_index);
         while true {
             let result = self.get_next_row(column_index, value, comp);
             match result {
@@ -287,18 +331,19 @@ impl<B: Write + Read + Seek> Rows <B> {
 
         Ok(rows)
     }
-
+    /// scans the entire file
     /// returns all rows which are not deleted
     pub fn full_scan(&mut self) -> Result<Rows<Cursor<Vec<u8>>>, Error> {
         let vec: Vec<u8> = Vec::new();
         let cursor = Cursor::new(vec);
         let mut rows = Rows::new(cursor, &self.columns);
         let mut buf: Vec<u8> = Vec::new();
-
+        info!("starting full scan ....");
         while true {
             match self.next_row(&mut buf) {
                 Ok(_) => {
                         rows.add_row(& buf);
+                        info!(".");
                 },
                 Err(e) => {
                     match e {
@@ -308,10 +353,42 @@ impl<B: Write + Read + Seek> Rows <B> {
                 },
             }
         }
+        info!("finished full scan ....");
         Ok(rows)
     }
+/*
+    pub fn clean(&mut self) -> Result<u64, Error> {
+        let mut buf: Vec<u8> = Vec::new();
+        let mut copy_buf: Vec<u8> = Vec::new();
+        loop {
+            match self.next_row(&buf, false) {
+                Ok(_) => ,
+                Error::EndOfFile => break,
+                Err(e) => return Err(e),
+            }
+            info!("Reading Header");
+            try!(self.prev_row());
+            let delete_pos = pos;
+            let mut row_header: RowHeader = try!(self.read_header());
+            info!("Header Read");
+            if row_header.is_deleted() {
+                let copy_row = try!(last_not_deleted_row());
+                if copy_row != delete_pos {
+                    try!(self.set_pos(SeekFrom::Start(copy_row)));
+                    self.next_row(&copy_buf, false)
+                    try!(self.set_pos(SeekFrom::Start(delete_pos)));
+                    try!(self.add_row(copy_buf));
+                    copy_buf.clear();
+
 
     /// returns true if data_src is empty
+                }
+            }
+        }
+    }
+*/
+    /// checks if object is containing rows
+    /// returns bool on success else Error
     pub fn is_empty(&mut self) -> Result <bool, Error> {
         //data_src.is_empty()
         let old_pos = self.pos;
