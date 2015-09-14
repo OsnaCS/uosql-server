@@ -8,7 +8,7 @@ use super::query;
 use net::types::*;
 use storage::{Rows};
 use storage::types::{SqlType, Column};
-use net::Error;
+use std::error::Error;
 
 pub fn handle(mut stream: TcpStream) {
     // Logging about the new connection
@@ -28,7 +28,7 @@ pub fn handle(mut stream: TcpStream) {
                         PkgType::AccGranted)
                     {
                         Ok(_) => {},
-                        Err(_) => return
+                        Err(e) => { error!("{}", e.description()); return }
                     }
                 },
                 Err(_) => {
@@ -107,7 +107,9 @@ pub fn handle(mut stream: TcpStream) {
 
                         Err(error) => {
                             error!("{:?}", error);
-                            match net::send_error_package(&mut stream, Error::UnEoq(error).into()) {
+                            match net::send_error_package(&mut stream,
+                                net::Error::UnEoq(error).into())
+                            {
                                 Ok(_) => {},
                                 Err(_) => warn!("Failed to send error.")
                             }
