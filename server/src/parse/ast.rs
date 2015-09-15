@@ -226,9 +226,30 @@ pub enum DataSrc {
     Bool(u8),
 }
 
+
 /// Possible values for "Order By" keyword
 #[derive(Debug, Clone, PartialEq)]
 pub enum Order {
     Asc,
     Desc
+}
+
+impl DataSrc {
+    /// checks if Value is true
+    /// return is true for Int when Value no null
+    /// return is true for String when String is not empty
+    /// return is true for Bool when Bool is not null
+    pub fn is_true(&self) -> bool {
+        match self {
+            &DataSrc::Int(x) => x == 0,
+            &DataSrc::String(ref x) => !x.is_empty(),
+            &DataSrc::Bool(x) => x != 0,
+        }
+    }
+    /// static method to turn u8 into bool
+    /// return is true for input when input is not null
+    pub fn to_bool(input: u8) -> bool {
+        input != 0
+    }
+
 }

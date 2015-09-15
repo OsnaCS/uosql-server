@@ -8,7 +8,7 @@ use std::io::{self, Write};
 use std::fmt;
 pub use server::net::types;
 pub use server::logger;
-use server::storage::Rows;
+use server::storage::ResultSet;
 use bincode::SizeLimit;
 use bincode::rustc_serialize::{EncodingError, DecodingError,
     decode_from, encode_into};
@@ -174,14 +174,14 @@ impl Connection {
     }
 
     // TODO: Return results (response-package)
-    pub fn execute(&mut self, query: String) -> Result<Rows, Error> {
+    pub fn execute(&mut self, query: String) -> Result<ResultSet, Error> {
         match send_cmd(&mut self.tcp, Command::Query(query), 1024) {
             Ok(_) => {},
             Err(e) => return Err(e)
         };
         match receive(&mut self.tcp, PkgType::Response) {
             Ok(_) => {
-                let rows: Rows =
+                let rows: ResultSet =
                     try!(decode_from(&mut self.tcp, SizeLimit::Infinite));
                 Ok(rows)
             },
@@ -243,7 +243,7 @@ fn receive(s: &mut TcpStream, cmd: PkgType) -> Result<(), Error> {
         match status {
             PkgType::Ok => {},
             PkgType::Response => {
-                let _ : Rows = try!(decode_from(s, SizeLimit::Infinite));
+                let _ : ResultSet = try!(decode_from(s, SizeLimit::Infinite));
             },
             PkgType::Greet => {
                 let _ : Greeting = try!(decode_from(s, SizeLimit::Infinite));
