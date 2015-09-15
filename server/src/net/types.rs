@@ -2,7 +2,7 @@
 /// the enum. Nightly Build supports using enums - so we can fix super::Error in
 /// about 3 months ;)
 
-use storage::types::Column;
+use std::error::Error;
 
 /// Code numeric value sent as first byte
 #[derive(PartialEq, RustcEncodable, RustcDecodable)]
@@ -31,27 +31,27 @@ impl From<super::Error> for ClientErrMsg {
         match error {
             super::Error::Io(_) => ClientErrMsg {
                 code: 0,
-                msg: "IO error".into()
+                msg: error.description().into()
             },
-            super::Error::UnexpectedPkg(err) => ClientErrMsg {
+            super::Error::UnexpectedPkg => ClientErrMsg {
                 code: 2,
-                msg: err.into()
+                msg: error.description().into()
             },
-            super::Error::UnknownCmd(err) => ClientErrMsg {
+            super::Error::UnknownCmd => ClientErrMsg {
                 code: 3,
-                msg: err.into()
+                msg: error.description().into()
             },
             super::Error::Encode(_) => ClientErrMsg {
                 code: 4,
-                msg: "encoding error".into()
+                msg: error.description().into()
             },
             super::Error::Decode(_) => ClientErrMsg {
                 code: 5,
-                msg: "decoding error".into()
+                msg: error.description().into()
             },
-            super::Error::UnEoq(e) => ClientErrMsg {
+            super::Error::UnEoq(_) => ClientErrMsg {
                 code: 6,
-                msg: "Parse error".into()
+                msg: error.description().into()
             }
         }
     }
@@ -92,24 +92,3 @@ pub enum Command {
     // Shutdown,
     // Statistics,
 }
-
-/// Sent by the server to the client.
-pub struct Response {
-    columns: Vec<Column>,
-    data: Option<Vec<u8>>
-}
-/*
-impl ResultSet {
-    pub fn get_col_cnt(&self) -> usize {
-        self.colums.len()
-    }
-
-    pub fn get_col(&self, nr: usize) -> Option<Column> {
-        self.columns.get(nr)
-    }
-
-    pub fn get_name(&self, name: String)
-
-
-}
-*/

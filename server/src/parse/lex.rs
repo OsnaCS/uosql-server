@@ -247,7 +247,7 @@ impl<'a> Iterator for Lexer<'a> {
             // Literals
             '\'' | '"' => {
                 let l = self.scan_lit();
-                Token::Literal(Lit::Str(l))
+                Token::Literal(Lit::String(l))
             },
 
             // Equ

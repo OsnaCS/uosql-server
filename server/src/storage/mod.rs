@@ -1,7 +1,7 @@
 //! Storage Engine trait and several implementations
 //!
 //!
-pub mod engine;
+mod engine;
 mod meta;
 pub mod types;
 pub mod bstar;
@@ -11,17 +11,18 @@ mod data;
 pub use self::meta::Table;
 pub use self::meta::Database;
 pub use self::data::Rows;
-pub use self::data::Row;
+pub use self::data::ResultSet;
 pub use self::types::Column;
 pub use self::types::SqlType;
-use parse::ast;
-use std::string::FromUtf8Error;
-
+pub use parse::ast;
+pub use parse::ast::CompType;
+pub use std::string::FromUtf8Error;
+pub use self::engine::FlatFile;
 use std::io;
-
-//use self::meta::Table;
-
+use std::io::Cursor;
 use bincode::rustc_serialize::{EncodingError, DecodingError};
+use std::str::Utf8Error;
+use std::ffi::NulError;
 
 /// A database table
 ///
@@ -36,15 +37,39 @@ pub enum Error {
     BinDe(DecodingError),
     Byteorder(::byteorder::Error),
     Utf8Error(FromUtf8Error),
+    Utf8StrError(Utf8Error),
+    NulError(NulError),
     WrongMagicNmbr,
     Engine, // cur not used
     LoadDataBase,
     RemoveColumn,
     AddColumn,
     InvalidType,
-    PrimaryKey,
     InterruptedRead,
     OutOfBounds,
+    MissingPrimaryKey,
+    InvalidColumn,
+    NotAPrimaryKey,
+    NoImplementation,
+    WrongLength,
+    NoOperationPossible,
+    InvalidState,
+    EndOfFile,
+    PrimaryKeyValueExists,
+    FoundNoPrimaryKey,
+}
+
+impl From<NulError> for Error {
+    fn from(err: NulError) -> Error {
+        Error::NulError(err)
+    }
+}
+
+
+impl From<Utf8Error> for Error {
+    fn from(err: Utf8Error) -> Error {
+        Error::Utf8StrError(err)
+    }
 }
 
 impl From<FromUtf8Error> for Error {
@@ -52,6 +77,7 @@ impl From<FromUtf8Error> for Error {
         Error::Utf8Error(err)
     }
 }
+
 
 impl From<io::Error> for Error {
     fn from(err: io::Error) -> Error {
@@ -94,11 +120,19 @@ pub trait Engine {
     /// returns the table
     fn table(&self) -> &Table;
 
-    /// Writes a row to hard drive
-    fn insert_row(&mut self, data: &[Option<ast::DataSrc>])
-        -> Result<(), Error>;
+    fn full_scan(&self) -> Result<Rows<Cursor<Vec<u8>>>, Error>;
 
-    fn full_scan(&self) -> Result<Rows, Error>;
+    fn lookup(&self, column_index: usize, value: &[u8], comp: CompType)
+    -> Result<Rows<Cursor<Vec<u8>>>, Error>;
+
+    fn insert_row(&mut self, row_data: &[u8]) -> Result<u64, Error>;
+
+    fn delete(&self, column_index: usize, value: &[u8], comp: CompType)
+    -> Result<u64, Error>;
+
+    fn modify(&mut self, constraint_column_index: usize,
+     constraint_value: &[u8], comp: CompType,
+     values: &[(usize, &[u8])] )-> Result<u64, Error>;
 }
 
 #[repr(u8)]

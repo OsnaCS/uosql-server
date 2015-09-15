@@ -18,7 +18,7 @@ use super::engine::FlatFile;
 use super::types::Column;
 
 /// constants
-const MAGIC_NUMBER: u64 = 0x6561742073686974; // secret
+const MAGIC_NUMBER: u64 = 0x49616D4372616E43;
 const VERSION_NO: u8 = 1;
 
 
@@ -33,7 +33,7 @@ const VERSION_NO: u8 = 1;
 pub enum DataType { Integer = 1, Float = 2, }
 
 impl DataType {
-    pub fn value(&self) -> u8 {
+    pub fn _value(&self) -> u8 {
        *self as u8
     }
 }
@@ -110,7 +110,7 @@ impl Database {
 pub struct TableMetaData {
     version_nmbr: u8,
     engine_id: u8,
-    columns: Vec<Column>,
+    pub columns: Vec<Column>,
     //primary_key: String
 }
 
@@ -123,7 +123,7 @@ pub struct TableMetaData {
 pub struct Table<'a> {
     database: &'a Database,
     pub name: String,
-    meta_data: TableMetaData,
+    pub meta_data: TableMetaData,
 }
 
 impl<'a> Table<'a> {
@@ -165,7 +165,7 @@ impl<'a> Table<'a> {
 
         info!("checking magic number: {:?}", ma_nmbr);
         if ma_nmbr != MAGIC_NUMBER {
-            println!("Magic Number not correct");
+            info!("Magic Number not correct");
             return Err(Error::WrongMagicNmbr)
         }
         let meta_data: TableMetaData = try!(decode_from(&mut file, SizeLimit::Infinite));
@@ -283,17 +283,4 @@ impl<'a> Table<'a> {
     fn get_path(database: &str, name: &str, ext: &str) -> String {
          format!("{}/{}.{}", database, name, ext)
     }
-
- /*   fn get_primary_key(&self) -> Column {
-        match self.meta_data.columns.iter().find(|x| x.name == self.meta_data.primary_key) {
-            Some(x) => {
-                info!("Primaty Key: {:?} was found", self.meta_data.primary_key);
-                Ok(x)
-            },
-            None => {
-                warn!("Primary Key: {:?} was not found", self.meta_data.primary_key);
-                Err(Error::PrimaryKey)
-            },
-        }
-    }*/
 }

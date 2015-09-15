@@ -8,10 +8,13 @@ are marked with a single colon in front, e.g. ":help" for access to this file.
 ################################################################################
 Commands
 ################################################################################
-:exit	 	Exit client without terminating server connection.
-:help    	Displays this file.
-:ping	 	Checks if server is available and active.
-:quit	 	Terminates connection with server and exits client.
+:exit	 	    Exit client without terminating server connection.
+:help    	    Displays this file.
+:load           Loads script.sql from client-folder and executes querys. See
+                script.sql for further information on syntax.
+:load [path]    Loads .sql file with sql commands from specified path
+:ping	 	    Checks if server is available and active.
+:quit	 	    Terminates connection with server and exits client.
 
 ################################################################################
 Startup parameters

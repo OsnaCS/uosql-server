@@ -13,9 +13,9 @@ fn main() {
     print!("Sql Query: ");
     let mut query = read_query();
     while query != "exit" {
-        execute(&query, & mut user);
-        print!("Sql Query: ");
-        query = read_query();
+        //execute(&query, & mut user);
+        //print!("Sql Query: ");
+        //query = read_query();
     }
 
 }
@@ -27,10 +27,10 @@ fn execute(query: &str, user: & mut auth::User) {
         match ast {
         Ok(tree) => {
                 println!("{:?}", tree);
-                match query::execute_from_ast(tree, user) {
+                /*match query::execute_from_ast(tree, user) {
                     Ok(s) => println!("Resultset: {:?}", s),
                     Err(error) => println!("{:?}", error),
-                };
+                };*/
             },
         Err(error) => println!("{:?}", error),
 }

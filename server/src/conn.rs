@@ -6,9 +6,9 @@ use auth;
 use parse;
 use super::query;
 use net::types::*;
-use storage::{Rows};
+use storage::{ResultSet};
 use storage::types::{SqlType, Column};
-use net::Error;
+use std::error::Error;
 
 pub fn handle(mut stream: TcpStream) {
     // Logging about the new connection
@@ -17,9 +17,10 @@ pub fn handle(mut stream: TcpStream) {
         .unwrap_or("???".into());
     info!("Handling connection from {}", addr);
 
-    // Perform handshake, check user login --> done
+    // Perform handshake, check user login.
     let res = net::do_handshake(&mut stream);
-    let _ = match res {
+
+    match res {
         Ok((user, pw)) => {
             info!("Connection established. Handshake sent");
             match auth::find_user(&user, &pw) {
@@ -28,29 +29,30 @@ pub fn handle(mut stream: TcpStream) {
                         PkgType::AccGranted)
                     {
                         Ok(_) => {},
-                        Err(_) => return
+                        Err(e) => { error!("{}", e.description()); return }
                     }
                 },
                 Err(_) => {
                     let _ =
                         net::send_info_package(&mut stream, PkgType::AccDenied);
-                    // Loops for user-convienience?
+                    error!("Authentication failed. Connection closed.");
                     return
                 }
             }
         },
         _ => {
             let _ = net::send_info_package(&mut stream, PkgType::AccDenied);
+            error!("Authentication failed. Connection closed.");
             return
         }
     };
 
-    // Read commands from the client (with help of `net`) --> done
+    // Read commands from the client (with help of `net`)
     loop {
         //get the command from the stream
         let command_res = net::read_commands(&mut stream);
 
-        // TODO: Dispatch commands (handle easy ones directly, forward others)
+        // Dispatch commands (handle easy ones directly, forward others)
         match command_res {
             Ok(cmd) =>
             match cmd {
@@ -74,28 +76,28 @@ pub fn handle(mut stream: TcpStream) {
                     }
                 },
                 // send the query string for parsing
-                // TODO: If query -> Call parser to obtain AST
-                // TODO: If query -> Pass AST to query executer
-                // TODO: Send results
                 Command::Query(q) => {
 
                     debug!("Query received, dispatch query to parser.");
 
+                    // Call parser to obtain AST
                     let ast = parse::parse(&q);
 
                     match ast {
                         Ok(tree) => {
                             debug!("{:?}", tree);
 
-                            // Dummy Row
+                            // Pass AST to query executer
                             let r = query::execute_from_ast(tree, & mut auth::User {
                                 _name: "DummyUser".into(),
                                 _currentDatabase: None} ).
                                 unwrap_or(
-                                    Rows { data: vec![], columns: vec![Column::new("error occurred",
-                                                    SqlType::Int, false, "error", false)]});
-
-
+                                    ResultSet { data: vec![], columns: vec![
+                                        Column::new("error occurred", SqlType::Int, false,
+                                        "error mind the error, not an error again, I hate errors",
+                                        false)]
+                                    }
+                                );
 
                             // Send response package
                             match net::send_response_package(&mut stream, r) {
@@ -106,7 +108,9 @@ pub fn handle(mut stream: TcpStream) {
 
                         Err(error) => {
                             error!("{:?}", error);
-                            match net::send_error_package(&mut stream, Error::UnEoq(error).into()) {
+                            match net::send_error_package(&mut stream,
+                                net::Error::UnEoq(error).into())
+                            {
                                 Ok(_) => {},
                                 Err(_) => warn!("Failed to send error.")
                             }

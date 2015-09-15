@@ -5,24 +5,50 @@ extern crate bincode;
 use std::net::{Ipv4Addr, AddrParseError, TcpStream};
 use std::str::FromStr;
 use std::io::{self, Write};
+use std::fmt;
 pub use server::net::types;
 pub use server::logger;
+use server::storage::ResultSet;
 use bincode::SizeLimit;
 use bincode::rustc_serialize::{EncodingError, DecodingError,
     decode_from, encode_into};
 use types::*;
-use server::storage::Rows;
 
-// const PROTOCOL_VERSION : u8 = 1;
 
+const PROTOCOL_VERSION : u8 = 1;
+
+/// Client specific Error definition.
+#[derive(Debug)]
 pub enum Error {
     AddrParse(AddrParseError),
     Io(io::Error),
-    UnexpectedPkg(String),
+    UnexpectedPkg,
     Encode(EncodingError),
     Decode(DecodingError),
-    Auth(String),
+    Auth,
     Server(ClientErrMsg),
+}
+
+/// Implement display for description of Error
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        std::error::Error::description(self).fmt(f)
+    }
+}
+
+/// Implement description for this Error enum
+impl std::error::Error for Error {
+    fn description(&self) -> &str {
+        match self {
+            &Error::AddrParse(_) => "wrong IPv4 address format",
+            &Error::Io(_) => "IO error occured",
+            &Error::UnexpectedPkg => "received unexpected package",
+            &Error::Encode(_) => "could not encode/ send package",
+            &Error::Decode(_) => "could not decode/ receive package",
+            &Error::Auth => "could not authenticate user",
+            &Error::Server(ref e) => { &e.msg }
+        }
+    }
 }
 
 /// Implement the conversion from io::Error to Connection-Error
@@ -60,6 +86,8 @@ impl From<ClientErrMsg> for Error {
     }
 }
 
+/// Stores TCPConnection with a server. Contains IP, Port, Login data and
+/// greeting from server.
 pub struct Connection {
     ip: String,
     port: u16,
@@ -69,7 +97,7 @@ pub struct Connection {
 }
 
 impl Connection {
-    /// Establish connection to specified address and port
+    /// Establish connection to specified address and port.
     pub fn connect(addr: String, port: u16, usern: String, passwd: String)
         -> Result<Connection, Error>
     {
@@ -93,7 +121,7 @@ impl Connection {
         let greet: Greeting =
             try!(decode_from(&mut tmp_tcp, SizeLimit::Bounded(1024)));
 
-        // Login
+        // Login package
         let log = Login { username: usern, password: passwd };
         match encode_into(&PkgType::Login, &mut tmp_tcp,
             SizeLimit::Bounded(1024))
@@ -102,11 +130,13 @@ impl Connection {
             Err(e) => return Err(e.into())
         }
 
+        // Login data
         match encode_into(&log, &mut tmp_tcp, SizeLimit::Bounded(1024)) {
             Ok(_) => {},
             Err(e) => return Err(e.into())
         }
 
+        // Get Login response - either user is authorized or unauthorized
         let status: PkgType =
             try!(decode_from(&mut tmp_tcp, SizeLimit::Bounded(1024)));
         match status {
@@ -114,13 +144,12 @@ impl Connection {
                 Ok(Connection { ip: addr, port: port, tcp: tmp_tcp,
                     greeting: greet, user_data: log} ),
             PkgType::AccDenied =>
-                Err(Error::Auth("Authentication failure.".into())),
-            _ => Err(Error::UnexpectedPkg("Unexpected package
-                    received. Server is INSANE.".into()))
+                Err(Error::Auth),
+            _ => Err(Error::UnexpectedPkg)
         }
     }
 
-    /// Sends ping-command to server and receives Ok-package
+    /// Send ping-command to server and receive Ok-package
     pub fn ping(&mut self) -> Result<(), Error> {
         match send_cmd(&mut self.tcp, Command::Ping, 1024) {
             Ok(_) => {},
@@ -132,7 +161,7 @@ impl Connection {
         }
     }
 
-    /// Sends quit-command to server and receives Ok-package
+    /// Send quit-command to server and receive Ok-package
     pub fn quit(&mut self) -> Result<(), Error> {
         match send_cmd(&mut self.tcp, Command::Quit, 1024) {
             Ok(_) => {},
@@ -145,14 +174,14 @@ impl Connection {
     }
 
     // TODO: Return results (response-package)
-    pub fn execute(&mut self, query: String) -> Result<Rows, Error> {
+    pub fn execute(&mut self, query: String) -> Result<ResultSet, Error> {
         match send_cmd(&mut self.tcp, Command::Query(query), 1024) {
             Ok(_) => {},
             Err(e) => return Err(e)
         };
         match receive(&mut self.tcp, PkgType::Response) {
             Ok(_) => {
-                let rows: Rows =
+                let rows: ResultSet =
                     try!(decode_from(&mut self.tcp, SizeLimit::Infinite));
                 Ok(rows)
             },
@@ -160,27 +189,39 @@ impl Connection {
         }
     }
 
+    /// Return server version number.
     pub fn get_version(&self) -> u8 {
         self.greeting.protocol_version
     }
 
+    /// Return server greeting message.
     pub fn get_message(&self) -> &str {
         &self.greeting.message
     }
 
+    /// Return ip address for current connection.
     pub fn get_ip(&self) -> &str {
         &self.ip
     }
 
+    /// Return port for current connection.
     pub fn get_port(&self) -> u16 {
         self.port
     }
 
+    /// Return username used for current connection authentication.
     pub fn get_username(&self) -> &str {
         &self.user_data.username
     }
 }
 
+/// Return current library version.
+#[allow(dead_code)]
+fn get_lib_version() -> u8 {
+    PROTOCOL_VERSION
+}
+
+/// Send command package with actual command, e.g. quit, ping, query.
 fn send_cmd<W: Write>(mut s: &mut W, cmd: Command, size: u64)
     -> Result<(), Error>
 {
@@ -189,7 +230,7 @@ fn send_cmd<W: Write>(mut s: &mut W, cmd: Command, size: u64)
     Ok(())
 }
 
-/// Match received packages to expected packages
+/// Match received packages to expected packages.
 fn receive(s: &mut TcpStream, cmd: PkgType) -> Result<(), Error> {
     let status: PkgType = try!(decode_from(s, SizeLimit::Bounded(1024)));
 
@@ -202,17 +243,14 @@ fn receive(s: &mut TcpStream, cmd: PkgType) -> Result<(), Error> {
         match status {
             PkgType::Ok => {},
             PkgType::Response => {
-                let _ : Rows = try!(decode_from(s, SizeLimit::Infinite));
+                let _ : ResultSet = try!(decode_from(s, SizeLimit::Infinite));
             },
             PkgType::Greet => {
                 let _ : Greeting = try!(decode_from(s, SizeLimit::Infinite));
             },
             _ => {}
         }
-        return Err(Error::UnexpectedPkg("Received unexpected package".into()))
+        return Err(Error::UnexpectedPkg)
     }
     Ok(())
 }
-
-#[test]
-fn it_works() {}
