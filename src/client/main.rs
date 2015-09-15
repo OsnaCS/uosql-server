@@ -20,7 +20,7 @@ use std::io::{self, stdout, Write, Read};
 use std::str::FromStr;
 use uosql::logger;
 use uosql::Connection;
-use server::storage::Rows;
+use server::storage::ResultSet;
 use docopt::Docopt;
 use regex::Regex;
 
@@ -493,7 +493,7 @@ pub fn read_string(msg: &str) -> String {
 }
 
 /// Display data from ResultSet.
-pub fn display(row: &Rows) {
+pub fn display(row: &ResultSet) {
     if row.data.is_empty() && row.columns.is_empty() {
         println!("No data to display received.");
     } else if row.data.is_empty() {
@@ -504,7 +504,7 @@ pub fn display(row: &Rows) {
 }
 
 /// Formated display of table data.
-fn display_data(row: &Rows) {
+fn display_data(row: &ResultSet) {
     let mut cols = vec![];
     for i in &row.columns {
         cols.push(max(12, i.name.len()));
@@ -526,7 +526,7 @@ fn display_data(row: &Rows) {
 }
 
 /// Formated display of MetaData.
-fn display_meta(row: &Rows) {
+fn display_meta(row: &ResultSet) {
     // print meta data
     let mut cols = vec![];
     for i in &row.columns {

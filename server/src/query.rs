@@ -62,7 +62,9 @@ impl<'a> Executor<'a> {
 
     }
 
-    fn execute_def_stmt(&mut self, query: DefStmt) -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError> {
+    fn execute_def_stmt(&mut self, query: DefStmt)
+        -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError>
+    {
 
         match query {
             DefStmt::Create(stmt) => self.execute_create_stmt(stmt),
@@ -71,7 +73,9 @@ impl<'a> Executor<'a> {
         }
     }
 
-    fn execute_use_stmt(&mut self, query: UseStmt) -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError> {
+    fn execute_use_stmt(&mut self, query: UseStmt
+    -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError>
+    {
 
         match query {
             UseStmt::Database(querybase) => {
@@ -81,7 +85,9 @@ impl<'a> Executor<'a> {
         }
     }
 
-    fn execute_insert_stmt(&mut self, stmt: InsertStmt) -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError> {
+    fn execute_insert_stmt(&mut self, stmt: InsertStmt)
+        -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError>
+    {
         let table = try!(self.get_table(&stmt.tid));
 
         if !stmt.col.is_empty() {
@@ -111,7 +117,9 @@ impl<'a> Executor<'a> {
 
     }
 
-    fn execute_select_stmt(&mut self, stmt: SelectStmt) -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError> {
+    fn execute_select_stmt(&mut self, stmt: SelectStmt)
+        -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError>
+    {
         if stmt.target.len() != 1 {
             return Err(ExecutionError::DebugError("Select only implemented for select * ".into()));
         }
@@ -128,7 +136,9 @@ impl<'a> Executor<'a> {
 
     }
 
-    fn execute_describe_stmt(&mut self, query: String) -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError>{
+    fn execute_describe_stmt(&mut self, query: String)
+        -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError>
+    {
         let table = try!(self.get_table(&query));
         let columns = table.columns();
         let mut columnvec = Vec::new();
@@ -137,7 +147,9 @@ impl<'a> Executor<'a> {
         Ok(Rows::new(Cursor::new(Vec::<u8>::new()), &columnvec))
     }
 
-    fn execute_create_stmt(&mut self, query: CreateStmt) -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError> {
+    fn execute_create_stmt(&mut self, query: CreateStmt)
+        -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError>
+    {
         match query {
             CreateStmt::Database(s) => {
                 self.user._currentDatabase = Some(try!(Database::create(&s)));
@@ -165,7 +177,9 @@ impl<'a> Executor<'a> {
         Err(ExecutionError::DebugError("Not implemented.".into()))
     }
 
-    fn execute_drop_stmt(&mut self, query: DropStmt) -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError> {
+    fn execute_drop_stmt(&mut self, query: DropStmt)
+        -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError>
+    {
         match query {
             DropStmt::Table(s) => {
                 let base = try!(self.get_own_database());
@@ -196,7 +210,9 @@ impl<'a> Executor<'a> {
     }
 
 
-    fn execute_alt_stmt(&mut self, query: AltStmt) -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError> {
+    fn execute_alt_stmt(&mut self, query: AltStmt)
+        -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError>
+    {
         match query {
             AltStmt::Table(stmt) => self.execute_alt_table_stmt(stmt),
         }
@@ -204,7 +220,9 @@ impl<'a> Executor<'a> {
     }
 
 
-    fn execute_alt_table_stmt(&mut self, stmt: AlterTableStmt) -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError> {
+    fn execute_alt_table_stmt(&mut self, stmt: AlterTableStmt)
+        -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError>
+    {
         let table = try!(self.get_table(&stmt.tid));
         match stmt.op {
             AlterOp::Add(columninfo) => Ok(generate_rows_dummy()),
