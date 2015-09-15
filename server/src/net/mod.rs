@@ -16,7 +16,7 @@
 //!
 pub mod types;
 
-use std::io::{Write, Read};
+use std::io::{Write, Read, Seek};
 // to encode and decode the structs to the given stream
 use bincode::rustc_serialize::{EncodingError, DecodingError, decode_from, encode_into};
 use std::io;

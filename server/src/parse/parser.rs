@@ -818,31 +818,6 @@ impl<'a> Parser<'a> {
                 };
                 SqlType::Char(length)
             },
-            // checks if char is written in correct sql syntax
-            /*"varchar" => {
-                self.bump();
-                try!(self.expect_token(&[Token::ParenOp]));
-                self.bump();
-                let length_lit = try!(self.expect_number());
-                self.bump();
-                try!(self.expect_token(&[Token::ParenCl]));
-
-                let length = match length_lit {
-                    Lit::Int(i) => {
-                        if 0 <= i && i <= ( u16::max_value() as i64)  {
-                            i as u16
-                        }else {
-                            return Err(ParseError::DatatypeMissmatch(
-                                Span { lo: span_lo , hi: span_hi }
-                            ))
-                        }
-                    },
-                    _ => return Err(ParseError::DatatypeMissmatch(
-                                Span { lo: span_lo , hi: span_hi }
-                                ))
-                };
-                SqlType::VarChar(length)
-            },*/
             _ => return Err(ParseError::NotADatatype(
              Span { lo: span_lo , hi: span_hi }
              )),

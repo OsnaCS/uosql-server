@@ -521,7 +521,6 @@ impl<B: Write + Read + Seek> Rows <B> {
                 },
                 Err(e) => return Err(e)
             };
-
             data.extend(row_data.into_iter())
         }
 

@@ -9,6 +9,8 @@ use super::storage::{Database, Column, Table, Rows, ResultSet};
 use super::storage;
 use super::auth;
 use super::parse::parser::ParseError;
+use std::io::{Write, Read, Seek};
+use std::fs::File;
 use std::io::Cursor;
 
 
@@ -17,9 +19,9 @@ pub struct Executor<'a> {
 }
 
 
+
     pub fn execute_from_ast<'a>(query: Query, user: &'a mut auth::User)
         -> Result<ResultSet, ExecutionError> {
-
 
         let mut executor = Executor::new(user);
 
@@ -49,6 +51,7 @@ impl<'a> Executor<'a> {
     fn execute_manipulation_stmt(&mut self, query: ManipulationStmt)
         -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError> {
 
+
         match query {
             ManipulationStmt::Use(stmt) => self.execute_use_stmt(stmt),
             ManipulationStmt::Insert(stmt) => self.execute_insert_stmt(stmt),
@@ -60,6 +63,7 @@ impl<'a> Executor<'a> {
     }
 
     fn execute_def_stmt(&mut self, query: DefStmt) -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError> {
+
         match query {
             DefStmt::Create(stmt) => self.execute_create_stmt(stmt),
             DefStmt::Drop(stmt) =>  self.execute_drop_stmt(stmt),
@@ -68,6 +72,7 @@ impl<'a> Executor<'a> {
     }
 
     fn execute_use_stmt(&mut self, query: UseStmt) -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError> {
+
         match query {
             UseStmt::Database(querybase) => {
                 self.user._currentDatabase = Some(try!(Database::load(&querybase)));
@@ -118,9 +123,11 @@ impl<'a> Executor<'a> {
         }
         let table = try!(self.get_table(&stmt.tid[0]));
         let engine = table.create_engine();
-        Ok(try!(engine.full_scan()))
+        // Ok(try!(engine.full_scan()))
+        Err(ExecutionError::DebugError("engine.full_scan() not implemented ".into()))
 
     }
+
     fn execute_describe_stmt(&mut self, query: String) -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError>{
         let table = try!(self.get_table(&query));
         let columns = table.columns();
@@ -154,7 +161,8 @@ impl<'a> Executor<'a> {
         let table = try!(base.create_table(&query.tid, tmp_vec, 0));
         let mut engine = table.create_engine();
         engine.create_table();
-        Ok(generate_rows_dummy())
+        //Ok(generate_rows_dummy())
+        Err(ExecutionError::DebugError("Not implemented.".into()))
     }
 
     fn execute_drop_stmt(&mut self, query: DropStmt) -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError> {
@@ -187,12 +195,14 @@ impl<'a> Executor<'a> {
         }
     }
 
+
     fn execute_alt_stmt(&mut self, query: AltStmt) -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError> {
         match query {
             AltStmt::Table(stmt) => self.execute_alt_table_stmt(stmt),
         }
 
     }
+
 
     fn execute_alt_table_stmt(&mut self, stmt: AlterTableStmt) -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError> {
         let table = try!(self.get_table(&stmt.tid));
@@ -204,12 +214,6 @@ impl<'a> Executor<'a> {
 
 
     }
-
-
-
-
-
-
 
     fn get_own_database(&self) -> Result<&Database, ExecutionError> {
         match self.user._currentDatabase {
