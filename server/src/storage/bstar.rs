@@ -28,6 +28,11 @@ pub enum MetaAddress {
     FreeAdrr = 24,
 }
 
+#[derive(PartialEq)]
+pub enum Side {
+    Right,
+    Left
+}
 #[derive(Debug)]
 pub struct Bstar<T: Debug + PartialOrd + KnownSize> {
     pub root: u64,
@@ -72,13 +77,13 @@ impl<T: KnownSize + PartialOrd + Clone + Debug> Bstar<T> {
         try!(meta.seek(SeekFrom::Start(0)));
 
         let root = try!(meta.read_u64::<BigEndian>());
-        meta.seek(SeekFrom::Current(8));
+        //meta.seek(SeekFrom::Current(8));
         let elementcount = try!(meta.read_u64::<BigEndian>());
-        meta.seek(SeekFrom::Current(8));
+        //meta.seek(SeekFrom::Current(8));
         let order = try!(meta.read_u64::<BigEndian>());
-        meta.seek(SeekFrom::Current(8));
+        //meta.seek(SeekFrom::Current(8));
         let free_addr = try!(meta.read_u64::<BigEndian>());
-        meta.seek(SeekFrom::Current(8));
+        //meta.seek(SeekFrom::Current(8));
         let eof = try!(meta.read_u64::<BigEndian>());
 
         meta.seek(SeekFrom::Start(0));
@@ -126,16 +131,16 @@ impl<T: KnownSize + PartialOrd + Clone + Debug> Bstar<T> {
 
         // IMPORTANT: Update the root start when changing B-tree fields!
         try!(meta.write_u64::<BigEndian>(0));
-        meta.seek(SeekFrom::Current(8));
+        //meta.seek(SeekFrom::Current(8));
         // Write Elementcount
         try!(meta.write_u64::<BigEndian>(0));
-        meta.seek(SeekFrom::Current(8));
+        //meta.seek(SeekFrom::Current(8));
         // Order meta
         try!(meta.write_u64::<BigEndian>(order));
-        meta.seek(SeekFrom::Current(8));
+        //meta.seek(SeekFrom::Current(8));
         // Write first free address meta
         try!(meta.write_u64::<BigEndian>(0));
-        meta.seek(SeekFrom::Current(8));
+        //meta.seek(SeekFrom::Current(8));
         // Write eof
         try!(meta.write_u64::<BigEndian>(0));
 
@@ -181,6 +186,15 @@ impl<T: KnownSize + PartialOrd + Clone + Debug> Bstar<T> {
         Ok(())
     }
 
+    pub fn lookup_keyaddr(&mut self, key: T) -> Result<Option<KeyAddr<T>>> {
+        let lookup = try!(self.lookup_internal(& KeyAddr::new(key.clone(),0)));
+        if lookup.found {
+            Ok(Some(KeyAddr::new(key, lookup.target.unwrap())))
+        } else {
+            Ok(None)
+        }
+    }
+
 
     pub fn insert_keyaddr(&mut self, key: KeyAddr<T>) -> Result<Bnode<T>> {
         let lookup = try!(self.lookup_internal(&key));
@@ -203,17 +217,14 @@ impl<T: KnownSize + PartialOrd + Clone + Debug> Bstar<T> {
                 self.delegate_overflow_father(&mut originalnode, lookup.addr)
 
                 } else {
-
-                    let mut debug = false;
                     // Normal Insert
+
                     if originalnode.node_list.insert(key) == 0 {
-                        debug = true;
                         // key for reaching this node changed!
-                        self.delegate_reaching_key(&mut originalnode);
+                        let oldkey = originalnode.node_list.get_by_index(1).unwrap().key.clone();
+                        self.delegate_reaching_key(&mut originalnode, oldkey );
                     }
-                    if debug {
-                        let mut father = try!(Bnode::<T>::read(&mut self.dat, Some(originalnode.father)));
-                    }
+
                     try!(originalnode.write(&mut self.dat, Some(lookup.addr)));
 
                     try!(self.inc_elementcount());
@@ -319,17 +330,17 @@ impl<T: KnownSize + PartialOrd + Clone + Debug> Bstar<T> {
         }
     }
 
-            fn delegate_reaching_key(&mut self, node: &mut Bnode<T>) -> Result<()>{
-                if node.is_root != 1 {
-                    let keyofinterest = node.node_list.get_by_index(0).unwrap().key.clone();
-                    let oldkeyofinterest = node.node_list.get_by_index(1).unwrap().key.clone();
-                    let mut father = try!(Bnode::<T>::read(&mut self.dat, Some(node.father)));
-                    let sonaddress = father.node_list.delete_by_key(&KeyAddr::new(oldkeyofinterest, 0)).unwrap().addr;
-                    let keyaddr = KeyAddr::<T>::new(keyofinterest , sonaddress);
-                    if father.node_list.insert(keyaddr) == 0 {
-
+    fn delegate_reaching_key(&mut self, node: &mut Bnode<T>, oldkey: T) -> Result<()>{
+        if node.is_root != 1 {
+            let keyofinterest = node.node_list.get_by_index(0).unwrap().key.clone();
+            //let oldkeyofinterest = node.node_list.get_by_index(1).unwrap().key.clone();
+            let mut father = try!(Bnode::<T>::read(&mut self.dat, Some(node.father)));
+            //let newoldkey = father.node_list.get_by_index(1).unwrap().key.clone();
+            let sonaddress = father.node_list.delete_by_key(&KeyAddr::new(oldkey.clone(), 0)).unwrap().addr;
+            let keyaddr = KeyAddr::<T>::new(keyofinterest , sonaddress);
+            if father.node_list.insert(keyaddr) == 0 {
                 try!(father.write(&mut self.dat, Some(node.father)));
-                self.delegate_reaching_key(&mut father)
+                self.delegate_reaching_key(&mut father, oldkey)
             } else {
                 try!(father.write(&mut self.dat, Some(node.father)));
                 Ok(())
@@ -340,24 +351,147 @@ impl<T: KnownSize + PartialOrd + Clone + Debug> Bstar<T> {
         }
     }
 
-    fn inc_elementcount(&mut self) -> Result<()> {
-        self.elementcount += 1;
-        seek_maybe(&mut self.meta, Some(Elementcount));
-        try!(self.meta.write_u64::<BigEndian>(self.elementcount));
-        self.flush()
+
+    pub fn delete_keyaddr(&mut self, key: T) -> Result<Option<KeyAddr<T>>> {
+        if self.elementcount == 0 {
+            Ok(None)
+        } else {
+            let lookup  = try!(self.lookup_internal(&KeyAddr::<T>::new(key.clone(), 0 )));
+            if lookup.found {
+                try!(self.delegate_underflow_node(&mut lookup.bnode.unwrap(), lookup.index.unwrap(), lookup.addr));
+                try!(self.dec_elementcount());
+                Ok(Some(KeyAddr::<T>::new(key, lookup.target.unwrap())))
+
+            } else {
+                Ok(None)
+            }
+        }
     }
 
-    fn flush(&mut self) -> Result<()> {
-        try!(self.meta.flush());
-        try!(self.dat.flush());
-        Ok(())
+    fn delegate_underflow_node(&mut self, node: &mut Bnode<T>, keyindex: u64, nodeaddr: u64) -> Result<()> {
+            if node.node_list.elementcount > self.order {
+                // normal delete
+                let res = node.node_list.delete_by_index(keyindex as usize);
+                if keyindex == 0 {
+                    self.delegate_reaching_key(node, res.unwrap().key);
+                }
+                node.write(&mut self.dat, Some(nodeaddr));
+                Ok(())
+
+            } else {
+                if node.is_root == 1 {
+                    // delete from root
+                    if node.node_list.elementcount <= 2 {
+                        // delete old root
+                        Ok(())
+                    } else {
+                        // normal
+                        node.node_list.delete_by_index(keyindex as usize);
+                        node.write(&mut self.dat, Some(nodeaddr));
+                        Ok(())
+                    }
+                } else {
+                    // Node does not have enough keys to delete from
+                    let deleted = node.node_list.delete_by_index(keyindex as usize).unwrap();
+                    if keyindex == 0 {
+                        self.delegate_reaching_key(node, deleted.key.clone());
+                    }
+                    let mut father = try!(Bnode::<T>::read(&mut self.dat, Some(node.father)));
+                    let indexonfather = father.node_list.get_index_by_key(&deleted).1;
+
+                    // right brother
+                    let rightbaddr = match father.node_list.get_by_index(indexonfather + 1) {
+                        Some(keyaddr) => Some(keyaddr.addr),
+                        None => None,
+                    };
+                    let leftbaddr = match indexonfather {
+                        0 => None,
+                        _ => Some(father.node_list.get_by_index(indexonfather - 1).unwrap().addr),
+                    };
+
+                    let mut peernode = {
+                        if rightbaddr != None && leftbaddr != None {
+                            // compare size ofbrother nodes
+                            let rightbnode = try!(Bnode::<T>::read(&mut self.dat, Some(rightbaddr.unwrap())));
+                            let leftbnode = try!(Bnode::<T>::read(&mut self.dat, Some(leftbaddr.unwrap())));
+                            if rightbnode.node_list.elementcount > leftbnode.node_list.elementcount {
+                                (rightbnode, Side::Right, rightbaddr.unwrap())
+                            } else {
+                                (leftbnode, Side::Left, leftbaddr.unwrap())
+                            }
+                        } else if rightbaddr == None {
+                            // return left brother
+                            (try!(Bnode::<T>::read(&mut self.dat, Some(leftbaddr.unwrap()))), Side::Left, leftbaddr.unwrap())
+                        } else {
+                            // return right brother
+                            (try!(Bnode::<T>::read(&mut self.dat, Some(rightbaddr.unwrap()))), Side::Right, rightbaddr.unwrap())
+                        }
+
+                    };
+
+                    if peernode.0.node_list.elementcount <= self.order {
+                        // TODO: merge node and peernode
+
+
+
+
+
+                    } else {
+                        // distribute nodelists from both nodes equally
+
+                        let peerlength = peernode.0.node_list.elementcount;
+                        let mut nodelength = node.node_list.elementcount;
+
+                        if peernode.1 == Side::Left {
+                            // left node
+                            for i in 0..((peerlength - nodelength)/2) {
+                                let tmp = peernode.0.node_list.delete_by_index((peerlength-i-1)as usize);
+                                node.node_list.insert_at_index(0, tmp.unwrap());
+                            }
+
+                            father.node_list.get_by_index(indexonfather).unwrap().key = node.node_list.get_by_index(0).unwrap().key.clone();
+                            try!(peernode.0.write(&mut self.dat, Some(peernode.2)));
+
+
+                        } else {
+                            for i in 0..((peerlength - nodelength)/2) {
+                                let tmp = peernode.0.node_list.delete_by_index(i as usize);
+                                node.node_list.insert_at_index(nodelength as usize, tmp.unwrap());
+                                let mut nodelength = node.node_list.elementcount;
+                            }
+
+                            father.node_list.get_by_index(indexonfather + 1).unwrap().key = peernode.0.node_list.get_by_index(0).unwrap().key.clone();
+                            try!(peernode.0.write(&mut self.dat, Some(peernode.2)));
+                        }
+                        node.write(&mut self.dat, Some(nodeaddr));
+                        // TODO: Make more effective disc usage: update the father only on the index where it is changed
+                        father.write(&mut self.dat, Some(node.father));
+
+                    }
+                    // if two nodes are merged: delegate deleting the unneccessary key to father node.
+                    Ok(())
+                }
+
+            }
+    }
+
+
+    fn inc_elementcount(&mut self) -> Result<()> {
+        self.elementcount += 1;
+        self.meta.seek(SeekFrom::Start(8));
+        Ok(try!(self.meta.write_u64::<BigEndian>(self.elementcount)))
+    }
+
+    fn dec_elementcount(&mut self) -> Result<()> {
+        self.elementcount -= 1;
+        self.meta.seek(SeekFrom::Start(8));
+        Ok(try!(self.meta.write_u64::<BigEndian>(self.elementcount)))
     }
 
     fn update_root(&mut self, root: u64) -> Result<()> {
         self.root = root;
         try!(self.meta.seek(SeekFrom::Start(Root)));
-        try!(self.meta.write_u64::<BigEndian>(root));
-        self.flush()
+        Ok(try!(self.meta.write_u64::<BigEndian>(root)))
     }
 
     // returns the lookupinfo
@@ -431,6 +565,7 @@ impl<T: KnownSize + PartialOrd + Clone + Debug> Bstar<T> {
             self.eof = self.freeaddr;
             try!(self.meta.seek(SeekFrom::Start(FreeAdrr)));
             try!(self.meta.write_u64::<BigEndian>(self.freeaddr));
+            try!(self.meta.write_u64::<BigEndian>(self.eof));
             Ok(tmp)
         }
     }
@@ -496,20 +631,14 @@ impl<T: PartialOrd + KnownSize + Debug> Bnode<T> {
     pub fn read(file: &mut File, addr: Option<u64>) -> Result<Bnode<T>> {
         try!(seek_maybe(file, addr));
         let father = try!(file.read_u64::<BigEndian>());
-        file.seek(SeekFrom::Current(8));
         let is_leaf = try!(file.read_u8());
-        file.seek(SeekFrom::Current(1));
         let is_root = try!(file.read_u8());
-        file.seek(SeekFrom::Current(1));
         let elementcount = try!(file.read_u64::<BigEndian>());
-        file.seek(SeekFrom::Current(8));
         let order = try!(file.read_u64::<BigEndian>());
-        file.seek(SeekFrom::Current(8));
         let mut list = SortedList::<KeyAddr<T>>::with_capacity((order * 2) as usize);
         for i in 0..elementcount {
             let keyaddr = try!(KeyAddr::<T>::read(file, None ));
             list.insert(keyaddr);
-            file.seek(SeekFrom::Current(KeyAddr::<T>::size() as i64));
         }
 
         Ok(Bnode { node_list: list, father: father, is_leaf: is_leaf, is_root: is_root, order: order } )
@@ -519,15 +648,10 @@ impl<T: PartialOrd + KnownSize + Debug> Bnode<T> {
     pub fn write(&mut self, file: &mut File, addr: Option<u64>) -> Result<()> {
         try!(seek_maybe(file, addr));
         try!(file.write_u64::<BigEndian>(self.father));
-        file.seek(SeekFrom::Current(8));
         try!(file.write_u8(self.is_leaf));
-        file.seek(SeekFrom::Current(1));
         try!(file.write_u8(self.is_root));
-        file.seek(SeekFrom::Current(1));
         try!(file.write_u64::<BigEndian>(self.node_list.elementcount));
-        file.seek(SeekFrom::Current(8));
         try!(file.write_u64::<BigEndian>(self.order));
-        file.seek(SeekFrom::Current(8));
         for i in 0..self.order * 2 {
             match self.node_list.get_by_index(i as usize) {
                 Some(keyaddr) => {
@@ -535,14 +659,13 @@ impl<T: PartialOrd + KnownSize + Debug> Bnode<T> {
                 },
                 None => (),
             }
-            file.seek(SeekFrom::Current(KeyAddr::<T>::size() as i64));
         }
         Ok(())
 
     }
 
     pub fn size(order: u64) -> u64 {
-        ((KeyAddr::<T>::size() * (order * 2)) + 26) * 3
+        ((KeyAddr::<T>::size() * (order * 2)) + 26)
     }
 }
 
@@ -568,6 +691,10 @@ impl<T: PartialOrd + Debug> SortedList<T> {
         self.elementcount == 0
     }
 
+    pub fn insert_at_index(&mut self, index: usize, key: T) {
+        self.list.insert(index,key);
+        self.elementcount += 1;
+    }
     /// returns the index where the inserted value is located
     pub fn insert(&mut self, value: T) -> u64 {
         if self.empty() {
@@ -715,21 +842,18 @@ impl<T: KnownSize + PartialOrd + Debug> KnownSize for KeyAddr<T> {
 
     fn read(file: &mut File, addr: Option<u64>) -> Result<KeyAddr<T>> {
         let key = try!(T::read(file, addr));
-        file.seek(SeekFrom::Current(T::size() as i64));
         let tmp = try!(u64::read(file, None));
         Ok(KeyAddr::new(key,tmp))
     }
 
     fn write(&self, file: &mut File, addr: Option<u64>) -> Result<()> {
         try!(self.key.write(file, addr));
-        file.seek(SeekFrom::Current(T::size() as i64));
         Ok(try!(self.addr.write(file, None)))
     }
 
     fn write_default(file: &mut File, addr: Option<u64>) -> Result<()> {
         try!(seek_maybe(file, addr));
         try!(T::write_default(file, None));
-        file.seek(SeekFrom::Current(T::size() as i64));
         Ok(try!(u64::write_default(file, None)))
     }
 
