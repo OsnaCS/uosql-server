@@ -7,7 +7,7 @@ use std::fs::OpenOptions;
 fn main() {
     Bstar::<u64>::delete("test");
 
-    let mut _tree = Bstar::create("test", 2, false);
+    let mut _tree = Bstar::create("test", "TARGETTABLEyxcyxvxcxyxc",2);
     let mut tree = match _tree {
         Ok(t) => t,
         _ => panic!("error"),
@@ -26,6 +26,9 @@ fn main() {
     tree.insert_keyaddr(KeyAddr::<u64>::new(5,2));
     tree.insert_keyaddr(KeyAddr::<u64>::new(12,2));
     tree.insert_keyaddr(KeyAddr::<u64>::new(13,2));
+
+
+
     /*for i in 32..85 {
         tree.insert_keyaddr(KeyAddr::<u64>::new(i,1000-i));
     }
@@ -79,6 +82,24 @@ fn main() {
     tree.debug_print();
     println!("");
     println!("");
+    println!("{:?}", tree.delete_keyaddr(12));
 
+    println!(" {:?} ELEMENTS:", tree);
+    println!("");
+    tree.debug_print();
+    println!("");
+    println!("");
+        println!("{:?}", tree.delete_keyaddr(9));
+
+    println!(" {:?} ELEMENTS:", tree);
+    println!("");
+    tree.debug_print();
+    println!("");
+    println!("");
+
+
+    for keyaddr in tree.iter_start_at(8) {
+        println!("{:?}", keyaddr );
+    }
 
     }

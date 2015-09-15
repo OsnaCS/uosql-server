@@ -185,7 +185,9 @@ impl<'a> Executor<'a> {
 
                                 let stype = row.owner.columns[index].sql_type;
                                 let comp = match &c.rhs {
-                                    &CondType::Word(_) => return Err(ExecutionError::DebugError("Not implemented yet!".to_string())),
+                                    &CondType::Word(_) => return Err(
+                                        ExecutionError::DebugError(
+                                            "Not implemented yet!".to_string())),
                                     &CondType::Literal(ref lit) => lit.into_DataSrc(),
                                 };
 
