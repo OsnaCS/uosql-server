@@ -12,17 +12,16 @@ extern crate regex;
 
 mod specialcrate;
 
-use std::io::{self, stdout, Write};
+use std::net::Ipv4Addr;
+use std::cmp::{max, min};
+use std::fs::File;
+use std::error::Error;
+use std::io::{self, stdout, Write, Read};
 use std::str::FromStr;
 use uosql::logger;
 use uosql::Connection;
 use server::storage::Rows;
 use docopt::Docopt;
-use std::net::Ipv4Addr;
-use std::cmp::{max, min};
-use std::fs::File;
-use std::io::Read;
-use std::error::Error;
 use regex::Regex;
 
 /// For console input, manages flags and arguments
@@ -44,6 +43,8 @@ struct Args {
    flag_name: Option<String>,
    flag_pwd:  Option<String>
 }
+
+
 
 fn main() {
 
@@ -98,6 +99,7 @@ fn main() {
         }
     };
 
+    // Connect to uosql server with given parameters.
     let mut conn = match Connection::connect(address, port, username, password)
     {
         Ok(conn) => conn,
@@ -157,10 +159,8 @@ fn main() {
     }
 }
 
-
-
-
-/// Process commandline-input from user
+/// Process commandline-input from user.
+/// Match on special commands from user input.
 fn process_input(input: &str, conn: &mut Connection) -> bool {
 
     let regex_load = match Regex::new(r"(?i):load .+\.sql") {
@@ -171,17 +171,17 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
         }
     };
 
-    //before conversion to lowercase, check for :load with path
+    // before conversion to lowercase, check for :load with path
     if regex_load.is_match(input) {
 
         let mut path: String = "".into();
 
-        // remove first 6 charakters ("load ")
+        // remove first 6 characters (":load ")
         for x in 6..input.len() {
             path.push(input.to_string().remove(x))
         }
 
-        println!("{:?}", path);
+        // open file
         let f = match File::open(path) {
             Ok(f) => f,
             Err(_) => {
@@ -192,6 +192,7 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
         return execute_sql(f, conn)
     }
 
+    // standard match for command and queries
     let input_low = input.to_lowercase();
     match &*input_low {
         ":quit" => {
@@ -216,7 +217,6 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
             }
         },
         ":exit" => {
-            // TODO: other functionality to exit than quit
             match conn.quit() {
                 Ok(_) => {
                     println!("Bye bye.");
@@ -236,7 +236,7 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
             println!("Hello, Dave. You're looking well today.");
         },
         ":load" => {
-            //loads the file script.sql and executes all queries in the file.
+            // loads the file script.sql and executes all queries in the file.
             let f = match File::open("script.sql") {
                 Ok(file) => file,
                 Err(_) => {
@@ -252,8 +252,7 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
                     via github /schickling/rust-examples/tree/master/snake-ncurses");
             specialcrate::snake();
         }
-        _ => {
-            // Size
+        _ => { // Queries
             match conn.execute(input.into()) {
                 Ok(data) => {
                     // show data belonging to executed query
@@ -293,7 +292,7 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
     true
 }
 
-/// Reads and executes sql-script from file
+/// Read and execute sql-script from file.
 fn execute_sql(mut f: File, conn: &mut Connection) -> bool {
     let mut s = String::new();
     match f.read_to_string(&mut s) {
@@ -407,8 +406,8 @@ fn execute_sql(mut f: File, conn: &mut Connection) -> bool {
 }
 
 
-/// Read from command line and return trimmed string
-/// If an error occurs reading from stdin loop until a valid String was read
+/// Read from command line and return trimmed string.
+/// If an error occurs reading from stdin loop until a valid String was read.
 fn read_line() -> String {
     let mut input = String::new();
     loop {
@@ -424,8 +423,8 @@ fn read_line() -> String {
     }
 }
 
-/// Read IP-address to connect to from command-line
-/// In case no input given ("\n") the default address "127.0.0.1" is returned
+/// Read IP-address to connect to from command-line.
+/// In case no input was given ("\n") default address "127.0.0.1" is returned.
 pub fn read_address() -> String {
     loop {
         print!("IP: ");
@@ -446,8 +445,8 @@ pub fn read_address() -> String {
     }
 }
 
-/// Read Port number to connect to from command-line
-/// In case no input given ("\n") the default port "4242" is returned
+/// Read Port number to connect to from command-line.
+/// In case no input given ("\n") default port "4242" is returned.
 pub fn read_port() -> u16 {
     loop {
         print!("Port: ");
@@ -476,6 +475,7 @@ pub fn read_port() -> u16 {
     }
 }
 
+/// Read a string from command line. Return a valid string, else loop.
 pub fn read_string(msg: &str) -> String {
     loop {
         print!("{}: ", msg);
@@ -492,14 +492,18 @@ pub fn read_string(msg: &str) -> String {
     }
 }
 
+/// Display data from ResultSet.
 pub fn display(row: &Rows) {
-    if row.data.is_empty() {
+    if row.data.is_empty() && row.columns.is_empty() {
+        println!("No data to display received.");
+    } else if row.data.is_empty() {
         display_meta(&row)
     } else {
         display_data(&row)
     }
 }
 
+/// Formated display of table data.
 fn display_data(row: &Rows) {
     let mut cols = vec![];
     for i in &row.columns {
@@ -519,9 +523,9 @@ fn display_data(row: &Rows) {
     println!("|");
 
     display_seperator(&cols);
-
 }
 
+/// Formated display of MetaData.
 fn display_meta(row: &Rows) {
     // print meta data
     let mut cols = vec![];
@@ -596,6 +600,7 @@ fn display_meta(row: &Rows) {
     display_seperator(&cols);
 }
 
+/// Display separator line adjusted to given column sizes. (Pattern +-...-+)
 pub fn display_seperator(cols: &Vec<usize>) {
     for i in 0..(cols.len()) {
         print!("+--");
