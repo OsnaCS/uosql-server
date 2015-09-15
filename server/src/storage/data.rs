@@ -1,6 +1,5 @@
 use std::vec::Vec;
 use super::Error;
-use super::types::SqlType;
 use super::types::Column;
 use std::io::{Write, Read, Seek, SeekFrom, Cursor};
 use super::super::parse::ast::CompType;
@@ -55,8 +54,8 @@ impl<B: Write + Read + Seek> Rows <B> {
         info!("Reading Header");
         let mut row_header: RowHeader = try!(self.read_header());
         info!("Header Read");
-        while (row_header.is_deleted()) {
-            self.skip_row();
+        while row_header.is_deleted() {
+            try!(self.skip_row());
             row_header = try!(self.read_header());
         }
 
@@ -96,49 +95,7 @@ impl<B: Write + Read + Seek> Rows <B> {
             Err(e) => return Err(Error::Io(e))
         }
     }
-/*
-    fn last_not_deleted_row(&mut self) -> Result<u64, Error> {
-        let old_pos = pos;
-        let last_row_pos = try!(set_pos(
-        SeekFrom::End(-(RowHeader::size() + self::get_columns_size(self.columns))
-        ));
-        loop {
 
-
-            let header = self.read_header();
-            if !header.is_deleted() {
-                set_pos(SeekFrom::Start(old_pos));
-                return last_row_pos;
-            }
-
-            if last_row_pos == old_pos {
-                return last_row_pos;
-            }
-
-            if last_row_pos < old_pos {
-                Err(Error::InvalidState);
-            }
-
-            last_row_pos = try!(set_pos(
-            SeekFrom::Current(-(RowHeader::size() + self::get_columns_size(self.columns))
-            ));
-        }
-    }
-
-    fn get_next_deleted_row(&mut self) -> Result<u64, Error> {
-        let old_pos = pos;
-        let mut new_pos = 0;
-        let mut target_vec = Vec::<u8>::new();
-        loop {
-            new_pos = pos;
-            let header = try!(self.read_header());
-            set_pos()
-            try!(self.next_row(&target_vec, false));
-            if header.is_deleted() {
-                return Ok(new_pos);
-            }
-        }
-    }*/
     /// reads the header of the current row
     /// moves the cursor past the header
     /// returns an error if no RowHeader exists
@@ -158,10 +115,10 @@ impl<B: Write + Read + Seek> Rows <B> {
 
     /// set delete bit for one row
     pub fn delete_row(&mut self) -> Result<(), Error> {
-        self.prev_row();
+        try!(self.prev_row());
         let row_header = RowHeader::new(1);
         try!(self.write_bytes(&row_header.to_raw_data()));
-        self.skip_row();
+        try!(self.skip_row());
         info!("Row Deleted");
         Ok(())
     }
@@ -287,7 +244,7 @@ impl<B: Write + Read + Seek> Rows <B> {
                 return Err(Error::PrimaryKeyValueExists);
             }
         }
-        self.set_pos(SeekFrom::End(0));
+        try!(self.set_pos(SeekFrom::End(0)));
         Ok(try!(self.add_row(row_data)))
     }
 
@@ -296,28 +253,22 @@ impl<B: Write + Read + Seek> Rows <B> {
     pub fn delete(&mut self, column_index: usize, value: &[u8], comp: CompType)
      -> Result<u64, Error>
     {
-        self.reset_pos();
+        try!(self.reset_pos());
         let mut count = 0;
-        while true {
+        loop {
             match self.get_next_row(column_index, value, comp) {
                 Ok(_) => {
                     count += 1;
-                    self.delete_row();
-                }
-                Err(e) => {
-                    match e {
-                        Error::EndOfFile => {
-                            info!("reached end of file");
-                            break;
-                        },
-                        _ => return Err(e)
-                    }
-                }
+                    try!(self.delete_row());
+                },
+                Err(Error::EndOfFile) => {
+                    info!("reached end of file");
+                    break;
+                },
+                Err(e) => return Err(e)
             }
         }
-
         Ok(count)
-
     }
 
     /// Updates all rows fulfilling the constraint.
@@ -337,7 +288,7 @@ impl<B: Write + Read + Seek> Rows <B> {
         let mut rows = try!(self.lookup(constraint_column_index,
                                         constraint_value,
                                         comp));
-        rows.reset_pos();
+        try!(rows.reset_pos());
         let primary_key_index = self.get_primary_key_column_index();
         let mut primary_key_value: Vec<u8>;
         let mut row_data = Vec::<u8>::new();
@@ -392,23 +343,23 @@ impl<B: Write + Read + Seek> Rows <B> {
     pub fn lookup(&mut self, column_index: usize, value: &[u8], comp: CompType)
         -> Result<Rows<Cursor<Vec<u8>>>, Error>
     {
-        self.reset_pos();
+        try!(self.reset_pos());
         let vec: Vec<u8> = Vec::new();
         let cursor = Cursor::new(vec);
         let mut rows = Rows::new(cursor, &self.columns);
         info!("starting lookup for column {:?}", column_index);
-        while true {
+        loop {
             let result = self.get_next_row(column_index, value, comp);
             match result {
                 Ok(r) => {
                     println!{"Row: {:?}", r};
-                    rows.add_row(&r);
+                    try!(rows.add_row(&r));
                 },
                 Err(Error::EndOfFile) => {
                     info!("reached end of file");
                     break;
                 }
-                Err(e) => { return Err(e) }
+                Err(e) => return Err(e)
             }
         }
         Ok(rows)
@@ -425,7 +376,7 @@ impl<B: Write + Read + Seek> Rows <B> {
         loop {
             match self.next_row(&mut buf) {
                 Ok(_) => {
-                        rows.add_row(& buf);
+                        try!(rows.add_row(& buf));
                         info!(".");
                 },
                 Err(Error::EndOfFile) => break,
@@ -504,7 +455,7 @@ impl<B: Write + Read + Seek> Rows <B> {
         column_count
     }
 
-
+    /// Returns a new ResultSet containing all rows of the current object
     pub fn to_result_set(&mut self) -> Result<ResultSet, Error> {
         try!(self.reset_pos());
         let mut data = Vec::<u8>::new();
@@ -530,6 +481,7 @@ impl<B: Write + Read + Seek> Rows <B> {
 
 }
 
+/// Representation of a RowHeader
 pub struct RowHeader {
      pub data: u8,
 }
@@ -566,6 +518,7 @@ impl RowHeader{
         1
     }
 
+    /// Returns the bytes of the RowHeader
     pub fn to_raw_data(&self) -> Vec<u8> {
         let mut raw_data = Vec::<u8>::new();
         raw_data.push(self.data);
@@ -573,6 +526,7 @@ impl RowHeader{
     }
 }
 
+/// Encodable and decodable representation of a Rows object
 #[derive(Debug, RustcEncodable, RustcDecodable)]
 pub struct ResultSet {
     pub data: Vec<u8>,
