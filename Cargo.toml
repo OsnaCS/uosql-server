@@ -29,6 +29,7 @@ cookie = "0.1"
 url = "*"
 ncurses = "5.73.0"
 rand = "*"
+regex = "0.1.41"
 
 [dependencies.server]
 path = "server"
