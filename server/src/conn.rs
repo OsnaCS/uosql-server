@@ -8,7 +8,8 @@ use super::query;
 use net::types::*;
 use storage::{Rows};
 use storage::types::{SqlType, Column};
-use net::Error;
+use std::error::Error;
+use std::io::{Cursor};
 
 pub fn handle(mut stream: TcpStream) {
     // Logging about the new connection
@@ -28,7 +29,7 @@ pub fn handle(mut stream: TcpStream) {
                         PkgType::AccGranted)
                     {
                         Ok(_) => {},
-                        Err(_) => return
+                        Err(e) => { error!("{}", e.description()); return }
                     }
                 },
                 Err(_) => {
@@ -86,11 +87,30 @@ pub fn handle(mut stream: TcpStream) {
                     match ast {
                         Ok(tree) => {
                             debug!("{:?}", tree);
+
+                            let r = query::execute_from_ast(tree, & mut auth::User {
+                                _name: "DummyUser".into(),
+                                _currentDatabase: None} ).
+                                unwrap_or(
+                                    Rows::new(Cursor::new(Vec::new()), &vec![
+                                        Column::new("error occurred", SqlType::Int, false,
+                                        "error mind the error, not an error again, I hate errors",
+                                        false)])
+
+                                );
+
+                            // Send response package
+                            match net::send_response_package(&mut stream, r) {
+                                Ok(_) => { },
+                                Err(_) => warn!("Failed to send packet.")
+                            }
                         },
 
                         Err(error) => {
                             error!("{:?}", error);
-                            match net::send_error_package(&mut stream, Error::UnEoq(error).into()) {
+                            match net::send_error_package(&mut stream,
+                                net::Error::UnEoq(error).into())
+                            {
                                 Ok(_) => {},
                                 Err(_) => warn!("Failed to send error.")
                             }

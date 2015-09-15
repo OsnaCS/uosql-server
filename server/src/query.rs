@@ -78,7 +78,6 @@ impl<'a> Executor<'a> {
                 self.user._currentDatabase = Some(try!(Database::load(&querybase)));
                 Ok(generate_rows_dummy())
             }
-
         }
     }
 
@@ -138,8 +137,9 @@ impl<'a> Executor<'a> {
             CreateStmt::Database(s) => {
                 self.user._currentDatabase = Some(try!(Database::create(&s)));
                 Ok(generate_rows_dummy())
-            }
+            },
             CreateStmt::Table(stmt) => self.execute_create_table_stmt(stmt),
+            _ => Err(ExecutionError::DebugError("to_do".into())),
         }
     }
 
@@ -189,6 +189,7 @@ impl<'a> Executor<'a> {
                 };
                 Ok(generate_rows_dummy())
             },
+            _ => Err(ExecutionError::DebugError("to_do".into())),
         }
     }
 

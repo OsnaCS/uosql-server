@@ -24,6 +24,8 @@ use bincode::SizeLimit;
 use self::types::*;
 use storage::Rows;
 use parse::parser::ParseError;
+use std;
+use std::fmt;
 
 const PROTOCOL_VERSION: u8 = 1;
 
@@ -31,11 +33,32 @@ const PROTOCOL_VERSION: u8 = 1;
 #[derive(Debug)]
 pub enum Error {
     Io(io::Error),
-    UnexpectedPkg(String),
-    UnknownCmd(String),
+    UnexpectedPkg,
+    UnknownCmd,
     Encode(EncodingError),
     Decode(DecodingError),
     UnEoq(ParseError),
+}
+
+/// Implement display for description of Error
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        std::error::Error::description(self).fmt(f)
+    }
+}
+
+/// Implement description for this Error enum
+impl std::error::Error for Error {
+    fn description(&self) -> &str {
+        match self {
+            &Error::Io(_) => "IO error occured",
+            &Error::UnexpectedPkg => "received unexpected package",
+            &Error::UnknownCmd => "cannot interpret command: unknown",
+            &Error::Encode(_) => "could not encode/ send package",
+            &Error::Decode(_) => "could not decode/ receive package",
+            &Error::UnEoq(_) => "parsing error"
+        }
+    }
 }
 
 /// Implement the conversion from io::Error to NetworkError
@@ -94,7 +117,7 @@ pub fn read_login<R: Read + Write>(stream: &mut R)
     let status: PkgType = try!(decode_from(stream, SizeLimit::Bounded(1024)));
 
     if status != PkgType::Login {
-        return Err(Error::UnexpectedPkg("package not expected".into()));
+        return Err(Error::UnexpectedPkg);
     }
 
     // read the login data
@@ -125,7 +148,7 @@ pub fn send_response_package<W: Write, B: Write + Read + Seek>(mut stream: &mut 
 {
     try!(encode_into(&PkgType::Response, stream, SizeLimit::Bounded(1024)));
     //try!(encode_into(&data, stream, SizeLimit::Infinite));
-    Err(Error::UnknownCmd("Rows reworked.".into()))
+    Err(Error::UnknownCmd)
     //Ok(())
 }
 
@@ -137,7 +160,7 @@ pub fn read_commands<R: Read + Write>(stream: &mut R)
     let status: PkgType = try!(decode_from(stream, SizeLimit::Bounded(1024)));
     if status != PkgType::Command {
         //send error_packet
-        return Err(Error::UnknownCmd("command not known".into()))
+        return Err(Error::UnknownCmd)
     }
 
     // second  4 bytes is the kind of command
@@ -172,12 +195,13 @@ pub fn test_send_ok_packet() {
 #[test]
 pub fn test_send_error_packet() {
     let mut vec = Vec::new();   // stream to write into
+    // could not encode/ send package
     let vec2 = vec![0, 0, 0, 3, // for error packet
         0, 2, // for kind of error
-        0, 0, 0, 0, 0, 0, 0, 17, // for the size of the message string
-        117, 110, 101, 120, 112, 101, 99, 116, 101, 100,
-        32, 112, 97, 99, 107, 101, 116]; // string itself
-    let err = Error::UnexpectedPkg("unexpected packet".into());
+        0, 0, 0, 0, 0, 0, 0, 27, // for the size of the message string
+        114, 101, 99, 101, 105, 118, 101, 100, 32, 117, 110, 101, 120, 112, 101,
+        99, 116, 101, 100, 32, 112, 97, 99, 107, 97, 103, 101]; // string itself
+    let err = Error::UnexpectedPkg;
 
     // test if the message is sent
     let res = send_error_package(&mut vec, err.into());
