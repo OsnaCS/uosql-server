@@ -17,9 +17,10 @@ pub fn handle(mut stream: TcpStream) {
         .unwrap_or("???".into());
     info!("Handling connection from {}", addr);
 
-    // Perform handshake, check user login --> done
+    // Perform handshake, check user login.
     let res = net::do_handshake(&mut stream);
-    let _ = match res {
+    
+    match res {
         Ok((user, pw)) => {
             info!("Connection established. Handshake sent");
             match auth::find_user(&user, &pw) {
@@ -34,23 +35,24 @@ pub fn handle(mut stream: TcpStream) {
                 Err(_) => {
                     let _ =
                         net::send_info_package(&mut stream, PkgType::AccDenied);
-                    // Loops for user-convienience?
+                    error!("Authentication failed. Connection closed.");
                     return
                 }
             }
         },
         _ => {
             let _ = net::send_info_package(&mut stream, PkgType::AccDenied);
+            error!("Authentication failed. Connection closed.");
             return
         }
     };
 
-    // Read commands from the client (with help of `net`) --> done
+    // Read commands from the client (with help of `net`)
     loop {
         //get the command from the stream
         let command_res = net::read_commands(&mut stream);
 
-        // TODO: Dispatch commands (handle easy ones directly, forward others)
+        // Dispatch commands (handle easy ones directly, forward others)
         match command_res {
             Ok(cmd) =>
             match cmd {
@@ -73,20 +75,20 @@ pub fn handle(mut stream: TcpStream) {
                         Err(_) => warn!("Failed to send packet.")
                     }
                 },
+                
                 // send the query string for parsing
-                // TODO: If query -> Call parser to obtain AST
-                // TODO: If query -> Pass AST to query executer
-                // TODO: Send results
                 Command::Query(q) => {
 
                     debug!("Query received, dispatch query to parser.");
 
+                    // Call parser to obtain AST
                     let ast = parse::parse(&q);
 
                     match ast {
                         Ok(tree) => {
                             debug!("{:?}", tree);
 
+                            // Pass AST to query executer
                             let r = query::execute_from_ast(tree, & mut auth::User {
                                 _name: "DummyUser".into(),
                                 _currentDatabase: None} ).
