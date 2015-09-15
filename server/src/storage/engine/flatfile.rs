@@ -110,4 +110,14 @@ impl<'a> Engine for FlatFile<'a> {
         reader.delete(column_index, value, comp)
     }
 
+    fn modify(&mut self, constraint_column_index: usize,
+    constraint_value: &[u8], comp: CompType,
+    values: &[(usize, &[u8])] )-> Result<u64, Error>
+    {
+        info!("modify row");
+        let mut reader = try!(self.get_reader());
+        reader.modify(constraint_column_index, constraint_value, comp, values)
+    }
+
+
 }

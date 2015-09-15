@@ -333,10 +333,11 @@ impl<B: Write + Read + Seek> Rows <B> {
      constraint_value: &[u8], comp: CompType,
      values: &[(usize, &[u8])] )-> Result<u64, Error>
     {
+        info!("Modify rows values {:?}", values);
         let mut rows = try!(self.lookup(constraint_column_index,
                                         constraint_value,
                                         comp));
-
+        rows.reset_pos();
         let primary_key_index = self.get_primary_key_column_index();
         let mut primary_key_value: Vec<u8>;
         let mut row_data = Vec::<u8>::new();
@@ -348,9 +349,12 @@ impl<B: Write + Read + Seek> Rows <B> {
         loop {
             match result {
                 Ok(_) => { },
-                Err(Error::EndOfFile) => break,
+                Err(Error::EndOfFile) => {
+                    break;
+                },
                 Err(e) => return Err(e)
             };
+
             primary_key_value = try!(rows.get_value(&row_data,
                                                     primary_key_index));
 
@@ -376,8 +380,9 @@ impl<B: Write + Read + Seek> Rows <B> {
             }
 
             row_data.clear();
+            result = rows.next_row(&mut row_data);
         }
-
+        info!("rows modified");
         Ok(updated_rows)
     }
 
@@ -501,6 +506,30 @@ impl<B: Write + Read + Seek> Rows <B> {
     }
 
 
+    pub fn to_result_set(&mut self) -> Result<ResultSet, Error> {
+        try!(self.reset_pos());
+        let mut data = Vec::<u8>::new();
+        let mut row_data;
+        let mut result:Result<u64, Error>;
+
+        loop {
+            row_data = Vec::<u8>::new();
+            result = self.next_row(&mut row_data);
+            match result {
+                Ok(_) => { },
+                Err(Error::EndOfFile) => {
+                    break;
+                },
+                Err(e) => return Err(e)
+            };
+
+            data.extend(row_data.into_iter())
+        }
+
+        Ok(ResultSet { data: data, columns: self.columns.clone() })
+    }
+
+
 }
 
 pub struct RowHeader {
@@ -544,4 +573,10 @@ impl RowHeader{
         raw_data.push(self.data);
         raw_data
     }
+}
+
+#[derive(Debug, RustcEncodable, RustcDecodable)]
+pub struct ResultSet {
+    pub data: Vec<u8>,
+    pub columns: Vec<Column>,
 }

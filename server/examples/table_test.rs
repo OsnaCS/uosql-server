@@ -111,26 +111,30 @@ fn flat_file_test() {
     let t = data.load_table("storage_team").unwrap();
     let mut engine = FlatFile::new(t);
 
-    let rows = engine.full_scan().unwrap();
-    println!("the rows: {:?}", rows);
-
+    // delete with bool
     let my_bool: [u8; 1] = [0x01];
     engine.delete(1, &my_bool[..], CompType::Equ).unwrap();
 
+    // delete with char
     // let my_char: [u8; 6] = [0x48, 0x41, 0x4C, 0x4D, 0x4F, 0x00];
     // println!("{:?}", my_char);
     // engine.delete(2,&my_char[0..6],CompType::Equ).unwrap();
 
-    println!("starting lookup.....");
-    let my_int: [u8; 4] = [0, 0, 0, 1];
+    println!("///////////////////////////////////////////////////////////////");
+    println!("/////////////////////// Lookup ////////////////////////////////");
+    println!("///////////////////////////////////////////////////////////////");
 
+
+    let my_int: [u8; 4] = [0, 0, 0, 1];
     let mut rows = engine.lookup(0,&my_int[0..4],CompType::Equ).unwrap();
     rows.reset_pos();
 
-
-
     println!("engine.lookup rows: {:?}", rows);
-    let mut vec: Vec<u8> = Vec::new();
+
+
+    println!("///////////////////////////////////////////////////////////////");
+    println!("//////////////////////// Delete ///////////////////////////////");
+    println!("///////////////////////////////////////////////////////////////");
 
     engine.delete(0,&my_int[0..4],CompType::Equ).unwrap();
     rows.reset_pos();
@@ -139,10 +143,26 @@ fn flat_file_test() {
     println!("the rows: {:?}", rows);
     rows.reset_pos();
 
+    // modify a char
+    let my_char: [u8; 6] = [0x48, 0x41, 0x4C, 0x4D, 0x4F, 0x00];
+    let my_char2: [u8; 6] = [0x48, 0x41, 0x4C, 0x4c, 0x4C, 0x00];
+    let values = [(2 as usize, &(my_char2[..]))];
+    println!("///////////////////////////////////////////////////////////////");
+    println!("//////////////////////// Modify ///////////////////////////////");
+    println!("///////////////////////////////////////////////////////////////");
+    engine.modify(2, &my_char, CompType::Equ, &values).unwrap();
 
-    rows.next_row(&mut vec).unwrap();
-    println!("the rows: {:?}", vec);
-    vec.clear();
+    rows.reset_pos();
+
+    rows = engine.full_scan().unwrap();
+    println!("the rows: {:?}", rows);
+    rows.reset_pos();
+
+    // let mut vec: Vec<u8> = Vec::new();
+    // rows.next_row(&mut vec).unwrap();
+    // println!("the rows: {:?}", vec);
+    // vec.clear();
+
     // rows.next_row(&mut vec).unwrap();
     // println!("the rows: {:?}", vec);
     // vec.clear();

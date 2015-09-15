@@ -113,6 +113,10 @@ pub trait Engine {
 
     fn delete(&self, column_index: usize, value: &[u8], comp: CompType)
     -> Result<u64, Error>;
+
+    fn modify(&mut self, constraint_column_index: usize,
+     constraint_value: &[u8], comp: CompType,
+     values: &[(usize, &[u8])] )-> Result<u64, Error>;
 }
 
 #[repr(u8)]
