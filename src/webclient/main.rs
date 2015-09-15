@@ -28,7 +28,6 @@ use std::net::Ipv4Addr;
 use std::str::FromStr;
 use nickel::QueryString;
 use server::storage::Rows;
-use std::cmp::{max, min};
 
 // Dummy key for typemap
 struct ConnKey;
@@ -229,7 +228,7 @@ fn main() {
         return res.render("src/webclient/templates/logout.tpl", &data);
     });
 
-        // Greeting page
+    // Greeting page
     server.get("/", middleware! { |req, res|
 
         // Look for connection
@@ -240,7 +239,7 @@ fn main() {
 
         let query = req.query().get("sql");
         if !query.is_none() {
-            let result = match con.execute(query.unwrap().to_string()) {
+            let result = match con.execute(query.unwrap().trim().to_string()) {
                 Ok(r) => r,
                 Err(e) => {
                     let errstr = match e {
@@ -256,10 +255,8 @@ fn main() {
                     return res.render("src/webclient/templates/error.tpl", &data);
                 }
             };
-            // let s = format!("{:?}", result);
-            // data.insert("result", s.to_string());
-            let res_output = display(&result);
-            println!("{}", res_output);
+
+            let res_output = display_html(&result);
             data.insert("result", res_output);
         }
 
@@ -277,7 +274,7 @@ fn main() {
 
     server.listen("127.0.0.1:6767");
 }
-
+/// Test if binding address is a valid address
 fn test_bind (bind : &str) -> bool {
     let result = match Ipv4Addr::from_str(bind) {
         Ok(_) => true,
@@ -288,128 +285,77 @@ fn test_bind (bind : &str) -> bool {
     result
 }
 
-fn display (rows: &Rows) -> String {
+/// Display table data as HTML table
+fn display_html (rows: &Rows) -> String {
     if rows.data.is_empty() {
-        display_meta(&rows)
+        display_meta_html(&rows)
     } else {
-        display_data(&rows)
+        display_data_html(&rows)
     }
 }
 
-fn display_data(row: &Rows) -> String {
-
+/// Fill table with meta data
+fn display_meta_html (rows: &Rows) -> String {
     let mut result = String::new();
+    result.push_str("<table id=\"t01\"><caption>Results</caption>");
 
-    let mut cols = vec![];
-    for i in &row.columns {
-        cols.push(max(12, i.name.len()));
-    }
-
-    // column names
-    result.push_str(&display_seperator(&cols));
-
+    // First table row with column names
+    result.push_str("<tr><td>Column name</td>");
+    let cols = rows.columns.clone();
     for i in 0..(cols.len()) {
-        if row.columns[i].name.len() > 27 {
-            result.push_str(&format!("| {}... ", &row.columns[i].name[..27]));
-        } else {
-            result.push_str(&format!("| {1: ^0$} ", min(30, cols[i]), row.columns[i].name));
-        }
+        result.push_str(&format!("<td>{}</td>", rows.columns[i].name).to_string());
     }
-    result.push_str("|\n");
+    result.push_str("</tr>");
 
-    result.push_str(&display_seperator(&cols));
+    // Second table row (Type)
+    result.push_str("<tr><td>Type</td>");
+    for i in 0..(cols.len()) {
+        result.push_str(&format!("<td>{:?}</td>", rows.columns[i].sql_type).to_string());
+    }
+    result.push_str("</tr>");
 
+    // Third table row (Primary Key)
+    result.push_str("<tr><td>Primary</td>");
+    for i in 0..(cols.len()) {
+        result.push_str(&format!("<td>{}</td>", rows.columns[i].is_primary_key).to_string());
+    }
+    result.push_str("</tr>");
+
+    // Fourth table row (Allow null)
+    result.push_str("<tr><td>Allow NULL</td>");
+    for i in 0..(cols.len()) {
+        result.push_str(&format!("<td>{}</td>", rows.columns[i].allow_null).to_string());
+    }
+    result.push_str("</tr>");
+
+    // Fifth table row (Description)
+    result.push_str("<tr><td>Description</td>");
+    for i in 0..(cols.len()) {
+        result.push_str(&format!("<td>{}</td>", rows.columns[i].description).to_string());
+    }
+    result.push_str("</tr>");
+    // End table
+    result.push_str("</table>");
     result
 }
 
-fn display_meta(row: &Rows) -> String{
+/// Fill table with row data
+fn display_data_html (rows: &Rows) -> String {
 
     let mut result = String::new();
-    result.trim();
+    result.push_str("<table id=\"t01\"><caption>Results</caption>");
 
-    // print meta data
-    let mut cols = vec![];
-    for i in &row.columns {
-        cols.push(max(12, max(i.name.len(), i.description.len())));
-    }
+    let cols = rows.columns.clone();
 
-    // // Column name +---
-    result.push_str("\n");
-    result.push_str("+");
-    let col_name = "Column name";
-    for _ in 0..(col_name.len()+2) {
-        result.push_str("-");
-    }
-
-    // for every column +---
-    result.push_str(&display_seperator(&cols));
-
-    result.push_str(&format!("| {} ", col_name));
-    // name of every column
     for i in 0..(cols.len()) {
-        if row.columns[i].name.len() > 27 {
-            result.push_str(&format!("| {}... ", &row.columns[i].name[..27]));
-        } else {
-            result.push_str(&format!("| {1: ^0$} ", min(30, cols[i]), row.columns[i].name));
-        }
+        result.push_str(&format!("<td>{}</td>", rows.columns[i].name).to_string());
     }
-    result.push_str("|\n");
+    result.push_str("</tr>");
 
-    // format +--
-    result.push_str("+");
-    for _ in 0..(col_name.len()+2) {
-        result.push_str("-");
-    }
+    //To Do: Display data
 
-    result.push_str(&display_seperator(&cols));
-
-    result.push_str(&format!("| {1: <0$} ", col_name.len(), "Type"));
-    for i in 0..(cols.len()) {
-        result.push_str(&format!("| {1: ^0$} ", min(30, cols[i]), format!("{:?}", row.columns[i].sql_type)));
-    }
-    result.push_str("|\n");
-
-    result.push_str(&format!("| {1: <0$} ", col_name.len(), "Primary"));
-    for i in 0..(cols.len()) {
-        result.push_str(&format!("| {1: ^0$} ", min(30, cols[i]), row.columns[i].is_primary_key));
-    }
-    result.push_str("|\n");
-
-    result.push_str(&format!("| {1: <0$} ", col_name.len(), "Allow NULL"));
-    for i in 0..(cols.len()) {
-        result.push_str(&format!("| {1: ^0$} ", min(30, cols[i]), row.columns[i].allow_null));
-    }
-    result.push_str("|\n");
-
-    result.push_str(&format!("| {1: <0$} ", col_name.len(), "Description"));
-    for i in 0..(cols.len()) {
-        if row.columns[i].description.len() > 27 {
-            //splitten
-            result.push_str(&format!("| {}... ", &row.columns[i].description[..27]));
-        } else {
-            result.push_str("FALSE");
-            result.push_str(&format!("| {1: ^0$} ", min(30, cols[i]), row.columns[i].description));
-        }
-    }
-    result.push_str("|\n");
-
-    result.push_str("+");
-    for _ in 0..(col_name.len()+2) {
-        result.push_str("-");
-    }
-
-    result.push_str(&display_seperator(&cols));
+    result.push_str("</tr>");
+    // End table
+    result.push_str("</table>");
     result
-}
-
-pub fn display_seperator(cols: &Vec<usize>) -> String{
-    let mut res = String::new();
-    for i in 0..(cols.len()) {
-        res.push_str("+--");
-        for _ in 0..min(30, cols[i]) {
-            res.push_str("-");
-        }
-    }
-    res.push_str("+\n");
-    res
 }
