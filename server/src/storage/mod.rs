@@ -21,6 +21,7 @@ use std::io;
 use std::io::Cursor;
 use bincode::rustc_serialize::{EncodingError, DecodingError};
 use std::str::Utf8Error;
+use std::ffi::NulError;
 
 /// A database table
 ///
@@ -36,6 +37,7 @@ pub enum Error {
     Byteorder(::byteorder::Error),
     Utf8Error(FromUtf8Error),
     Utf8StrError(Utf8Error),
+    NulError(NulError),
     WrongMagicNmbr,
     Engine, // cur not used
     LoadDataBase,
@@ -54,8 +56,14 @@ pub enum Error {
     EndOfFile,
     PrimaryKeyValueExists,
     FoundNoPrimaryKey,
-    NulError,
 }
+
+impl From<NulError> for Error {
+    fn from(err: NulError) -> Error {
+        Error::NulError(err)
+    }
+}
+
 
 impl From<Utf8Error> for Error {
     fn from(err: Utf8Error) -> Error {

@@ -5,7 +5,6 @@ use super::super::parse::token::Lit;
 use super::super::parse::ast::CompType;
 use byteorder::{BigEndian, WriteBytesExt, ReadBytesExt};
 use std::ffi::CString;
-use std::ffi::CStr;
 use std::str;
 
 /// General enums in SQL
@@ -418,11 +417,8 @@ impl FromSql for u8 {
 }
 
 impl FromSql for String {
-    fn from_sql(mut data: &[u8]) -> Result<Self, Error> {
-        let cstr = match CString::new(data){
-            Ok(s) => s,
-            Err(e) => return Err(Error::NulError)
-        };
+    fn from_sql(data: &[u8]) -> Result<Self, Error> {
+        let cstr = try!(CString::new(data));
 
         let s = try!(str::from_utf8(cstr.to_bytes())).to_string();
         Ok(s)
