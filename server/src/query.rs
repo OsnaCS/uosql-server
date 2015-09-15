@@ -73,7 +73,7 @@ impl<'a> Executor<'a> {
         }
     }
 
-    fn execute_use_stmt(&mut self, query: UseStmt
+    fn execute_use_stmt(&mut self, query: UseStmt)
     -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError>
     {
 
