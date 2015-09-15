@@ -116,16 +116,16 @@ pub fn read_login<R: Read + Write>(stream: &mut R)
     let status: PkgType = try!(decode_from(stream, SizeLimit::Bounded(1024)));
 
     match status {
-        PkgType::Login => 
+        PkgType::Login =>
             // read the login data
             decode_from(stream, SizeLimit::Bounded(1024)).map_err(|e| e.into()),
         PkgType::Command => { // free the stream
             let _ = decode_from::<R, Command>(stream, SizeLimit::Bounded(4096));
             Err(Error::UnexpectedPkg)
         },
-        _ => 
+        _ =>
             Err(Error::UnexpectedPkg)
-    } 
+    }
 }
 
 /// Read the sent bytes, extract the kind of command.
@@ -140,9 +140,9 @@ pub fn read_commands<R: Read + Write>(stream: &mut R)
             let _ = decode_from::<R, Login>(stream, SizeLimit::Bounded(1024));
             Err(Error::UnexpectedPkg)
         },
-        PkgType::Command =>  
+        PkgType::Command =>
             decode_from(stream, SizeLimit::Bounded(4096)).map_err(|e| e.into()),
-        _ => 
+        _ =>
             Err(Error::UnexpectedPkg)
     }
 }

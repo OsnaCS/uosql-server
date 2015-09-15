@@ -86,7 +86,7 @@ impl From<ClientErrMsg> for Error {
     }
 }
 
-/// Stores TCPConnection with a server. Contains IP, Port, Login data and 
+/// Stores TCPConnection with a server. Contains IP, Port, Login data and
 /// greeting from server.
 pub struct Connection {
     ip: String,
@@ -121,7 +121,7 @@ impl Connection {
         let greet: Greeting =
             try!(decode_from(&mut tmp_tcp, SizeLimit::Bounded(1024)));
 
-        // Login package 
+        // Login package
         let log = Login { username: usern, password: passwd };
         match encode_into(&PkgType::Login, &mut tmp_tcp,
             SizeLimit::Bounded(1024))

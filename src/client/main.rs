@@ -159,7 +159,7 @@ fn main() {
     }
 }
 
-/// Process commandline-input from user. 
+/// Process commandline-input from user.
 /// Match on special commands from user input.
 fn process_input(input: &str, conn: &mut Connection) -> bool {
 
@@ -252,7 +252,7 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
                     via github /schickling/rust-examples/tree/master/snake-ncurses");
             specialcrate::snake();
         }
-        _ => { // Queries 
+        _ => { // Queries
             match conn.execute(input.into()) {
                 Ok(data) => {
                     // show data belonging to executed query

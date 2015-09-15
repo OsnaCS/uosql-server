@@ -19,7 +19,7 @@ pub fn handle(mut stream: TcpStream) {
 
     // Perform handshake, check user login.
     let res = net::do_handshake(&mut stream);
-    
+
     match res {
         Ok((user, pw)) => {
             info!("Connection established. Handshake sent");
@@ -75,7 +75,6 @@ pub fn handle(mut stream: TcpStream) {
                         Err(_) => warn!("Failed to send packet.")
                     }
                 },
-                
                 // send the query string for parsing
                 Command::Query(q) => {
 
