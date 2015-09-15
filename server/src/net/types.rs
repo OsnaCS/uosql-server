@@ -2,7 +2,6 @@
 /// the enum. Nightly Build supports using enums - so we can fix super::Error in
 /// about 3 months ;)
 
-use storage::types::Column;
 use std::error::Error;
 
 /// Code numeric value sent as first byte
@@ -93,24 +92,3 @@ pub enum Command {
     // Shutdown,
     // Statistics,
 }
-
-/// Sent by the server to the client.
-pub struct Response {
-    columns: Vec<Column>,
-    data: Option<Vec<u8>>
-}
-/*
-impl ResultSet {
-    pub fn get_col_cnt(&self) -> usize {
-        self.colums.len()
-    }
-
-    pub fn get_col(&self, nr: usize) -> Option<Column> {
-        self.columns.get(nr)
-    }
-
-    pub fn get_name(&self, name: String)
-
-
-}
-*/

@@ -9,17 +9,19 @@ pub struct TokenSpan {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
-	Str(String),
+	String(String),
 	Int(i64),
-    Float(f64)
+    Float(f64),
+    Bool(u8),
 }
 
 impl Lit {
     pub fn into_DataSrc(&self) -> DataSrc {
         match self {
-            &Lit::Str(ref s) => DataSrc::String(s.clone()),
+            &Lit::String(ref s) => DataSrc::String(s.clone()),
             &Lit::Int(ref i) => DataSrc::Int(i.clone()),
             &Lit::Float(ref f) => DataSrc::String(f.to_string()),
+            &Lit::Bool(ref b) => DataSrc::Bool(b.clone()),
         }
     }
 }

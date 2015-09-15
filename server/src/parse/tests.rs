@@ -93,7 +93,7 @@ fn test_create_table_full() {
             primary: true,
             auto_increment: true,
             not_null: true,
-            comment: Some(Lit::Str("TEST".to_string())),
+            comment: Some(Lit::String("TEST".to_string())),
         }
     ];
 
@@ -222,8 +222,8 @@ fn test_insert_1() {
         ManipulationStmt::Insert(InsertStmt {
             tid: "foo".to_string(),
             col: Vec::<String>::new(),
-            val: vec![Lit::Str("peter".to_string()),
-                Lit::Str("pan".to_string()),
+            val: vec![Lit::String("peter".to_string()),
+                Lit::String("pan".to_string()),
                 Lit::Int(3)],
     })));
 }
@@ -237,8 +237,8 @@ fn test_insert_2() {
         ManipulationStmt::Insert(InsertStmt {
             tid: "foo".to_string(),
             col: Vec::<String>::new(),
-            val: vec![Lit::Str("peter".to_string()),
-                Lit::Str("pan".to_string()),
+            val: vec![Lit::String("peter".to_string()),
+                Lit::String("pan".to_string()),
                 Lit::Int(4)],
     })));
 }
@@ -252,8 +252,8 @@ fn test_insert_3() {
         ManipulationStmt::Insert(InsertStmt {
             tid: "foo".to_string(),
             col: vec!["eins".to_string(), "zwei".to_string(), "drei".to_string()],
-            val: vec![Lit::Str("peter".to_string()),
-                Lit::Str("pan".to_string()),
+            val: vec![Lit::String("peter".to_string()),
+                Lit::String("pan".to_string()),
                 Lit::Int(5)],
     })));
 }
@@ -271,7 +271,7 @@ fn test_delete_row() {
                 col: "name".to_string(),
                 op: CompType::Equ,
                 aliasrhs: None,
-                rhs: CondType::Literal(Lit::Str("peter".to_string())),
+                rhs: CondType::Literal(Lit::String("peter".to_string())),
             })),
     })));
 }
@@ -442,14 +442,14 @@ fn test_select_full_where_clause() {
                         col: "fname".to_string(),
                         op: CompType::Equ,
                         aliasrhs: None,
-                        rhs: CondType::Literal(Lit::Str("Eugene".to_string())),
+                        rhs: CondType::Literal(Lit::String("Eugene".to_string())),
                     })),
                     Box::new(Conditions::Leaf(Condition {
                         aliascol: None,
                         col: "lname".to_string(),
                         op: CompType::Equ,
                         aliasrhs: None,
-                        rhs: CondType::Literal(Lit::Str("peng".to_string())),
+                        rhs: CondType::Literal(Lit::String("peng".to_string())),
                     })))),
                 Box::new(Conditions::And(
                     Box::new(Conditions::Leaf(Condition {
@@ -457,14 +457,14 @@ fn test_select_full_where_clause() {
                         col: "fname".to_string(),
                         op: CompType::Equ,
                         aliasrhs: None,
-                        rhs: CondType::Literal(Lit::Str("peter".to_string())),
+                        rhs: CondType::Literal(Lit::String("peter".to_string())),
                     })),
                     Box::new(Conditions::Leaf(Condition {
                         aliascol: None,
                         col: "lname".to_string(),
                         op: CompType::Equ,
                         aliasrhs: None,
-                        rhs: CondType::Literal(Lit::Str("pan".to_string())),
+                        rhs: CondType::Literal(Lit::String("pan".to_string())),
                     }))
                 ))
             )),
@@ -522,14 +522,14 @@ fn test_select_full_where_clause_limit() {
                         col: "fname".to_string(),
                         op: CompType::Equ,
                         aliasrhs: None,
-                        rhs: CondType::Literal(Lit::Str("Eugene".to_string())),
+                        rhs: CondType::Literal(Lit::String("Eugene".to_string())),
                     })),
                     Box::new(Conditions::Leaf(Condition {
                         aliascol: None,
                         col: "lname".to_string(),
                         op: CompType::Equ,
                         aliasrhs: None,
-                        rhs: CondType::Literal(Lit::Str("peng".to_string())),
+                        rhs: CondType::Literal(Lit::String("peng".to_string())),
                     })))),
                 Box::new(Conditions::And(
                     Box::new(Conditions::Leaf(Condition {
@@ -537,14 +537,14 @@ fn test_select_full_where_clause_limit() {
                         col: "fname".to_string(),
                         op: CompType::Equ,
                         aliasrhs: None,
-                        rhs: CondType::Literal(Lit::Str("peter".to_string())),
+                        rhs: CondType::Literal(Lit::String("peter".to_string())),
                     })),
                     Box::new(Conditions::Leaf(Condition {
                         aliascol: None,
                         col: "lname".to_string(),
                         op: CompType::Equ,
                         aliasrhs: None,
-                        rhs: CondType::Literal(Lit::Str("pan".to_string())),
+                        rhs: CondType::Literal(Lit::String("pan".to_string())),
                     }))
                 ))
             )),
@@ -588,14 +588,14 @@ fn test_select_complete_1() {
                         col: "fname".to_string(),
                         op: CompType::Equ,
                         aliasrhs: None,
-                        rhs: CondType::Literal(Lit::Str("Eugene".to_string())),
+                        rhs: CondType::Literal(Lit::String("Eugene".to_string())),
                     })),
                     Box::new(Conditions::Leaf(Condition {
                         aliascol: Some("bar_1".to_string()),
                         col: "lname".to_string(),
                         op: CompType::Equ,
                         aliasrhs: None,
-                        rhs: CondType::Literal(Lit::Str("peng".to_string())),
+                        rhs: CondType::Literal(Lit::String("peng".to_string())),
                     })))),
                 Box::new(Conditions::And(
                     Box::new(Conditions::Leaf(Condition {
@@ -655,14 +655,14 @@ fn test_select_complete_2_with_order_by() {
                         col: "fname".to_string(),
                         op: CompType::Equ,
                         aliasrhs: None,
-                        rhs: CondType::Literal(Lit::Str("Eugene".to_string())),
+                        rhs: CondType::Literal(Lit::String("Eugene".to_string())),
                     })),
                     Box::new(Conditions::Leaf(Condition {
                         aliascol: Some("bar_1".to_string()),
                         col: "lname".to_string(),
                         op: CompType::Equ,
                         aliasrhs: None,
-                        rhs: CondType::Literal(Lit::Str("peng".to_string())),
+                        rhs: CondType::Literal(Lit::String("peng".to_string())),
                     })))),
                 Box::new(Conditions::And(
                     Box::new(Conditions::Leaf(Condition {
@@ -769,7 +769,7 @@ fn test_update_full_with_table_alias() {
                 col: "bar_2".to_string(),
                 op: CompType::GThan,
                 aliasrhs: None,
-                rhs: CondType::Literal(Lit::Str("pleb".to_string())),
+                rhs: CondType::Literal(Lit::String("pleb".to_string())),
                 })
             )
     })));
@@ -790,7 +790,7 @@ fn test_mult_where_blocks_3_param() {
                     col: "lname".to_string(),
                     op: CompType::Equ,
                     aliasrhs: None,
-                    rhs: CondType::Literal(Lit::Str("peng".to_string())),
+                    rhs: CondType::Literal(Lit::String("peng".to_string())),
                     }
                 )
             ), Box::new(Conditions::And(Box::new(
@@ -799,14 +799,14 @@ fn test_mult_where_blocks_3_param() {
                         col: "fname".to_string(),
                         op: CompType::Equ,
                         aliasrhs: None,
-                        rhs: CondType::Literal(Lit::Str("peter".to_string())),
+                        rhs: CondType::Literal(Lit::String("peter".to_string())),
                         }
                     )), Box::new(Conditions::Leaf(Condition {
                         aliascol: None,
                         col: "lname".to_string(),
                         op: CompType::Equ,
                         aliasrhs: None,
-                        rhs: CondType::Literal(Lit::Str("pan".to_string())),
+                        rhs: CondType::Literal(Lit::String("pan".to_string())),
                         }))
                     )
                 )
@@ -832,14 +832,14 @@ fn test_mult_where_blocks_priority_4_param() {
                         col: "fname".to_string(),
                         op: CompType::Equ,
                         aliasrhs: None,
-                        rhs: CondType::Literal(Lit::Str("Eugene".to_string())),
+                        rhs: CondType::Literal(Lit::String("Eugene".to_string())),
                     })),
                     Box::new(Conditions::Leaf(Condition {
                         aliascol: None,
                         col: "lname".to_string(),
                         op: CompType::Equ,
                         aliasrhs: None,
-                        rhs: CondType::Literal(Lit::Str("peng".to_string())),
+                        rhs: CondType::Literal(Lit::String("peng".to_string())),
                     })))),
                 Box::new(Conditions::And(
                     Box::new(Conditions::Leaf(Condition {
@@ -847,14 +847,14 @@ fn test_mult_where_blocks_priority_4_param() {
                         col: "fname".to_string(),
                         op: CompType::Equ,
                         aliasrhs: None,
-                        rhs: CondType::Literal(Lit::Str("peter".to_string())),
+                        rhs: CondType::Literal(Lit::String("peter".to_string())),
                     })),
                     Box::new(Conditions::Leaf(Condition {
                         aliascol: None,
                         col: "lname".to_string(),
                         op: CompType::Equ,
                         aliasrhs: None,
-                        rhs: CondType::Literal(Lit::Str("pan".to_string())),
+                        rhs: CondType::Literal(Lit::String("pan".to_string())),
                     }))
                 ))
             ))

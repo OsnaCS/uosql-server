@@ -27,7 +27,7 @@ use url::form_urlencoded as urlencode;
 use std::net::Ipv4Addr;
 use std::str::FromStr;
 use nickel::QueryString;
-use server::storage::Rows;
+use server::storage::ResultSet;
 
 // Dummy key for typemap
 struct ConnKey;
@@ -274,6 +274,7 @@ fn main() {
 
     server.listen("127.0.0.1:6767");
 }
+
 /// Test if binding address is a valid address
 fn test_bind (bind : &str) -> bool {
     let result = match Ipv4Addr::from_str(bind) {
@@ -286,7 +287,7 @@ fn test_bind (bind : &str) -> bool {
 }
 
 /// Display table data as HTML table
-fn display_html (rows: &Rows) -> String {
+fn display_html (rows: &ResultSet) -> String {
     if rows.data.is_empty() {
         display_meta_html(&rows)
     } else {
@@ -295,7 +296,7 @@ fn display_html (rows: &Rows) -> String {
 }
 
 /// Fill table with meta data
-fn display_meta_html (rows: &Rows) -> String {
+fn display_meta_html (rows: &ResultSet) -> String {
     let mut result = String::new();
     result.push_str("<table id=\"t01\"><caption>Results</caption>");
 
@@ -340,7 +341,7 @@ fn display_meta_html (rows: &Rows) -> String {
 }
 
 /// Fill table with row data
-fn display_data_html (rows: &Rows) -> String {
+fn display_data_html (rows: &ResultSet) -> String {
 
     let mut result = String::new();
     result.push_str("<table id=\"t01\"><caption>Results</caption>");

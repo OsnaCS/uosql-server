@@ -28,7 +28,7 @@
         </form>
     </p>
     <h6 style = "text-align:center">
-        * Input required
+        *required
     <h6>
     <p style="text-align:right">
         <a href="http://media2mult.uni-osnabrueck.de/pmwiki/fields/dbp15/">
