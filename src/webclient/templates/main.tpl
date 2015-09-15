@@ -7,8 +7,9 @@
             border: 1px solid black;
             border-collapse: collapse;
         }
-        td {
+        td, th {
             padding: 5px;
+            text-align: left;
         }
         table#t01 {
             background-color: #ffffff;

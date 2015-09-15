@@ -28,6 +28,7 @@ use std::net::Ipv4Addr;
 use std::str::FromStr;
 use nickel::QueryString;
 use server::storage::ResultSet;
+use server::storage::types::FromSql;
 
 // Dummy key for typemap
 struct ConnKey;
@@ -301,10 +302,10 @@ fn display_meta_html (rows: &ResultSet) -> String {
     result.push_str("<table id=\"t01\"><caption>Results</caption>");
 
     // First table row with column names
-    result.push_str("<tr><td>Column name</td>");
+    result.push_str("<tr><th>Column name</th>");
     let cols = rows.columns.clone();
     for i in 0..(cols.len()) {
-        result.push_str(&format!("<td>{}</td>", rows.columns[i].name).to_string());
+        result.push_str(&format!("<th>{}</th>", rows.columns[i].name).to_string());
     }
     result.push_str("</tr>");
 
@@ -348,14 +349,37 @@ fn display_data_html (rows: &ResultSet) -> String {
 
     let cols = rows.columns.clone();
 
+    // Row of column names
     for i in 0..(cols.len()) {
-        result.push_str(&format!("<td>{}</td>", rows.columns[i].name).to_string());
+        result.push_str(&format!("<th>{}</th>", rows.columns[i].name).to_string());
     }
     result.push_str("</tr>");
 
-    //To Do: Display data
+    // Push all the data into result
+    // take 1st element
+    // result.push_str("<tr>");
+    // result.push_str("<td>");
+    // let typ = rows.columns[0].get_sql_type();
+    // let len = typ.size();
 
-    result.push_str("</tr>");
+    // let mut sli : Vec<u8>;
+    // for i in 0..len {
+    //     let elem = match rows.data.iter().next() {
+    //         Some(n) => n.clone(),
+    //         None => break,
+    //     };
+    //     sli.push(elem);
+    // }
+
+    // let erg = match typ.decode_from(&mut sli) {
+    //     Ok(n) => n,
+    //     Err(_) => { return "Error".into();}
+    // };
+    // result.push_str(&format!("{}", erg));
+    // result.push_str("</td>");
+    // result.push_str("</tr>");
+
+
     // End table
     result.push_str("</table>");
     result
