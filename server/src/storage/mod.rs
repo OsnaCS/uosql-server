@@ -17,13 +17,11 @@ pub use parse::ast;
 pub use parse::ast::CompType;
 pub use std::string::FromUtf8Error;
 pub use self::engine::FlatFile;
-
 use std::io;
-use std::io::{Write, Read, Seek, SeekFrom, Cursor};
-
-//use self::meta::Table;
-
+use std::io::Cursor;
 use bincode::rustc_serialize::{EncodingError, DecodingError};
+use std::str::Utf8Error;
+use std::ffi::NulError;
 
 /// A database table
 ///
@@ -38,6 +36,8 @@ pub enum Error {
     BinDe(DecodingError),
     Byteorder(::byteorder::Error),
     Utf8Error(FromUtf8Error),
+    Utf8StrError(Utf8Error),
+    NulError(NulError),
     WrongMagicNmbr,
     Engine, // cur not used
     LoadDataBase,
@@ -58,11 +58,25 @@ pub enum Error {
     FoundNoPrimaryKey,
 }
 
+impl From<NulError> for Error {
+    fn from(err: NulError) -> Error {
+        Error::NulError(err)
+    }
+}
+
+
+impl From<Utf8Error> for Error {
+    fn from(err: Utf8Error) -> Error {
+        Error::Utf8StrError(err)
+    }
+}
+
 impl From<FromUtf8Error> for Error {
     fn from(err: FromUtf8Error) -> Error {
         Error::Utf8Error(err)
     }
 }
+
 
 impl From<io::Error> for Error {
     fn from(err: io::Error) -> Error {
