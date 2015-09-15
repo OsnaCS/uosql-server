@@ -4,6 +4,9 @@ use std::io::Read;
 use super::super::parse::token::Lit;
 use super::super::parse::ast::CompType;
 use byteorder::{BigEndian, WriteBytesExt, ReadBytesExt};
+use std::ffi::CString;
+use std::ffi::CStr;
+use std::str;
 
 /// General enums in SQL
 #[derive(Debug, Clone, Copy, RustcDecodable, RustcEncodable, PartialEq)]
@@ -97,24 +100,7 @@ impl SqlType {
             },
         }
     }
-    /// Writes the vector vec to buf.
-    /// Returns the bytes written.
-    /// Returns byteorder::Error if vec could not be written to buf
-    fn write_to_buf<W: Write>(mut buf: W, vec: &Vec<u8>) -> Result<u32, Error> {
-        let mut it = vec.into_iter();
-        let mut bytes_written = 0;
 
-        loop {
-            match it.next() {
-                Some(v) => {
-                    try!(buf.write_u8(*v));
-                    bytes_written += 1;
-                },
-                None => break,
-            }
-        }
-        Ok(bytes_written)
-    }
 
     /// Convert s to a vector with l bytes.
     /// If length of s is > l, the returning vector will only contain the first
@@ -424,19 +410,21 @@ impl FromSql for u16 {
     }
 }
 
-
 impl FromSql for u8 {
     fn from_sql(mut data: &[u8]) -> Result<Self, Error> {
-        Err(Error::NoImplementation)
+        let u = try!(data.read_u8());
+        Ok(u)
     }
 }
+
 impl FromSql for String {
     fn from_sql(mut data: &[u8]) -> Result<Self, Error> {
+        let cstr = match CString::new(data){
+            Ok(s) => s,
+            Err(e) => return Err(Error::NulError)
+        };
 
-        let mut s = String::new();
-
-        try!(data.read_to_string(&mut s));
-        //s.trim_matches('\0');
+        let s = try!(str::from_utf8(cstr.to_bytes())).to_string();
         Ok(s)
     }
 }

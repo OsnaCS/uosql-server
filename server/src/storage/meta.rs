@@ -18,8 +18,6 @@ use super::Engine;
 use super::Error;
 use super::engine::FlatFile;
 use super::types::Column;
-use super::data::Rows;
-use super::super::parse::ast::DataSrc;
 
 /// constants
 const MAGIC_NUMBER: u64 = 0x49616D4372616E43;
@@ -37,7 +35,7 @@ const VERSION_NO: u8 = 1;
 pub enum DataType { Integer = 1, Float = 2, }
 
 impl DataType {
-    pub fn value(&self) -> u8 {
+    pub fn _value(&self) -> u8 {
        *self as u8
     }
 }
