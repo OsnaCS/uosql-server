@@ -524,7 +524,7 @@ impl<B: Write + Read + Seek> Rows <B> {
             data.extend(row_data.into_iter())
         }
 
-        Ok(ResultSet { data: data, columns: self.columns.clone() })
+        Ok(ResultSet{ data: data, columns: self.columns.clone() })
     }
 
 
@@ -573,8 +573,10 @@ impl RowHeader{
     }
 }
 
+
 #[derive(Debug, RustcEncodable, RustcDecodable)]
 pub struct ResultSet {
     pub data: Vec<u8>,
     pub columns: Vec<Column>,
 }
+

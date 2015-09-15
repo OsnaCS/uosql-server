@@ -20,6 +20,7 @@ use std::io::{self, stdout, Write, Read};
 use std::str::FromStr;
 use uosql::logger;
 use uosql::Connection;
+use uosql::types::preprocess;
 use server::storage::ResultSet;
 use docopt::Docopt;
 use regex::Regex;
@@ -509,6 +510,7 @@ fn display_data(row: &ResultSet) {
     for i in &row.columns {
         cols.push(max(12, i.name.len()));
     }
+    preprocess(&row);
 
     // column names
     display_seperator(&cols);

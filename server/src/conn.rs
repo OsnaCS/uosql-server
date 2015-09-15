@@ -20,15 +20,16 @@ pub fn handle(mut stream: TcpStream) {
     // Perform handshake, check user login.
     let res = net::do_handshake(&mut stream);
 
+    let mut user; 
     match res {
-        Ok((user, pw)) => {
+        Ok((name, pw)) => {
             info!("Connection established. Handshake sent");
-            match auth::find_user(&user, &pw) {
-                Ok(_) => {
+            user = match auth::find_user(&name, &pw) {
+                Ok(u) => {
                     match net::send_info_package(&mut stream,
                         PkgType::AccGranted)
                     {
-                        Ok(_) => {},
+                        Ok(_) => u,
                         Err(e) => { error!("{}", e.description()); return }
                     }
                 },
@@ -88,17 +89,17 @@ pub fn handle(mut stream: TcpStream) {
                             debug!("{:?}", tree);
 
                             // Pass AST to query executer
-                            let r = query::execute_from_ast(tree, & mut auth::User {
-                                _name: "DummyUser".into(),
-                                _currentDatabase: None} ).
-                                unwrap_or(
+                            let mut r2 = query::execute_from_ast(tree, &mut user);
+
+                            println!("{:?}", r2);
+
+                            let r = r2.unwrap_or(
                                     ResultSet { data: vec![], columns: vec![
-                                        Column::new("error occurred", SqlType::Int, false,
+                                        Column::new("error", SqlType::Int, false,
                                         "error mind the error, not an error again, I hate errors",
                                         false)]
                                     }
                                 );
-
                             // Send response package
                             match net::send_response_package(&mut stream, r) {
                                 Ok(_) => { },

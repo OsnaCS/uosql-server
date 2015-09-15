@@ -131,8 +131,8 @@ impl<'a> Executor<'a> {
         }
         let table = try!(self.get_table(&stmt.tid[0]));
         let engine = table.create_engine();
-        // Ok(try!(engine.full_scan()))
-        Err(ExecutionError::DebugError("engine.full_scan() not implemented ".into()))
+        Ok(try!(engine.full_scan()))
+        
 
     }
 
@@ -173,8 +173,8 @@ impl<'a> Executor<'a> {
         let table = try!(base.create_table(&query.tid, tmp_vec, 0));
         let mut engine = table.create_engine();
         engine.create_table();
-        //Ok(generate_rows_dummy())
-        Err(ExecutionError::DebugError("Not implemented.".into()))
+        Ok(generate_rows_dummy())
+        //Err(ExecutionError::DebugError("Not implemented.".into()))
     }
 
     fn execute_drop_stmt(&mut self, query: DropStmt)
