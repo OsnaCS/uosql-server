@@ -23,7 +23,7 @@ use std::io::{self, Write, Read};
 use bincode::rustc_serialize::{EncodingError, DecodingError, decode_from, encode_into};
 use bincode::SizeLimit;
 use self::types::*;
-use storage::Rows;
+use storage::ResultSet;
 use parse::parser::ParseError;
 
 const PROTOCOL_VERSION: u8 = 1;
@@ -165,7 +165,7 @@ pub fn send_info_package<W: Write>(mut stream: &mut W, pkg: PkgType)
 }
 
 /// Send ResultSet package as response to a query.
-pub fn send_response_package<W: Write>(mut stream: &mut W, data: Rows)
+pub fn send_response_package<W: Write>(mut stream: &mut W, data: ResultSet)
     -> Result<(), Error>
 {
     try!(encode_into(&PkgType::Response, stream, SizeLimit::Bounded(1024)));
