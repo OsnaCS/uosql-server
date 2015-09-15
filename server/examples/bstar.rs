@@ -6,7 +6,8 @@ use std::fs::OpenOptions;
 
 fn main() {
     Bstar::<u64>::delete("test");
-    let mut _tree = Bstar::create("test", 2);
+
+    let mut _tree = Bstar::create("test", 2, false);
     let mut tree = match _tree {
         Ok(t) => t,
         _ => panic!("error"),
@@ -51,10 +52,29 @@ fn main() {
     println!("");
 
     println!("{:?}", tree.delete_keyaddr(1));
-    println!("{:?}", tree.delete_keyaddr(2));
-
+        println!("");
+    println!(" {:?} ELEMENTS:", tree);
     println!("");
-    println!("DEBUG PRINTING {:?} ELEMENTS:", tree);
+    tree.debug_print();
+    println!("");
+    println!("");
+    println!("{:?}", tree.delete_keyaddr(2));
+        println!("");
+    println!(" {:?} ELEMENTS:", tree);
+    println!("");
+    tree.debug_print();
+    println!("");
+    println!("");
+    println!("{:?}", tree.delete_keyaddr(3));
+        println!("");
+    println!(" {:?} ELEMENTS:", tree);
+    println!("");
+    tree.debug_print();
+    println!("");
+    println!("");
+    println!("{:?}", tree.delete_keyaddr(7));
+
+    println!(" {:?} ELEMENTS:", tree);
     println!("");
     tree.debug_print();
     println!("");
