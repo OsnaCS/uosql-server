@@ -819,7 +819,7 @@ impl<'a> Parser<'a> {
                 SqlType::Char(length)
             },
             // checks if char is written in correct sql syntax
-            "varchar" => {
+            /*"varchar" => {
                 self.bump();
                 try!(self.expect_token(&[Token::ParenOp]));
                 self.bump();
@@ -842,7 +842,7 @@ impl<'a> Parser<'a> {
                                 ))
                 };
                 SqlType::VarChar(length)
-            },
+            },*/
             _ => return Err(ParseError::NotADatatype(
              Span { lo: span_lo , hi: span_hi }
              )),

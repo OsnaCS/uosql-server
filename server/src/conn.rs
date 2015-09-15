@@ -6,7 +6,7 @@ use auth;
 use parse;
 use super::query;
 use net::types::*;
-use storage::{Rows};
+use storage::{ResultSet};
 use storage::types::{SqlType, Column};
 use std::error::Error;
 
@@ -91,7 +91,7 @@ pub fn handle(mut stream: TcpStream) {
                                 _name: "DummyUser".into(),
                                 _currentDatabase: None} ).
                                 unwrap_or(
-                                    Rows { data: vec![], columns: vec![
+                                    ResultSet { data: vec![], columns: vec![
                                         Column::new("error occurred", SqlType::Int, false,
                                         "error mind the error, not an error again, I hate errors",
                                         false)]
