@@ -1,8 +1,8 @@
-// Code from snake-ncurses by Johannes Schickling <schickling.j@gmail.com>,
+// Code by Johannes Schickling <schickling.j@gmail.com>,
 // https://github.com/schickling/rust-examples/tree/master/snake-ncurses
 // minor revisions accoring to changed rust-spedicifactions were made in
 // order to successfully compile the code, game.rs and main.rs were
-// merged into specialcrate.rs. Snake-Ncurses was published under MIT license.
+// merged into specialcrate.rs. Code was published under MIT license.
 
 extern crate rand;
 
