@@ -525,7 +525,6 @@ impl<T: KnownSize + PartialOrd + Clone + Debug> Bstar<T> {
                         peernode.0.rightbrother = node.rightbrother;
 
                         try!(peernode.0.write(&mut self.dat, Some(peernode.2)));
-                        println!("Node right BROTHER{:?}", node.rightbrother );
                         // delete original nodes reaching key from father by recursion
                         try!(self.delegate_underflow_node(&mut father,
                                                             indexonfather as u64,
@@ -541,7 +540,6 @@ impl<T: KnownSize + PartialOrd + Clone + Debug> Bstar<T> {
                         try!(self.update_free_addr(peernode.2));
                         // write node to disk
                         node.rightbrother = peernode.0.rightbrother;
-                        println!("PEER right BROTHER{:?}", peernode.0.rightbrother );
                         try!(node.write(&mut self.dat, Some(nodeaddr)));
                         // delete right peer reaching key from father by recursion
                         try!(self.delegate_underflow_node(&mut father,
