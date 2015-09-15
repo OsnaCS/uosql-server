@@ -32,7 +32,7 @@ pub enum ManipulationStmt {
 #[derive(Debug, Clone, PartialEq)]
 pub enum CreateStmt {
     Table(CreateTableStmt),
-    // View
+    View(CreateViewStmt),
     Database(String),
 }
 
@@ -48,7 +48,7 @@ pub enum AltStmt {
 #[derive(Debug, Clone, PartialEq)]
 pub enum DropStmt {
     Table(String),
-    //Index(String)
+    View(String),
     Database(String)
 }
 
@@ -64,12 +64,22 @@ pub struct CreateTableStmt {
     pub cols: Vec<ColumnInfo>,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct CreateViewStmt {
+    pub name: String,
+    pub opt: bool, // OR REPLACE keyword
+    pub sel : SelectStmt,
+}
+
 /// Information for column creation
 #[derive(Debug, Clone, PartialEq)]
 pub struct ColumnInfo {
     pub cid: String,
     pub datatype: SqlType,
     pub primary: bool,
+    pub auto_increment: bool,
+    pub not_null: bool,
+    pub comment: Option<token::Lit>,
 }
 
 /// Information for table alteration
@@ -106,6 +116,7 @@ pub struct SelectStmt {
     //pub groupby: Option<GroupBy>,
     //pub orderby: Option<OrderBy>,
     pub spec_op: Option<SpecOps>,
+    pub order: Vec<Sort>,
     pub limit: Option<Limit>,
 }
 
@@ -183,6 +194,13 @@ pub struct Condition {
     pub rhs: CondType
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct Sort {
+    pub alias: Option<String>,
+    pub col: String,
+    pub order: Option<Order>,
+}
+
 /// Allowed operators for where-clause
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub enum CompType {
@@ -206,5 +224,30 @@ pub enum DataSrc  {
     Int(i64),
     String(String),
     Bool(u8),
+}
 
+impl DataSrc {
+    /// checks if Value is true
+    /// return is true for Int when Value no null
+    /// return is true for String when String is not empty
+    /// return is true for Bool when Bool is not null
+    pub fn is_true(&self) -> bool {
+        match self {
+            &DataSrc::Int(x) => x == 0,
+            &DataSrc::String(ref x) => !x.is_empty(),
+            &DataSrc::Bool(x) => x != 0,
+        }
+    }
+    /// static method to turn u8 into bool
+    /// return is true for input when input is not null
+    pub fn to_bool(input: u8) -> bool {
+        input != 0
+    }
+}
+
+/// Possible values for "Order By" keyword
+#[derive(Debug, Clone, PartialEq)]
+pub enum Order {
+    Asc,
+    Desc
 }

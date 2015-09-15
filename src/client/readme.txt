@@ -10,6 +10,8 @@ Commands
 ################################################################################
 :exit	 	Exit client without terminating server connection.
 :help    	Displays this file.
+:load       Loads script.sql from client-folder and executes querys. See
+            script.sql for further information on syntax. 
 :ping	 	Checks if server is available and active.
 :quit	 	Terminates connection with server and exits client.
 

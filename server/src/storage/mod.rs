@@ -1,7 +1,7 @@
 //! Storage Engine trait and several implementations
 //!
 //!
-pub mod engine;
+mod engine;
 mod meta;
 pub mod types;
 
@@ -12,10 +12,13 @@ pub use self::meta::Database;
 pub use self::data::Rows;
 pub use self::types::Column;
 pub use self::types::SqlType;
-use parse::ast;
-use std::string::FromUtf8Error;
+pub use parse::ast;
+pub use parse::ast::CompType;
+pub use std::string::FromUtf8Error;
+pub use self::engine::FlatFile;
 
 use std::io;
+use std::io::{Write, Read, Seek, SeekFrom, Cursor};
 
 //use self::meta::Table;
 
@@ -40,9 +43,18 @@ pub enum Error {
     RemoveColumn,
     AddColumn,
     InvalidType,
-    PrimaryKey,
     InterruptedRead,
     OutOfBounds,
+    MissingPrimaryKey,
+    InvalidColumn,
+    NotAPrimaryKey,
+    NoImplementation,
+    WrongLength,
+    NoOperationPossible,
+    InvalidState,
+    EndOfFile,
+    PrimaryKeyValueExists,
+    FoundNoPrimaryKey,
 }
 
 impl From<FromUtf8Error> for Error {
@@ -92,11 +104,15 @@ pub trait Engine {
     /// returns the table
     fn table(&self) -> &Table;
 
-    /// Writes a row to hard drive
-    fn insert_row(&mut self, data: &[Option<ast::DataSrc>])
-        -> Result<(), Error>;
+    fn full_scan(&self) -> Result<Rows<Cursor<Vec<u8>>>, Error>;
 
-    fn full_scan(&self) -> Result<Rows, Error>;
+    fn lookup(&self, column_index: usize, value: &[u8], comp: CompType)
+    -> Result<Rows<Cursor<Vec<u8>>>, Error>;
+
+    fn insert_row(&mut self, row_data: &[u8]) -> Result<u64, Error>;
+
+    fn delete(&self, column_index: usize, value: &[u8], comp: CompType)
+    -> Result<u64, Error>;
 }
 
 #[repr(u8)]
