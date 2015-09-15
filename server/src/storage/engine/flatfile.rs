@@ -1,16 +1,12 @@
 use super::super::meta::{Table};
 use super::super::{Engine, Error};
 use std::fs::{OpenOptions, File};
-use std::io::{Write, Read, Seek, SeekFrom, Cursor};
-use super::super::super::parse::ast;
+use std::io::{Write, Read, Cursor};
 use super::super::super::parse::ast::CompType;
-use super::super::types::SqlType;
-
+use super::super::data::{Rows};
 //---------------------------------------------------------------
 // FlatFile-Engine
 //---------------------------------------------------------------
-use super::super::data::{Rows};
-use std::fs;
 
 pub struct FlatFile<'a> {
     table: Table<'a>,
@@ -26,7 +22,7 @@ impl<'a> FlatFile<'a> {
 
     /// return a rows object with the table.dat file as data_src
     pub fn get_reader(&self) -> Result<Rows<File>, Error> {
-        let mut file = try!(OpenOptions::new()
+        let file = try!(OpenOptions::new()
             .read(true)
             .write(true)
             .open(&self.table.get_table_data_path()));
@@ -69,17 +65,14 @@ impl<'a> Engine for FlatFile<'a> {
         let mut rows = Rows::new(cursor, &self.table.meta_data.columns);
         let mut buf: Vec<u8> = Vec::new();
 
-        while true {
+        loop {
             match reader.next_row(&mut buf) {
                 Ok(_) => {
-                        rows.add_row(& buf);
+                    try!(rows.add_row(& buf));
+                    ()
                 },
-                Err(e) => {
-                    match e {
-                        Error::EndOfFile => break,
-                        _ => return Err(e)
-                    }
-                },
+                Err(Error::EndOfFile) => break,
+                Err(e) => return Err(e),
             }
         }
         Ok(rows)
