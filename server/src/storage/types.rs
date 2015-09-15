@@ -392,13 +392,14 @@ impl Column {
         &self.sql_type
     }
 
-    pub fn get_coulmn_name(&self) -> &str {
+    pub fn get_column_name(&self) -> &str {
         &self.name
     }
 
     pub fn get_size(&self) -> u32 {
         self.sql_type.size() as u32
     }
+
 }
 
 //---------------------------------------------------------------

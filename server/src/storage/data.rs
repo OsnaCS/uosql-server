@@ -46,6 +46,7 @@ impl<B: Write + Read + Seek> Rows <B> {
     /// reads the next row, which is not marked as deleted
     /// and writes the data into target_buf
     /// returns the bytes read or an Error otherwise.
+    /// Returns Error:EndOfFile if no next row could be read.
     pub fn next_row<W: Write>(&mut self, mut target_buf: &mut W)
         -> Result<u64, Error>
     {
@@ -66,7 +67,9 @@ impl<B: Write + Read + Seek> Rows <B> {
         Ok(target_vec.len() as u64)
     }
 
-    /// sets pos to the beginning of the next row
+    /// Sets pos to the beginning of the next row
+    /// Be sure to only call skip_row after the row header was
+    /// read.
     fn skip_row(&mut self) -> Result<u64, Error> {
         let columns_size = self.columns_size as i64;
         self.set_pos(SeekFrom::Current(columns_size))
@@ -177,6 +180,21 @@ impl<B: Write + Read + Seek> Rows <B> {
         Ok(d)
     }
 
+    /// Sets value of column_index' column to new_value.
+    pub fn set_value(&self, row_data: &mut[u8], new_value: &[u8], column_index: usize)
+    {
+        // start index of column
+        let s = self.column_offsets[column_index] as usize;
+        // end index of column
+        let e = s + self.get_column(column_index).get_size() as usize;
+        let mut c = 0;
+        for i in s..e {
+            row_data[i] = new_value[c];
+            c += 1;
+        }
+    }
+
+
     // returns the columns
     pub fn get_column(&self, index: usize) -> &Column {
         &self.columns[index]
@@ -278,6 +296,7 @@ impl<B: Write + Read + Seek> Rows <B> {
     pub fn delete(&mut self, column_index: usize, value: &[u8], comp: CompType)
      -> Result<u64, Error>
     {
+        self.reset_pos();
         let mut count = 0;
         while true {
             match self.get_next_row(column_index, value, comp) {
@@ -300,11 +319,75 @@ impl<B: Write + Read + Seek> Rows <B> {
         Ok(count)
 
     }
-    /// looks for rows with the given primary key value and comparison
-    /// returns an new Rows object which fulfills a constraint
+
+    /// Updates all rows fulfilling the constraint.
+    /// constraint_column_index: index of the rows whose value is compared
+    /// to constraint_value.
+    /// values[(column_index: usize, new_value: &[u8])]: Slice of tuples
+    /// The first value of the tuple contains the index of the column to be
+    /// updated. The second value contains the new value for the column.
+    /// returns the numer of rows updated.
+    /// Panics if a row could not be updated. If modify fails, the updated row
+    /// will be lost.
+    pub fn modify(&mut self, constraint_column_index: usize,
+     constraint_value: &[u8], comp: CompType,
+     values: &[(usize, &[u8])] )-> Result<u64, Error>
+    {
+        let mut rows = try!(self.lookup(constraint_column_index,
+                                        constraint_value,
+                                        comp));
+
+        let primary_key_index = self.get_primary_key_column_index();
+        let mut primary_key_value: Vec<u8>;
+        let mut row_data = Vec::<u8>::new();
+        let mut result = rows.next_row(&mut row_data);
+        let mut rows_deleted: u64;
+        let mut updated_rows: u64 = 0;
+
+        // loop through rows.
+        loop {
+            match result {
+                Ok(_) => { },
+                Err(Error::EndOfFile) => break,
+                Err(e) => return Err(e)
+            };
+            primary_key_value = try!(rows.get_value(&row_data,
+                                                    primary_key_index));
+
+            rows_deleted = try!(self.delete(primary_key_index,
+                                            &primary_key_value,
+                                            CompType::Equ));
+
+            if rows_deleted != 1 { panic!("Exactly one row should have been
+                                           deleted!") };
+
+            for kvp in values {
+              self.set_value(&mut row_data,
+                             &kvp.1, // new_value
+                             kvp.0); // column_index
+            }
+
+            match self.insert_row(&row_data) {
+                Ok(_) => { updated_rows += 1 },
+                Err(e) => {
+                    panic!("Modify failed. Deleted old row but could not insert
+                            modified new row. Returned error: {:?}", e);
+                }
+            }
+
+            row_data.clear();
+        }
+
+        Ok(updated_rows)
+    }
+
+    /// Returns an new Rows object with all rows which fulfill the constraint.
+    /// column_index: index of the column whose value should match value
+    /// comp: defines how the value of the column and value should be compared.
     pub fn lookup(&mut self, column_index: usize, value: &[u8], comp: CompType)
         -> Result<Rows<Cursor<Vec<u8>>>, Error>
     {
+        self.reset_pos();
         let vec: Vec<u8> = Vec::new();
         let cursor = Cursor::new(vec);
         let mut rows = Rows::new(cursor, &self.columns);
@@ -315,22 +398,18 @@ impl<B: Write + Read + Seek> Rows <B> {
                 Ok(r) => {
                     println!{"Row: {:?}", r};
                     rows.add_row(&r);
-
                 },
-                Err(e) => {
-                    match e {
-                        Error::EndOfFile => {
-                            info!("reached end of file");
-                            break;
-                        },
-                        _ => return Err(e)
-                    }
+                Err(Error::EndOfFile) => {
+                    info!("reached end of file");
+                    break;
                 }
+                Err(e) => { return Err(e) }
             }
         }
 
         Ok(rows)
     }
+
     /// scans the entire file
     /// returns all rows which are not deleted
     pub fn full_scan(&mut self) -> Result<Rows<Cursor<Vec<u8>>>, Error> {
@@ -339,58 +418,23 @@ impl<B: Write + Read + Seek> Rows <B> {
         let mut rows = Rows::new(cursor, &self.columns);
         let mut buf: Vec<u8> = Vec::new();
         info!("starting full scan ....");
-        while true {
+        loop {
             match self.next_row(&mut buf) {
                 Ok(_) => {
                         rows.add_row(& buf);
                         info!(".");
                 },
-                Err(e) => {
-                    match e {
-                        Error::EndOfFile => break,
-                        _ => return Err(e)
-                    }
-                },
+                Err(Error::EndOfFile) => break,
+                Err(e) => { return Err(e) }
             }
         }
         info!("finished full scan ....");
         Ok(rows)
     }
-/*
-    pub fn clean(&mut self) -> Result<u64, Error> {
-        let mut buf: Vec<u8> = Vec::new();
-        let mut copy_buf: Vec<u8> = Vec::new();
-        loop {
-            match self.next_row(&buf, false) {
-                Ok(_) => ,
-                Error::EndOfFile => break,
-                Err(e) => return Err(e),
-            }
-            info!("Reading Header");
-            try!(self.prev_row());
-            let delete_pos = pos;
-            let mut row_header: RowHeader = try!(self.read_header());
-            info!("Header Read");
-            if row_header.is_deleted() {
-                let copy_row = try!(last_not_deleted_row());
-                if copy_row != delete_pos {
-                    try!(self.set_pos(SeekFrom::Start(copy_row)));
-                    self.next_row(&copy_buf, false)
-                    try!(self.set_pos(SeekFrom::Start(delete_pos)));
-                    try!(self.add_row(copy_buf));
-                    copy_buf.clear();
 
-
-    /// returns true if data_src is empty
-                }
-            }
-        }
-    }
-*/
     /// checks if object is containing rows
     /// returns bool on success else Error
     pub fn is_empty(&mut self) -> Result <bool, Error> {
-        //data_src.is_empty()
         let old_pos = self.pos;
 
         let result: Result<bool, Error> = match self.set_pos(SeekFrom::End(0)) {
@@ -442,6 +486,18 @@ impl<B: Write + Read + Seek> Rows <B> {
         }
 
         Ok(row)
+    }
+
+    /// Returns the index of the column which is the primary key.
+    fn get_primary_key_column_index(&self) -> usize {
+        let mut column_count = 0;
+        for column in &self.columns {
+            if column.is_primary_key == true {
+                return column_count;
+            }
+            column_count += 1;
+        }
+        column_count
     }
 
 
