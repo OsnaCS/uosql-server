@@ -1,9 +1,5 @@
-
-
 use std::mem;
-
 use std::io::prelude::*;
-
 use std::fs;
 use std::fs::{OpenOptions, create_dir, remove_dir_all};
 
@@ -18,6 +14,7 @@ use super::Engine;
 use super::Error;
 use super::engine::FlatFile;
 use super::types::Column;
+use super::EngineID;
 
 /// constants
 const MAGIC_NUMBER: u64 = 0x49616D4372616E43;
@@ -86,10 +83,9 @@ impl Database {
     }
     /// Creates a new table in the DB folder
     /// Returns with Error on fail else Table
-    pub fn create_table(&self, name: &str, columns: Vec<Column>, engine_id: u8)
+    pub fn create_table(&self, name: &str, columns: Vec<Column>, engine_id: EngineID)
         -> Result<Table, Error>
     {
-
         let t = Table::new(&self, name, columns, engine_id);
         try!(t.save());
         info!("created new table {:?}", t);
@@ -111,7 +107,7 @@ impl Database {
 #[derive(Debug, RustcDecodable, RustcEncodable)]
 pub struct TableMetaData {
     version_nmbr: u8,
-    engine_id: u8,
+    engine_id: EngineID,
     pub columns: Vec<Column>,
     //primary_key: String
 }
@@ -132,7 +128,7 @@ impl<'a> Table<'a> {
     /// Creates new table object
     /// Returns Table
     pub fn new<'b>(database: &'b Database, name: &str,
-                   columns: Vec<Column>, engine_id: u8)
+                   columns: Vec<Column>, engine_id: EngineID)
         -> Table<'b>
     {
 
@@ -268,7 +264,18 @@ impl<'a> Table<'a> {
     /// Creates an engine for Table
     /// Returns Box<Engine>
     pub fn create_engine(self) -> Box<Engine + 'a> {
-        Box::new(FlatFile::new(self))
+        // add engines here
+        match self.meta_data.engine_id {
+            EngineID::FlatFile => {
+                Box::new(FlatFile::new(self))
+            },
+            EngineID::InvertedIndex => {
+                Box::new(FlatFile::new(self))
+            },
+            EngineID::BStar => {
+                Box::new(FlatFile::new(self))
+            },
+        }
     }
 
     /// Returns the path for the metadata files

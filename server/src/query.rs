@@ -5,7 +5,7 @@
 //!
 
 use super::parse::ast::*;
-use super::storage::{Database, Column, Table, Rows, ResultSet};
+use super::storage::{Database, Column, Table, Rows, ResultSet, EngineID};
 use super::storage;
 use super::auth;
 use super::parse::parser::ParseError;
@@ -131,8 +131,8 @@ impl<'a> Executor<'a> {
         }
         let table = try!(self.get_table(&stmt.tid[0]));
         let engine = table.create_engine();
-        // Ok(try!(engine.full_scan()))
-        Err(ExecutionError::DebugError("engine.full_scan() not implemented ".into()))
+        Ok(try!(engine.full_scan()))
+        //Err(ExecutionError::DebugError("engine.full_scan() not implemented ".into()))
 
     }
 
@@ -170,7 +170,7 @@ impl<'a> Executor<'a> {
             description: "this is a column".to_string(),
              is_primary_key: c.primary,
         }).collect();
-        let table = try!(base.create_table(&query.tid, tmp_vec, 0));
+        let table = try!(base.create_table(&query.tid, tmp_vec, EngineID::FlatFile));
         let mut engine = table.create_engine();
         engine.create_table();
         //Ok(generate_rows_dummy())
