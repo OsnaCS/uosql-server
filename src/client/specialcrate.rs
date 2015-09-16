@@ -50,7 +50,6 @@ impl Clone for Vector {
         self.x = source.x;
         self.y = source.y;
     }
-
 }
 
 pub struct Board {
@@ -89,7 +88,6 @@ impl Board {
         } else {
             Ok(())
         }
-
     }
 
     pub fn get_snake_vectors (&self) -> &[Vector] {
@@ -100,7 +98,6 @@ impl Board {
     pub fn get_bullet_vector (&self) -> &Vector {
         &self.bullet
     }
-
 }
 
 struct Snake {
@@ -141,20 +138,13 @@ impl Snake {
     fn eats_bullet (&self, bullet: Vector) -> bool {
         self.segments[0] == bullet
     }
-
 }
 
 // This was the code in main.rs
-
 extern crate ncurses;
-//extern crate rand;
 
 use std::thread::sleep_ms as sleep;
-//use std::time::duration::Duration;
 use self::ncurses::*;
-//use game::*;
-
-//mod game;
 
 pub fn snake()
 {
@@ -204,7 +194,6 @@ pub fn snake()
             Ok(_) => (),
         };
     }
-
     endwin();
 }
 
@@ -285,7 +274,6 @@ impl Game {
         } else {
             GameStatus::Running
         }
-
     }
 
     pub fn shift (&mut self, dir: Direction) {
@@ -307,7 +295,6 @@ impl Game {
     pub fn get_bullet_vectors (&self) -> Vec<Vector> {
         self.bullets.iter().map(|b| b.position).collect()
     }
-
 }
 
 struct Invader {
@@ -347,7 +334,6 @@ impl Invader {
             None
         }
     }
-
 }
 
 struct Player {
@@ -372,7 +358,6 @@ impl Player {
     fn fire (&self) -> Bullet {
         Bullet::new(Vector { x: self.position.x, y: self.position.y - 1 }, Direction::Up)
     }
-
 }
 
 struct Bullet {
@@ -403,11 +388,9 @@ impl Bullet {
     fn check_collision (&self, other: Vector) -> bool {
         self.position == other
     }
-
 }
+
 // blow is code from main.rs
-
-
 pub fn space_invaders()
 {
     initscr();
