@@ -8,22 +8,26 @@ pub mod bstar;
 
 mod data;
 
+use bincode::rustc_serialize::{EncodingError, DecodingError};
+
 pub use self::meta::Table;
 pub use self::meta::Database;
 pub use self::data::Rows;
 pub use self::data::ResultSet;
 pub use self::types::Column;
 pub use self::types::SqlType;
+pub use self::engine::FlatFile;
+
 pub use parse::ast;
 pub use parse::ast::CompType;
-pub use std::string::FromUtf8Error;
-pub use self::engine::FlatFile;
+
+
+
 use std::io;
 use std::io::Cursor;
-use bincode::rustc_serialize::{EncodingError, DecodingError};
 use std::str::Utf8Error;
 use std::ffi::NulError;
-
+pub use std::string::FromUtf8Error;
 /// A database table
 ///
 /// Through this type, you can retreive certain meta information about the
@@ -137,9 +141,10 @@ pub trait Engine {
 
 #[repr(u8)]
 #[derive(Clone,Copy,Debug,RustcDecodable, RustcEncodable)]
-enum EngineID {
+pub enum EngineID {
     FlatFile = 1,
     InvertedIndex,
+    BStar,
 }
 
 

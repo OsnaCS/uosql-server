@@ -1,12 +1,13 @@
-use super::{Error};
-use std::io::Write;
-use std::io::Read;
+use super::Error;
 use super::super::parse::token::Lit;
 use super::super::parse::ast::CompType;
+
 use byteorder::{BigEndian, WriteBytesExt, ReadBytesExt};
+
 use std::ffi::CString;
 use std::str;
-
+use std::io::Write;
+use std::io::Read;
 /// General enums in SQL
 #[derive(Debug, Clone, Copy, RustcDecodable, RustcEncodable, PartialEq)]
 pub enum SqlType {
@@ -384,7 +385,6 @@ impl Column {
     pub fn get_size(&self) -> u32 {
         self.sql_type.size() as u32
     }
-
 }
 
 //---------------------------------------------------------------
