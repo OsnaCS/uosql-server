@@ -1,5 +1,6 @@
 use super::Span;
 use parse::ast::*;
+use storage::SqlType;
 /// A token with it's associated Span in the source code
 #[derive(Debug)]
 pub struct TokenSpan {
@@ -24,6 +25,8 @@ impl Lit {
             &Lit::Bool(ref b) => DataSrc::Bool(b.clone()),
         }
     }
+
+
 }
 
 /// A token: Everything the lexer can produce
