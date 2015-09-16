@@ -360,7 +360,7 @@ fn process_input(input: &str, conn: &mut Connection, history: &Vec<String>) -> b
                     via github /schickling/rust-examples/");
             specialcrate::snake();
             println!("");
-        }
+        },
         ":log" => {
             let sep = "###############################";
             println!("{}", sep);
@@ -370,13 +370,13 @@ fn process_input(input: &str, conn: &mut Connection, history: &Vec<String>) -> b
                 println!("{0: <1$}", history[i], sep.len());
             }
             println!("{}", sep);
-        }
+        },
         ":insult" => {
             println!("Uh-uh, server responds with invasion fleet");
             println!("Fleet build under MIT License by Johannes Schickling
                     via github /schickling/rust-examples/");
             specialcrate::space_invaders();
-        }
+        },
         _ => { // Queries
             match conn.execute(input.into()) {
                 Ok(mut data) => {
