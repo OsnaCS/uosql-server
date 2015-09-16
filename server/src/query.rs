@@ -106,12 +106,15 @@ impl<'a> Executor<'a> {
             let mut index = 0;
 
             for column in table.columns() {
+                info!("inserting at {:?}", writevec.len());
+                info!("This is the insertvalue: {:?}", insertvalues[index] );
                 column.sql_type.encode_into(&mut writevec,&insertvalues[index]);
                 index += 1;
             }
         }
         //let n: Vec<_> = stmt.val.iter().map(|l| Some(l.into_DataSrc())).collect();
         let mut engine = table.create_engine();
+        info!("handing data vector {:?} to storage engine",writevec);
         try!(engine.insert_row(&writevec));
         Ok(generate_rows_dummy())
 
@@ -132,8 +135,6 @@ impl<'a> Executor<'a> {
         let table = try!(self.get_table(&stmt.tid[0]));
         let engine = table.create_engine();
         Ok(try!(engine.full_scan()))
-        //Err(ExecutionError::DebugError("engine.full_scan() not implemented ".into()))
-
     }
 
     fn execute_describe_stmt(&mut self, query: String)
@@ -173,8 +174,7 @@ impl<'a> Executor<'a> {
         let table = try!(base.create_table(&query.tid, tmp_vec, EngineID::FlatFile));
         let mut engine = table.create_engine();
         engine.create_table();
-        //Ok(generate_rows_dummy())
-        Err(ExecutionError::DebugError("Not implemented.".into()))
+        Ok(generate_rows_dummy())
     }
 
     fn execute_drop_stmt(&mut self, query: DropStmt)
