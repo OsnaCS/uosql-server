@@ -1,12 +1,13 @@
-use super::{Error};
-use std::io::Write;
-use std::io::Read;
+use super::Error;
 use super::super::parse::token::Lit;
 use super::super::parse::ast::CompType;
+
 use byteorder::{BigEndian, WriteBytesExt, ReadBytesExt};
+
 use std::ffi::CString;
 use std::str;
-
+use std::io::Write;
+use std::io::Read;
 /// General enums in SQL
 #[derive(Debug, Clone, Copy, RustcDecodable, RustcEncodable, PartialEq)]
 pub enum SqlType {
@@ -88,7 +89,7 @@ impl SqlType {
             &SqlType::Char(len) => {
                 match data {
                     &Lit::String(ref a) => {
-                        let str_as_bytes = Self::to_nul_terminated_bytes(&a, (len + 1) as u32);
+                        let str_as_bytes = Self::to_nul_terminated_bytes(&a, len as u32);
                         try!(buf.write_all(&str_as_bytes));
                         Ok(self.size())
                     }
@@ -384,7 +385,6 @@ impl Column {
     pub fn get_size(&self) -> u32 {
         self.sql_type.size() as u32
     }
-
 }
 
 //---------------------------------------------------------------

@@ -32,7 +32,6 @@ impl<B: Write + Read + Seek> Rows <B> {
                 column_offsets: column_offsets,
                 pos: 0
             }
-
     }
     // returns the sum of the column sizes
     fn get_columns_size(columns: &[Column]) -> u64 {
@@ -130,7 +129,6 @@ impl<B: Write + Read + Seek> Rows <B> {
         if row_data.len() == 0 {
             return Err(Error::InvalidState);
         }
-
         let s = self.column_offsets[column_index] as usize;
         let e = s + self.get_column(column_index).get_size() as usize;
         let d = row_data[s..e].to_vec();
@@ -369,6 +367,7 @@ impl<B: Write + Read + Seek> Rows <B> {
     /// scans the entire file
     /// returns all rows which are not deleted
     pub fn full_scan(&mut self) -> Result<Rows<Cursor<Vec<u8>>>, Error> {
+        try!(self.reset_pos());
         let vec: Vec<u8> = Vec::new();
         let cursor = Cursor::new(vec);
         let mut rows = Rows::new(cursor, &self.columns);
@@ -379,6 +378,8 @@ impl<B: Write + Read + Seek> Rows <B> {
                 Ok(_) => {
                         try!(rows.add_row(& buf));
                         info!(".");
+                        //info!("buf: {:?}", &buf);
+                        buf.clear();
                 },
                 Err(Error::EndOfFile) => break,
                 Err(e) => { return Err(e) }
@@ -405,9 +406,7 @@ impl<B: Write + Read + Seek> Rows <B> {
                 Err(e)
             },
         };
-
         self.pos = old_pos;
-
         result
     }
 
@@ -440,7 +439,6 @@ impl<B: Write + Read + Seek> Rows <B> {
                 }
             }
         }
-
         Ok(row)
     }
 
@@ -478,8 +476,6 @@ impl<B: Write + Read + Seek> Rows <B> {
 
         Ok(ResultSet { data: data, columns: self.columns.clone() })
     }
-
-
 }
 
 /// Representation of a RowHeader

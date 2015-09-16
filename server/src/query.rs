@@ -5,7 +5,7 @@
 //!
 
 use super::parse::ast::*;
-use super::storage::{Database, Column, Table, Rows, ResultSet, Engine};
+use super::storage::{Database, Column, Table, Rows, ResultSet, Engine,EngineID};
 use super::storage;
 use super::auth;
 use super::parse::parser::ParseError;
@@ -92,6 +92,7 @@ impl<'a> Executor<'a> {
             Insert just some values into some columns.
             Use insert into table values (_,....) instead".into()))
         }
+
         let mut writevec = Vec::<u8>::new();
         {
             let columns = table.columns();
@@ -103,11 +104,14 @@ impl<'a> Executor<'a> {
             let mut index = 0;
 
             for column in table.columns() {
+                info!("inserting at {:?}", writevec.len());
+                info!("This is the insertvalue: {:?}", insertvalues[index] );
                 column.sql_type.encode_into(&mut writevec,&insertvalues[index]);
                 index += 1;
             }
         }
         let mut engine = table.create_engine();
+        info!("handing data vector {:?} to storage engine",writevec);
         try!(engine.insert_row(&writevec));
         Ok(generate_rows_dummy())
 
@@ -117,7 +121,9 @@ fn execute_select_stmt(&mut self, stmt: SelectStmt)
         -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError>
     {
         let mut masterrow: Rows<Cursor<Vec<u8>>>;
+
         let mut left = try!(self.get_rows(&stmt.tid[0]));
+        println!("{:?}", left );
         let mut name_column_map = HashMap::<String, HashMap<String, usize>>::new();
         let mut column_index_map = HashMap::<String, usize>::new();
         let mut columnindex: usize = 0;
@@ -129,6 +135,7 @@ fn execute_select_stmt(&mut self, stmt: SelectStmt)
 
         // create a very huge cross product from all tables and some hashmaputilities
         for i in 1..stmt.tid.len() {
+
             let right = try!(self.get_rows(&stmt.tid[i]));
             column_index_map = HashMap::<String, usize>::new();
             for column in right.columns.clone() {
@@ -190,7 +197,6 @@ fn execute_select_stmt(&mut self, stmt: SelectStmt)
                     },
                 }
 
-
     }
 
     fn execute_describe_stmt(&mut self, query: String)
@@ -227,7 +233,7 @@ fn execute_select_stmt(&mut self, stmt: SelectStmt)
             description: "this is a column".to_string(),
              is_primary_key: c.primary,
         }).collect();
-        let table = try!(base.create_table(&query.tid, tmp_vec, 0));
+        let table = try!(base.create_table(&query.tid, tmp_vec, EngineID::FlatFile));
         let mut engine = table.create_engine();
         engine.create_table();
         Ok(generate_rows_dummy())
