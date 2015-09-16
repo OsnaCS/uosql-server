@@ -356,8 +356,8 @@ fn process_input(input: &str, conn: &mut Connection, history: &Vec<String>) -> b
         },
         ":snake" => {
             println!("Not on a plane, but on your terminal");
-            println!("Thanks for Snake-Code (MIT License) to Johannes Schickling
-                    via github /schickling/rust-examples/tree/master/snake-ncurses");
+            println!("Snakes bred under MIT License by Johannes Schickling
+                    via github /schickling/rust-examples/");
             specialcrate::snake();
             println!("");
         }
@@ -370,6 +370,12 @@ fn process_input(input: &str, conn: &mut Connection, history: &Vec<String>) -> b
                 println!("{0: <1$}", history[i], sep.len());
             }
             println!("{}", sep);
+        }
+        ":insult" => {
+            println!("Uh-uh, server responds with invasion fleet");
+            println!("Fleet build under MIT License by Johannes Schickling
+                    via github /schickling/rust-examples/");
+            specialcrate::space_invaders();
         }
         _ => { // Queries
             match conn.execute(input.into()) {
