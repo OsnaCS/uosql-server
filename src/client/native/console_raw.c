@@ -29,29 +29,26 @@ int key(void)
         return EXIT_FAILURE;
     }
 
-    //while (val == 0 || val == 1) {
-       // Listen to user input
-       c = getc(stdin);
-       if (c == 27) {
-           // if it starts with an escape-char get next char
-           //printf("%d\n", c);
-           c = getc(stdin);
+    // Listen to user input
+    c = getc(stdin);
+    if (c == 27) {
+        // if it starts with an escape-char get next char
+        c = getc(stdin);
 
-           if (c == 91) {
-               c = getc(stdin);
+        if (c == 91) {
+            c = getc(stdin);
 
-               if (c == 65) {
-                   val = UP;
-               }
-               else if (c == 66) {
-                   val = DOWN;
-               }
-               else val = OTHER;
-           }
-           else val = OTHER;
-       }
-       else val = c;
-    //}
+            if (c == 65) {
+               val = UP;
+            }
+            else if (c == 66) {
+               val = DOWN;
+            }
+            else val = OTHER;
+        }
+        else val = OTHER;
+    }
+    else val = c;
 
     // Restore original terminal state
     terminal_done();

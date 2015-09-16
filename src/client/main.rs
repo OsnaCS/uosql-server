@@ -227,6 +227,7 @@ fn main() {
             -1 => continue,
             13 => {
                 let x = history[h_idx-1].clone();
+                history.insert(0, x.clone());
                 input = x;
                 println!("");
             },
@@ -240,10 +241,10 @@ fn main() {
                 history.insert(0, x);
             }
         }
-        
+
         // if input was given process this input
         if input != "" {
-            let cs = process_input(&input, &mut conn);
+            let cs = process_input(&input, &mut conn, &history);
             match cs {
                 false => {
                     // write history to file if client program closes
@@ -268,7 +269,7 @@ fn main() {
 
 /// Process commandline-input from user.
 /// Match on special commands from user input.
-fn process_input(input: &str, conn: &mut Connection) -> bool {
+fn process_input(input: &str, conn: &mut Connection, history: &Vec<String>) -> bool {
     let regex_load = match Regex::new(r"(?i):load .+\.sql") {
         Ok(e) => e,
         Err(_) => {
@@ -358,6 +359,16 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
                     via github /schickling/rust-examples/tree/master/snake-ncurses");
             specialcrate::snake();
             println!("");
+        }
+        ":log" => {
+            let sep = "###############################";
+            println!("{}", sep);
+            println!("{0: ^1$}", "Command History", sep.len());
+            println!("{}", sep);
+            for i in 0..history.len() {
+                println!("{0: <1$}", history[i], sep.len());
+            }
+            println!("{}", sep);
         }
         _ => { // Queries
             match conn.execute(input.into()) {
