@@ -1,3 +1,9 @@
+/**
+ * Some minimal library to work with 'termios'
+ * Source: http://cboard.cprogramming.com/linux-programming/158476-termios-examples.html
+ * Date: 09-16-2015
+ */
+
 #include <unistd.h>
 #include <termios.h>
 #include <signal.h>
@@ -13,6 +19,7 @@ static void terminal_done(void)
 {
     if (terminal_descriptor != -1)
         tcsetattr(terminal_descriptor, TCSANOW, &terminal_original);
+    // in original source the terminal_descriptor was not set to -1!
     terminal_descriptor = -1;
 }
 
