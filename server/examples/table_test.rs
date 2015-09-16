@@ -8,7 +8,6 @@ use bincode::SizeLimit;
 use server::logger;
 use server::parse::ast::DataSrc;
 use std::io::Cursor;
-//use server::storage::engine::flatfile::FlatFile;
 
 fn main() {
 
@@ -166,7 +165,7 @@ fn flat_file_test() {
     });
 
     let db = Database::create("test").unwrap();
-    let _test = db.create_table("test", cols, 1).unwrap();
+    let _test = db.create_table("test", cols, EngineID::FlatFile).unwrap();
 
     let mut engine = FlatFile::new(_test);
     engine.create_table().unwrap();
