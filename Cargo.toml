@@ -2,6 +2,7 @@
 name = "uosql"
 version = "0.1.0"
 authors = ["Lukas Kalbertodt <lukas.kalbertodt@gmail.com>"]
+build = "src/client/native/build.rs"
 
 [lib]
 name = "uosql"
@@ -20,6 +21,10 @@ rustc-serialize = "0.3"
 ncurses = "5.73.0"
 rand = "*"
 regex = "0.1.41"
+libc = "0.1.10"
 
 [dependencies.server]
 path = "server"
+
+[build-dependencies]
+gcc = "0.3"
