@@ -31,7 +31,6 @@ impl<B: Write + Read + Seek> Rows <B> {
                 column_offsets: column_offsets,
                 pos: 0
             }
-
     }
     // returns the sum of the column sizes
     fn get_columns_size(columns: &[Column]) -> u64 {
@@ -129,7 +128,6 @@ impl<B: Write + Read + Seek> Rows <B> {
         if row_data.len() == 0 {
             return Err(Error::InvalidState);
         }
-
         let s = self.column_offsets[column_index] as usize;
         let e = s + self.get_column(column_index).get_size() as usize;
         let d = row_data[s..e].to_vec();
@@ -404,9 +402,7 @@ impl<B: Write + Read + Seek> Rows <B> {
                 Err(e)
             },
         };
-
         self.pos = old_pos;
-
         result
     }
 
@@ -439,7 +435,6 @@ impl<B: Write + Read + Seek> Rows <B> {
                 }
             }
         }
-
         Ok(row)
     }
 
@@ -474,11 +469,8 @@ impl<B: Write + Read + Seek> Rows <B> {
             };
             data.extend(row_data.into_iter())
         }
-
         Ok(ResultSet { data: data, columns: self.columns.clone() })
     }
-
-
 }
 
 /// Representation of a RowHeader

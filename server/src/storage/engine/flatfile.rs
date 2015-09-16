@@ -10,7 +10,6 @@ use super::super::data::{Rows};
 
 pub struct FlatFile<'a> {
     table: Table<'a>,
-
 }
 
 impl<'a> FlatFile<'a> {
@@ -49,7 +48,6 @@ impl<'a> Engine for FlatFile<'a> {
             .open(&self.table.get_table_data_path()));
 
         info!("created file for data: {:?}", _file);
-
         Ok(())
     }
     /// returns own table
@@ -111,6 +109,4 @@ impl<'a> Engine for FlatFile<'a> {
         let mut reader = try!(self.get_reader());
         reader.modify(constraint_column_index, constraint_value, comp, values)
     }
-
-
 }
