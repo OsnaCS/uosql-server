@@ -668,42 +668,81 @@ impl<T: KnownSize + PartialOrd + Clone + Debug> Bstar<T> {
             // tree is not empty
             let mut addr = self.root;
             let mut node = try!(Bnode::<T>::read(& mut self.dat, Some(addr)));
+            if !self.allowduplicates {
             let mut res = node.node_list.get_index_by_key(key);
+                // from the root starting search down to the leaf
+                while !node.is_leaf {
+                    let mut index = res.1;
+                    if node.node_list.list[index].gt(key) && index != 0 {
+                        index -= 1;
+                    }
 
-            // from the root starting search down to the leaf
-            while !node.is_leaf {
+                    addr = node.node_list.get_by_index(index).unwrap().addr;
+                    node = try!(Bnode::<T>::read(&mut self.dat, Some(addr)));
+                    res = node.node_list.get_index_by_key(key);
+                }
+
+                let mut target = None;
+                let mut found = false;
+                if res.0 {
+                    target = Some(node.node_list.get_by_index(res.1).unwrap().addr);
+                    found = true;
+                }
+
+                Ok(InternalLookup {
+                    found: found,
+                    bnode: Some(node),
+                    addr: addr,
+                    index: Some(res.1 as u64) ,
+                    target: target,
+                })
+
+            } else {
+                self.internal_lookup_duplicates(&mut node, addr, key)
+            }
+        }
+    }
+
+    fn internal_lookup_duplicates(& mut self, node: &mut Bnode<T>, addr: u64, key: &KeyAddr<T>)
+                                                        -> Result<InternalLookup<T>> {
+        let mut res = node.node_list.get_index_by_key(key);
+        if !node.is_leaf {
+            if res.0 && res.1 != 0 {
+                let mut newaddr = node.node_list.get_by_index(res.1 - 1).unwrap().addr;
+                let mut tryleft = try!(Bnode::<T>::read(&mut self.dat, Some(newaddr)));
+                let lookup = try!(self.internal_lookup_duplicates(&mut tryleft, newaddr, key));
+                if !lookup.found {
+                    newaddr = node.node_list.get_by_index(res.1).unwrap().addr;
+                    let mut newnode = try!(Bnode::<T>::read(&mut self.dat, Some(newaddr)));
+                    self.internal_lookup_duplicates(&mut newnode, newaddr, key)
+                } else {
+                   Ok(lookup)
+                }
+            } else {
                 let mut index = res.1;
                 if node.node_list.list[index].gt(key) && index != 0 {
                     index -= 1;
                 }
 
-                addr = node.node_list.get_by_index(index).unwrap().addr;
-                node = try!(Bnode::<T>::read(&mut self.dat, Some(addr)));
-                res = node.node_list.get_index_by_key(key);
+                let newaddr = node.node_list.get_by_index(index).unwrap().addr;
+                let mut newnode = try!(Bnode::<T>::read(&mut self.dat, Some(newaddr)));
+                self.internal_lookup_duplicates(&mut newnode, newaddr, key)
             }
-
+        } else {
+            let mut target = None;
+            let mut found = false;
             if res.0 {
-                // if key was found
-                let target = node.node_list.get_by_index(res.1).unwrap().addr;
-                Ok(InternalLookup {
-                    found: true,
-                    bnode: Some(node),
-                    addr: addr,
-                    index: Some(res.1 as u64) ,
-                    target: Some(target),
-                })
-            } else {
-                // key was not found
-                Ok(InternalLookup {
-                    found: false,
-                    bnode: Some(node),
-                    addr: addr,
-                    index: Some(res.1 as u64) ,
-                    target: None,
-                })
-
+                target = Some(node.node_list.get_by_index(res.1).unwrap().addr);
+                found = true;
             }
-
+            let resnode = try!(Bnode::<T>::read(&mut self.dat, Some(addr)));
+            Ok(InternalLookup {
+                found: found,
+                bnode: Some(resnode),
+                addr: addr,
+                index: Some(res.1 as u64) ,
+                target: target,
+            })
         }
     }
 

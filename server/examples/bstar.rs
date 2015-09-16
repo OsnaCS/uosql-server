@@ -21,6 +21,7 @@ fn main() {
     tree.insert_keyaddr(KeyAddr::<u64>::new(7,2));
     tree.insert_keyaddr(KeyAddr::<u64>::new(10,2));
     tree.insert_keyaddr(KeyAddr::<u64>::new(9,2));
+
         println!("");
     println!("DEBUG PRINTING {:?} ELEMENTS:", tree);
     println!("");
@@ -87,7 +88,7 @@ fn main() {
         Ok(t) => t,
         Err(e) => panic!(format!("{:?}",e)),
     };
-    println!("");
+   /* println!("");
     println!("DEBUG PRINTING {:?} ELEMENTS:", tree);
     println!("");
     tree.debug_print();
@@ -129,16 +130,16 @@ fn main() {
     tree.debug_print();
     println!("");
     println!("");
-        println!("{:?}", tree.delete_keyaddr(9));
+    //    println!("{:?}", tree.delete_keyaddr(9));
 
     println!(" {:?} ELEMENTS:", tree);
     println!("");
     tree.debug_print();
     println!("");
-    println!("");
+    println!("");*/
 
 
-    for keyaddr in tree.iter_options( IterDirection::Forward, Some(IterOption::Excluding(5))) {
+    for keyaddr in tree.iter_options( IterDirection::Forward, Some(IterOption::Including(5))) {
         println!("{:?}", keyaddr );
     }
 
