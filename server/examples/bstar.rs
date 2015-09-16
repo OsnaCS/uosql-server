@@ -1,5 +1,5 @@
 extern crate server;
-use server::storage::bstar::{ Bstar, Bnode, SortedList, KeyAddr };
+use server::storage::bstar::{ Bstar, Bnode, SortedList, KeyAddr, IterDirection, IterOption };
 use std::fs::File;
 use std::io::*;
 use std::fs::OpenOptions;
@@ -21,13 +21,53 @@ fn main() {
     tree.insert_keyaddr(KeyAddr::<u64>::new(7,2));
     tree.insert_keyaddr(KeyAddr::<u64>::new(10,2));
     tree.insert_keyaddr(KeyAddr::<u64>::new(9,2));
+        println!("");
+    println!("DEBUG PRINTING {:?} ELEMENTS:", tree);
+    println!("");
+    tree.debug_print();
+    println!("");
+    println!("");
     tree.insert_keyaddr(KeyAddr::<u64>::new(11,2));
+        println!("");
+    println!("DEBUG PRINTING {:?} ELEMENTS:", tree);
+    println!("");
+    tree.debug_print();
+    println!("");
+    println!("");
     tree.insert_keyaddr(KeyAddr::<u64>::new(8,2));
+        println!("");
+    println!("DEBUG PRINTING {:?} ELEMENTS:", tree);
+    println!("");
+    tree.debug_print();
+    println!("");
+    println!("");
     tree.insert_keyaddr(KeyAddr::<u64>::new(5,2));
+        println!("");
+    println!("DEBUG PRINTING {:?} ELEMENTS:", tree);
+    println!("");
+    tree.debug_print();
+    println!("");
+    println!("");
     tree.insert_keyaddr(KeyAddr::<u64>::new(12,2));
+        println!("");
+    println!("DEBUG PRINTING {:?} ELEMENTS:", tree);
+    println!("");
+    tree.debug_print();
+    println!("");
+    println!("");
     tree.insert_keyaddr(KeyAddr::<u64>::new(13,2));
 
-
+    println!("");
+    println!("DEBUG PRINTING {:?} ELEMENTS:", tree);
+    println!("");
+    tree.debug_print();
+    println!("");
+    println!("");
+    println!("");
+    println!("DELETING");
+    println!("");
+    println!("");
+    println!("");
 
     /*for i in 32..85 {
         tree.insert_keyaddr(KeyAddr::<u64>::new(i,1000-i));
@@ -98,7 +138,7 @@ fn main() {
     println!("");
 
 
-    for keyaddr in tree.iter_start_at(8) {
+    for keyaddr in tree.iter_options( IterDirection::Forward, Some(IterOption::Excluding(5))) {
         println!("{:?}", keyaddr );
     }
 

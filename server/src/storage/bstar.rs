@@ -305,14 +305,24 @@ impl<T: KnownSize + PartialOrd + Clone + Debug> Bstar<T> {
                             false,
                             self.order);
 
+
             // For the father: create left and right son keyaddr that need to be inserted.
             let leftkey = node.node_list.get_by_index(0).unwrap().key.clone();
             let rightkey = rightson.node_list.get_by_index(0).unwrap().key.clone();
             let rightaddr = try!(self.use_free_addr());
             let rightkeyaddr = KeyAddr::new(rightkey, rightaddr);
 
+            // update the original nodes right brothers left brother pointer
+            if node.rightbrother.is_some() {
+                let mut tmp = try!(Bnode::<T>::read(&mut self.dat,
+                                    Some(node.rightbrother.unwrap())));
+                tmp.leftbrother = Some(rightaddr);
+                try!(tmp.write(&mut self.dat, node.rightbrother));
+            }
+
             // the original nodes right brother will be the new created rightson
             node.rightbrother = Some(rightaddr);
+
 
             if !rightson.is_leaf  {
                 for key in &rightson.node_list.list {
@@ -539,9 +549,17 @@ impl<T: KnownSize + PartialOrd + Clone + Debug> Bstar<T> {
                         }
                         // node can be deleted
                         try!(self.update_free_addr(nodeaddr));
-                        // write peer to disk
+
+                        // update left and rightbrother addresses
+                        if node.rightbrother.is_some() {
+                            let mut tmp = try!(Bnode::<T>::read(&mut self.dat,
+                                                Some(node.rightbrother.unwrap())));
+                            tmp.leftbrother = node.leftbrother;
+                            try!(tmp.write(&mut self.dat, node.rightbrother));
+                        }
                         peernode.0.rightbrother = node.rightbrother;
 
+                        // write peer to disk
                         try!(peernode.0.write(&mut self.dat, Some(peernode.2)));
                         // delete original nodes reaching key from father by recursion
                         try!(self.delegate_underflow_node(&mut father,
@@ -557,7 +575,17 @@ impl<T: KnownSize + PartialOrd + Clone + Debug> Bstar<T> {
                         // TODO: file.set_len if the deleted node was the last!
                         try!(self.update_free_addr(peernode.2));
                         // write node to disk
+
+                        // update left and rightbrother addresses
+                        if peernode.0.rightbrother.is_some() {
+                            let mut tmp = try!(Bnode::<T>::read(&mut self.dat,
+                                                Some(peernode.0.rightbrother.unwrap())));
+                            tmp.leftbrother = peernode.0.leftbrother;
+                            try!(tmp.write(&mut self.dat, peernode.0.rightbrother));
+                        }
                         node.rightbrother = peernode.0.rightbrother;
+
+                        // write node to disk
                         try!(node.write(&mut self.dat, Some(nodeaddr)));
                         // delete right peer reaching key from father by recursion
                         try!(self.delegate_underflow_node(&mut father,
@@ -752,54 +780,164 @@ impl<T: KnownSize + PartialOrd + Clone + Debug> Bstar<T> {
                 if onode.is_ok() {
                     node = onode.unwrap();
                 } else {
-                    return Bterator { dat: &mut self.dat, addr: addr, node: dummy }
+                    return Bterator { dat: &mut self.dat,
+                                    addr: addr,
+                                    node: dummy,
+                                    direction: IterDirection::Forward }
                 }
             }
-            Bterator { dat: &mut self.dat, addr: addr, node: node }
+            Bterator { dat: &mut self.dat,
+                        addr: addr,
+                        node: node,
+                        direction: IterDirection::Forward }
         } else {
-            Bterator { dat: &mut self.dat, addr: 0, node: dummy }
+            Bterator { dat: &mut self.dat,
+                        addr: 0,
+                        node: dummy,
+                        direction: IterDirection::Forward }
         }
     }
 
 
-    /// returns a specific iterator, that starts at the keyaddr element found when
-    /// searching for key
-    pub fn iter_start_at(&mut self, key: T) -> Bterator<T> {
-        let olookup = self.lookup_internal(&KeyAddr::<T>::new(key,0));
-        if olookup.is_ok() {
-            let lookup = olookup.unwrap();
-            if lookup.found {
-                let mut bnode = lookup.bnode.unwrap();
-                for i in 0..lookup.index.unwrap() {
-                    bnode.node_list.delete_by_index(0);
-                }
-                Bterator { dat: &mut self.dat, addr: lookup.addr, node: bnode }
+    /// returns a specific iterator moving in the specified direction
+    /// if a key is given to the function with the Option to include or exclude it,
+    /// the iterator will do so.
+    /// It does not matter if the key is in the tree or not.
+    pub fn iter_options(&mut self, direction: IterDirection, key: Option<IterOption<T>> )
+                                                                                 -> Bterator<T>
+    {
+        let dummy = Bnode::<T>::create(
+                    SortedList::<KeyAddr<T>>::new(),
+                    0,
+                    None,
+                    None,
+                    false,
+                    false,
+                    0);
+        if key.is_none() {
+            if direction == IterDirection::Forward {
+                return self.iter();
             } else {
-                let dummy = Bnode::<T>::create(
-                                        SortedList::<KeyAddr<T>>::new(),
-                                        0,
-                                        None,
-                                        None,
-                                        false,
-                                        false,
-                                        0);
-                Bterator { dat: &mut self.dat, addr: 0, node: dummy }
+                let mut onode = Bnode::<T>::read(&mut self.dat, Some(self.root));
+
+                if onode.is_ok() {
+                    let mut node = onode.unwrap();
+                    let mut addr = self.root;
+                    let mut index = node.node_list.elementcount - 1;
+                    while !node.is_leaf {
+                        // if node is no leaf there is always a element at index 0.
+                        addr = node.node_list.get_by_index(index as usize).unwrap().addr;
+                        onode = Bnode::<T>::read(&mut self.dat, Some(addr));
+                        if onode.is_ok() {
+                            node = onode.unwrap();
+                        } else {
+                            return Bterator { dat: &mut self.dat,
+                                                addr: addr,
+                                                node: dummy,
+                                                direction: direction }
+                        }
+                        index = node.node_list.elementcount - 1;
+                    }
+                    return Bterator { dat: &mut self.dat,
+                                        addr: addr,
+                                        node: node,
+                                        direction: direction }
+                } else {
+                    return Bterator { dat: &mut self.dat,
+                                        addr: 0,
+                                        node: dummy,
+                                        direction: direction }
+                }
             }
         } else {
-            let dummy = Bnode::<T>::create(
-                            SortedList::<KeyAddr<T>>::new(),
-                            0,
-                            None,
-                            None,
-                            false,
-                            false,
-                            0);
-            Bterator { dat: &mut self.dat, addr: 0, node: dummy }
+            let iteroption = key.unwrap();
+            let value = iteroption.unwrap();
+            let olookup = self.lookup_internal(&KeyAddr::<T>::new(value.clone(),0));
+            if olookup.is_ok() {
+                let lookup = olookup.unwrap();
+
+                    let mut bnode = lookup.bnode.unwrap();
+                    println!("{:?}",bnode );
+                    println!("{:?}",lookup.index );
+                    let mut index = if direction == IterDirection::Forward {
+                        0
+                    } else {
+                        bnode.node_list.elementcount - 1
+                    };
+
+                    let modifier = {
+                        if direction == IterDirection::Forward {
+                            if iteroption == IterOption::Excluding(value) {
+                                if lookup.index.unwrap() != 0 {
+                                    1
+                                } else {
+                                    if lookup.found {
+                                        1
+                                    } else {
+                                        0
+                                    }
+                                }
+                            } else {
+                                if lookup.found {
+                                    0
+                                } else {
+                                    if lookup.index.unwrap() == 0 {
+                                        0
+                                    } else {
+                                        1
+                                    }
+                                }
+                            }
+                        } else {
+                            if iteroption == IterOption::Excluding(value) {
+                                if lookup.found {
+                                    1
+                                } else {
+                                    if lookup.index.unwrap() == 0 {
+                                        1
+                                    } else {
+                                        0
+                                    }
+                                }
+                            } else {
+                                0
+                            }
+                        }
+                    };
+                    for i in if direction == IterDirection::Forward {
+                                0..lookup.index.unwrap() + modifier
+                            } else {
+                                0..(bnode.node_list.elementcount - 1 - lookup.index.unwrap()
+                                    + modifier)
+                            }
+                        {
+                        bnode.node_list.delete_by_index(index as usize);
+                        index = if direction == IterDirection::Forward {
+                            0
+                        } else {
+                            if bnode.node_list.elementcount == 0 {
+                                break;
+                            }
+                            bnode.node_list.elementcount - 1
+                        }
+                    }
+                    Bterator { dat: &mut self.dat,
+                                addr: lookup.addr,
+                                node: bnode,
+                                direction: direction }
+
+            } else {
+                Bterator { dat: &mut self.dat,
+                            addr: 0,
+                            node: dummy,
+                            direction: IterDirection::Forward }
+            }
         }
 
     }
 
 }
+
 
 #[derive(Debug)]
 struct InternalLookup<T: PartialOrd + KnownSize + Debug> {
@@ -1204,11 +1342,31 @@ fn seek_maybe(file: &mut File, addr: Option<u64>) -> Result<()> {
 
 }
 
+#[derive(PartialEq, Debug)]
+pub enum IterOption<T: PartialEq + Debug + Clone> {
+    Including(T),
+    Excluding(T),
+
+}
+impl<T: PartialEq + Debug + Clone> IterOption<T> {
+    fn unwrap(&self) -> T {
+        match self {
+            &IterOption::Including(ref t) => t.clone(),
+            &IterOption::Excluding(ref t) => t.clone(),
+        }
+    }
+}
+#[derive(PartialEq, Debug)]
+pub enum IterDirection {
+    Forward,
+    Backward,
+}
 #[derive(Debug)]
 pub struct Bterator<'a, T: KnownSize + PartialOrd + Debug> {
     dat: &'a mut File,
     addr: u64,
     node: Bnode<T>,
+    direction: IterDirection,
 }
 
 impl<'a,T: KnownSize + PartialOrd + Debug> Iterator for Bterator<'a,T> {
@@ -1216,7 +1374,11 @@ impl<'a,T: KnownSize + PartialOrd + Debug> Iterator for Bterator<'a,T> {
 
     fn next(&mut self) -> Option<KeyAddr<T>> {
         if self.node.node_list.elementcount == 0 {
-            self.addr = match self.node.rightbrother {
+            let brother = match self.direction {
+                IterDirection::Forward => self.node.rightbrother,
+                IterDirection::Backward => self.node.leftbrother,
+            };
+            self.addr = match brother {
                 Some(addr) => addr,
                 None => return None,
             };
@@ -1227,6 +1389,10 @@ impl<'a,T: KnownSize + PartialOrd + Debug> Iterator for Bterator<'a,T> {
                 return None
             }
         }
-        Some(self.node.node_list.delete_by_index(0).unwrap())
+        let index = match self.direction{
+            IterDirection::Forward => 0,
+            IterDirection::Backward => self.node.node_list.elementcount - 1,
+        };
+        Some(self.node.node_list.delete_by_index(index as usize).unwrap())
     }
 }
