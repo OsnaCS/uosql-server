@@ -61,6 +61,7 @@ pub enum Error {
     EndOfFile,
     PrimaryKeyValueExists,
     FoundNoPrimaryKey,
+    PrimaryKeyUpdateNotImplemented,
 }
 
 impl From<NulError> for Error {
