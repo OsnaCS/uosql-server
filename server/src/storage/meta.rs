@@ -109,7 +109,6 @@ pub struct TableMetaData {
     version_nmbr: u8,
     engine_id: EngineID,
     pub columns: Vec<Column>,
-    //primary_key: String
 }
 
 //---------------------------------------------------------------

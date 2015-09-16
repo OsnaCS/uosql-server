@@ -89,7 +89,7 @@ impl SqlType {
             &SqlType::Char(len) => {
                 match data {
                     &Lit::String(ref a) => {
-                        let str_as_bytes = Self::to_nul_terminated_bytes(&a, (len + 1) as u32);
+                        let str_as_bytes = Self::to_nul_terminated_bytes(&a, len as u32);
                         try!(buf.write_all(&str_as_bytes));
                         Ok(self.size())
                     }
@@ -100,7 +100,6 @@ impl SqlType {
             },
         }
     }
-
 
     /// Convert s to a vector with l bytes.
     /// If length of s is > l, the returning vector will only contain the first
