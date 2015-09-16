@@ -40,11 +40,11 @@ fn main() {
         is_primary_key: false,
     });
 
-   let _storage_team = db.create_table("storage_team", cols, EngineID::BStar).unwrap();
+    let _storage_team = db.create_table("storage_team", cols, EngineID::BStar).unwrap();
 
-   //let _storage_team = db.load_table("storage_team").unwrap();
+    //let _storage_team = db.load_table("storage_team").unwrap();
 
-   flat_file_test();
+    flat_file_test();
 }
 
 fn flat_file_test() {
