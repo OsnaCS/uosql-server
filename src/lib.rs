@@ -174,7 +174,7 @@ impl Connection {
     }
 
     // TODO: Return results (response-package)
-    pub fn execute(&mut self, query: String) -> Result<ResultSet, Error> {
+    pub fn execute(&mut self, query: String) -> Result<DataSet, Error> {
         match send_cmd(&mut self.tcp, Command::Query(query), 1024) {
             Ok(_) => {},
             Err(e) => return Err(e)
@@ -183,7 +183,8 @@ impl Connection {
             Ok(_) => {
                 let rows: ResultSet =
                     try!(decode_from(&mut self.tcp, SizeLimit::Infinite));
-                Ok(rows)
+                let dataset = preprocess (&rows);
+                Ok(dataset)
             },
             Err(err) => Err(err)
         }

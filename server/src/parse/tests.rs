@@ -978,17 +978,6 @@ fn err_create_invalid_eoq_2() {
 }
 
 #[test]
-fn err_create_reserved_keyword() {
-    let mut p = parser::Parser::create("create table asd (table bool)");
-    let sol = parser::ParseError::ReservedKeyword(Span {
-        lo: 20,
-        hi: 25,
-    });
-
-    assert_eq!(p.parse(), Err(sol));
-}
-
-#[test]
 fn err_describe() {
     let mut p = parser::Parser::create("describe ,");
     let sol = parser::ParseError::NotAWord(Span {
@@ -1044,17 +1033,6 @@ fn err_alter_3() {
 }
 
 #[test]
-fn err_alter_4() {
-    let mut p = parser::Parser::create("alter table foo drop column drop");
-    let sol = parser::ParseError::ReservedKeyword(Span {
-        lo: 30,
-        hi: 32,
-    });
-
-    assert_eq!(p.parse(), Err(sol));
-}
-
-#[test]
 fn err_alter_5() {
     let mut p = parser::Parser::create("alter table foo add (bar int");
     let sol = parser::ParseError::NotAWord(Span {
@@ -1076,16 +1054,6 @@ fn err_alter_6() {
     assert_eq!(p.parse(), Err(sol));
 }
 
-#[test]
-fn err_alter_7() {
-    let mut p = parser::Parser::create("alter table foo drop column column");
-    let sol = parser::ParseError::ReservedKeyword(Span {
-        lo: 30,
-        hi: 34,
-    });
-
-    assert_eq!(p.parse(), Err(sol));
-}
 
 #[test]
 fn err_alter_8() {

@@ -3,4 +3,9 @@ processed in squential order and have to end with a ";", see example below */
 # also, single lines can be marked as comment by using "#" oder "-- ". Please
 # note the whitespace behind the "--"-Symbols, which is essential.
 
-select * from test;
+
+use database test;
+select * from a;
+
+use database a;
+select * from a;
