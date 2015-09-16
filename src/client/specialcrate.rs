@@ -329,7 +329,8 @@ impl Invader {
         let mut rng = rand::thread_rng();
         let temp: f32 = rng.gen_range(0.0, 1.0);
         if temp > 0.996 {
-            Some(Bullet::new(Vector { x: self.position.x, y: self.position.y + 1 }, Direction::Down))
+            Some(Bullet::new(Vector { x: self.position.x,
+                y: self.position.y + 1 }, Direction::Down))
         } else {
             None
         }
