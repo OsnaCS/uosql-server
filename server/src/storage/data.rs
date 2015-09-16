@@ -294,6 +294,9 @@ impl<B: Write + Read + Seek> Rows <B> {
         let mut rows_deleted: u64;
         let mut updated_rows: u64 = 0;
 
+        if ( primary_key_index == constraint_column_index ) {
+            return Err(Error::PrimaryKeyNotAllowed);
+        }
         // loop through rows.
         loop {
             match result {
@@ -312,7 +315,7 @@ impl<B: Write + Read + Seek> Rows <B> {
                                             CompType::Equ));
 
             if rows_deleted != 1 { panic!("Exactly one row should have been
-                                           deleted!") };
+                                           deleted! database inconsistent") };
 
             for kvp in values {
               self.set_value(&mut row_data,

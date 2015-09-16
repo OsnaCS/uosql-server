@@ -19,8 +19,8 @@ fn main() {
     let mut v = Vec::new();
     let _ = encode_into(&ty, &mut v, SizeLimit::Infinite);
 
-    //let db = Database::create("storage_team").unwrap();
-    let db = Database::load("storage_team").unwrap();
+    let db = Database::create("storage_team").unwrap();
+    //let db = Database::load("storage_team").unwrap();
 
     let mut cols = Vec::new();
     cols.push(Column {
@@ -50,9 +50,9 @@ fn main() {
     my_data.push(Some(DataSrc::Bool(1)));
     my_data.push(Some(DataSrc::String("sechs".to_string())));
 
-   //let _storage_team = db.create_table("storage_team", cols, 1).unwrap();
+    let _storage_team = db.create_table("storage_team", cols, EngineID::FlatFile).unwrap();
 
-   let _storage_team = db.load_table("storage_team").unwrap();
+    let _storage_team = db.load_table("storage_team").unwrap();
 
 
     //RRROOOOWWWWSSS
