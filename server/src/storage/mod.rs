@@ -58,6 +58,7 @@ pub enum Error {
     NoOperationPossible,
     InvalidState,
     EndOfFile,
+    BeginningOfFile,
     PrimaryKeyValueExists,
     FoundNoPrimaryKey,
     PrimaryKeyNotAllowed,
@@ -127,16 +128,18 @@ pub trait Engine {
     fn full_scan(&self) -> Result<Rows<Cursor<Vec<u8>>>, Error>;
 
     fn lookup(&self, column_index: usize, value: &[u8], comp: CompType)
-    -> Result<Rows<Cursor<Vec<u8>>>, Error>;
+        -> Result<Rows<Cursor<Vec<u8>>>, Error>;
 
     fn insert_row(&mut self, row_data: &[u8]) -> Result<u64, Error>;
 
     fn delete(&self, column_index: usize, value: &[u8], comp: CompType)
-    -> Result<u64, Error>;
+        -> Result<u64, Error>;
 
     fn modify(&mut self, constraint_column_index: usize,
-     constraint_value: &[u8], comp: CompType,
-     values: &[(usize, &[u8])] )-> Result<u64, Error>;
+        constraint_value: &[u8], comp: CompType,
+        values: &[(usize, &[u8])] )-> Result<u64, Error>;
+
+    fn reorganize(&mut self) -> Result<(), Error>;
 }
 
 #[repr(u8)]

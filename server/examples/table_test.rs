@@ -19,8 +19,8 @@ fn main() {
     let mut v = Vec::new();
     let _ = encode_into(&ty, &mut v, SizeLimit::Infinite);
 
-    let db = Database::create("storage_team").unwrap();
-    //let db = Database::load("storage_team").unwrap();
+    //let db = Database::create("storage_team").unwrap();
+    let db = Database::load("storage_team").unwrap();
 
     let mut cols = Vec::new();
     cols.push(Column {
@@ -71,8 +71,6 @@ fn main() {
 
     let h = rows.get_value(&d, 2);
     println!{"{:?}", h}
-
-    rows.delete_row().unwrap();
 
     rows.reset_pos().unwrap();
 
@@ -131,6 +129,8 @@ fn flat_file_test() {
     println!("///////////////////////////////////////////////////////////////");
 
     engine.delete(0,&my_int[0..4],CompType::Equ).unwrap();
+    engine.reorganize().unwrap();
+    panic!("done");
     rows.reset_pos().unwrap();
 
     rows = engine.full_scan().unwrap();
