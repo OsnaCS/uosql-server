@@ -20,8 +20,8 @@ use std::io::{self, stdout, Write, Read};
 use std::str::FromStr;
 use uosql::logger;
 use uosql::Connection;
-use uosql::types::preprocess;
-use server::storage::ResultSet;
+use uosql::types::{DataSet};
+use server::storage::SqlType;
 use docopt::Docopt;
 use regex::Regex;
 
@@ -255,9 +255,9 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
         }
         _ => { // Queries
             match conn.execute(input.into()) {
-                Ok(data) => {
+                Ok(mut data) => {
                     // show data belonging to executed query
-                    display(&data);
+                    display(&mut data);
                 },
                 Err(e) => {
                     match e {
@@ -369,9 +369,9 @@ fn execute_sql(mut f: File, conn: &mut Connection) -> bool {
 
         println!("\n Query given was: {}", i);
         match conn.execute(i.into()) {
-            Ok(data) => {
+            Ok(mut data) => {
             // show data belonging to executed query
-                display(&data);
+                display(&mut data);
             },
             Err(e) => {
                 match e {
@@ -494,45 +494,88 @@ pub fn read_string(msg: &str) -> String {
 }
 
 /// Display data from ResultSet.
-pub fn display(row: &ResultSet) {
-    if row.data.is_empty() && row.columns.is_empty() {
-        println!("No data to display received.");
-    } else if row.data.is_empty() {
-        display_meta(&row)
+pub fn display(table: &mut DataSet) {
+    if table.data_empty() && table.metadata_empty() {
+        // println!("done.");
+    } else if table.data_empty() {
+        display_meta(table)
     } else {
-        display_data(&row)
+        display_data(table)
     }
 }
 
 /// Formated display of table data.
-fn display_data(row: &ResultSet) {
+fn display_data(table: &mut DataSet) {
     let mut cols = vec![];
-    for i in &row.columns {
-        cols.push(max(12, i.name.len()));
+
+    for i in 0..table.get_col_cnt() {
+        match table.get_type_by_idx(i).unwrap_or(SqlType::Int) {
+            SqlType::Int => {
+                cols.push(max(12, table.get_col_name(i).unwrap().len()));
+            },
+            SqlType::Bool => {
+                cols.push(max(5, table.get_col_name(i).unwrap().len()));
+            },
+            SqlType::Char(size) => {
+                cols.push(max(size as usize, table.get_col_name(i).unwrap().len()));
+            }
+        }
     }
-    preprocess(&row);
 
     // column names
     display_seperator(&cols);
 
     for i in 0..(cols.len()) {
-        if row.columns[i].name.len() > 27 {
-            print!("| {}... ", &row.columns[i].name[..27]);
+        if table.get_col_name(i).unwrap().len() > 27 {
+            print!("| {}... ", &table.get_col_name(i).unwrap_or("none")[..27]);
         } else {
-            print!("| {1: ^0$} ", min(30, cols[i]), row.columns[i].name);
+            print!("| {1: ^0$} ", min(30, cols[i]), table.get_col_name(i).unwrap_or("none"));
         }
     }
     println!("|");
 
     display_seperator(&cols);
+
+    // display actual data
+    while table.next()
+    {
+        for i in 0..(cols.len()) {
+            // println!("i = {:?}", i);
+            match table.get_type_by_idx(i) {
+                Some(t) => {
+                    match t {
+                        SqlType::Int =>
+                            match table.next_int_by_idx(i) {
+                                Some(val) =>
+                                    print!("| {1: ^0$} ", min(30, cols[i]), val),
+                                None => print!("| {1: ^0$} ", min(30, cols[i]), "none"),
+                            },
+                        SqlType::Bool =>
+                            match table.next_bool_by_idx(i) {
+                                Some(val) =>
+                                    print!("| {1: ^0$} ", min(30, cols[i]), val),
+                                None => print!("| {1: ^0$} ", min(30, cols[i]), "none"),
+                            },
+                        SqlType::Char(_) =>
+                            print!("| {1: ^0$} ", min(30, cols[i]),
+                                    table.next_char_by_idx(i).unwrap_or("none".into()))
+                    }
+                },
+                None => continue
+            }
+        }
+        println!("|");
+    }
+    display_seperator(&cols);
 }
 
 /// Formated display of MetaData.
-fn display_meta(row: &ResultSet) {
+fn display_meta(table: &mut DataSet) {
     // print meta data
     let mut cols = vec![];
-    for i in &row.columns {
-        cols.push(max(12, max(i.name.len(), i.description.len())));
+    for i in 0..table.get_col_cnt() {
+        cols.push(max(12, max(table.get_col_name(i).unwrap().len(),
+                        table.get_description_by_idx(i).unwrap_or("none").len())));
     }
 
     // Column name +---
@@ -548,10 +591,10 @@ fn display_meta(row: &ResultSet) {
     print!("| {} ", col_name);
     // name of every column
     for i in 0..(cols.len()) {
-        if row.columns[i].name.len() > 27 {
-            print!("| {}... ", &row.columns[i].name[..27]);
+        if table.get_col_name(i).unwrap_or("none").len() > 27 {
+            print!("| {}... ", &table.get_col_name(i).unwrap_or("none")[..27]);
         } else {
-            print!("| {1: ^0$} ", min(30, cols[i]), row.columns[i].name);
+            print!("| {1: ^0$} ", min(30, cols[i]), table.get_col_name(i).unwrap_or("none"));
         }
     }
     println!("|");
@@ -566,30 +609,39 @@ fn display_meta(row: &ResultSet) {
 
     print!("| {1: <0$} ", col_name.len(), "Type");
     for i in 0..(cols.len()) {
-        print!("| {1: ^0$} ", min(30, cols[i]), format!("{:?}", row.columns[i].sql_type));
+        match table.get_type_by_idx(i) {
+            Some(t) => print!("| {1: ^0$} ", min(30, cols[i]), format!("{:?}", t)),
+            None => print!("| {1: ^0$} ", min(30, cols[i]), "none")
+        }
     }
     println!("|");
 
     print!("| {1: <0$} ", col_name.len(), "Primary");
     for i in 0..(cols.len()) {
-        print!("| {1: ^0$} ", min(30, cols[i]), row.columns[i].is_primary_key);
+        match table.get_is_primary_key_by_idx(i) {
+            Some(t) => print!("| {1: ^0$} ", min(30, cols[i]), format!("{:?}", t)),
+            None => print!("| {1: ^0$} ", min(30, cols[i]), "none")
+        }
     }
     println!("|");
 
     print!("| {1: <0$} ", col_name.len(), "Allow NULL");
     for i in 0..(cols.len()) {
-        print!("| {1: ^0$} ", min(30, cols[i]), row.columns[i].allow_null);
+        match table.get_allow_null_by_idx(i) {
+            Some(t) => print!("| {1: ^0$} ", min(30, cols[i]), t),
+            None => print!("| {1: ^0$} ", min(30, cols[i]), "none")
+        }
     }
     println!("|");
 
     print!("| {1: <0$} ", col_name.len(), "Description");
     for i in 0..(cols.len()) {
-        if row.columns[i].description.len() > 27 {
+        if table.get_description_by_idx(i).unwrap().len() > 27 {
             //splitten
-            print!("| {}... ", &row.columns[i].description[..27]);
+            print!("| {}... ", &table.get_description_by_idx(i).unwrap()[..27]);
         } else {
-            print!("FALSE");
-            print!("| {1: ^0$} ", min(30, cols[i]), row.columns[i].description);
+            print!("| {1: ^0$} ", min(30, cols[i]),
+                            table.get_description_by_idx(i).unwrap_or("none"));
         }
     }
     println!("|");

@@ -20,7 +20,7 @@ pub fn handle(mut stream: TcpStream) {
     // Perform handshake, check user login.
     let res = net::do_handshake(&mut stream);
 
-    let mut user; 
+    let mut user;
     match res {
         Ok((name, pw)) => {
             info!("Connection established. Handshake sent");
@@ -91,7 +91,7 @@ pub fn handle(mut stream: TcpStream) {
                             // Pass AST to query executer
                             let mut r2 = query::execute_from_ast(tree, &mut user);
 
-                            println!("{:?}", r2);
+                            debug!("{:?}", r2);
 
                             let r = r2.unwrap_or(
                                     ResultSet { data: vec![], columns: vec![

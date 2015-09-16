@@ -106,12 +106,15 @@ impl<'a> Executor<'a> {
             let mut index = 0;
 
             for column in table.columns() {
+                info!("inserting at {:?}", writevec.len());
+                info!("This is the insertvalue: {:?}", insertvalues[index] );
                 column.sql_type.encode_into(&mut writevec,&insertvalues[index]);
                 index += 1;
             }
         }
         //let n: Vec<_> = stmt.val.iter().map(|l| Some(l.into_DataSrc())).collect();
         let mut engine = table.create_engine();
+        info!("handing data vector {:?} to storage engine",writevec);
         try!(engine.insert_row(&writevec));
         Ok(generate_rows_dummy())
 
@@ -132,7 +135,6 @@ impl<'a> Executor<'a> {
         let table = try!(self.get_table(&stmt.tid[0]));
         let engine = table.create_engine();
         Ok(try!(engine.full_scan()))
-        
 
     }
 
