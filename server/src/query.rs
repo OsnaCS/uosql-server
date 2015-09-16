@@ -117,13 +117,13 @@ impl<'a> Executor<'a> {
 
     }
 
-fn execute_select_stmt(&mut self, stmt: SelectStmt)
+fn execute_select_stmt(&mut self, mut stmt: SelectStmt)
         -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError>
     {
         let mut masterrow: Rows<Cursor<Vec<u8>>>;
 
         let mut left = try!(self.get_rows(&stmt.tid[0]));
-        println!("{:?}", left );
+
         let mut name_column_map = HashMap::<String, HashMap<String, usize>>::new();
         let mut column_index_map = HashMap::<String, usize>::new();
         let mut columnindex: usize = 0;
@@ -132,10 +132,9 @@ fn execute_select_stmt(&mut self, stmt: SelectStmt)
             columnindex += 1;
         }
         name_column_map.insert(stmt.tid[0].clone(), column_index_map);
-
+        stmt.alias.insert(stmt.tid[0].clone(), stmt.tid[0].clone());
         // create a very huge cross product from all tables and some hashmaputilities
         for i in 1..stmt.tid.len() {
-
             let right = try!(self.get_rows(&stmt.tid[i]));
             column_index_map = HashMap::<String, usize>::new();
             for column in right.columns.clone() {
@@ -143,15 +142,11 @@ fn execute_select_stmt(&mut self, stmt: SelectStmt)
                 columnindex += 1;
             }
             name_column_map.insert(stmt.tid[i].clone(), column_index_map);
-
-            let tmp = self.cross_rows(left, right);
+            stmt.alias.insert(stmt.tid[1].clone(), stmt.tid[1].clone());
+            let tmp = try!(self.cross_rows(left, right));
             left = tmp;
-
-
         }
         masterrow = left;
-
-        println!("{:?}",name_column_map);
         // create the hashmap that gives every alias it's tablehash where the tablehash
         // maps a columnname to a index
 
@@ -161,12 +156,66 @@ fn execute_select_stmt(&mut self, stmt: SelectStmt)
 
 
 
-        let result = if stmt.cond.is_some() {
+        let mut whereresult = if stmt.cond.is_some() {
                 try!(self.execute_where(masterrow, &stmt.alias, &stmt.cond.unwrap()))
             } else {
                 masterrow
             };
-        Ok(result)
+
+        let mut indextargets: Vec<usize> = Vec::new();
+
+        for target in stmt.target {
+            match target.col {
+                Col::Every => {
+                    if target.alias.is_some() {
+                        let mut tablename = stmt.alias.get(&target.alias.unwrap());
+                        if tablename.is_none() {
+                            return Err(ExecutionError::UnknownAlias)
+                        }
+                        let columntoindex = name_column_map.get(tablename.unwrap()).unwrap();
+                        for index in columntoindex.values() {
+                            indextargets.push(index.clone());
+                        };
+
+                    } else {
+                        break
+                    }
+                },
+                Col::Specified(column) => {
+                    if target.alias.is_some() {
+
+                    } else {
+
+                    }
+                }
+            }
+        }
+
+
+        try!(whereresult.reset_pos());
+        let mut columnvec: Vec<Column> = Vec::new();
+        for index in indextargets.clone() {
+            columnvec.push(whereresult.columns[index].clone());
+        }
+        let mut cursor = Cursor::new(Vec::<u8>::new());
+        let mut resultrows = Rows::<Cursor<Vec<u8>>>::new(cursor, &columnvec);
+
+        loop {
+            let mut originalrow =  Vec::<u8>::new();
+            let res = whereresult.next_row(&mut originalrow);
+            match res {
+                Ok(_) => (),
+                Err(_) => break,
+            }
+            let mut toinsert = Vec::<u8>::new();
+            for index in indextargets.clone() {
+                toinsert.extend(try!(whereresult.get_value(&originalrow,index)).into_iter());
+            }
+        }
+
+
+
+        Ok(resultrows)
 
         /*if stmt.target.len() != 1 {
             return Err(ExecutionError::DebugError("Select only implemented for select * ".into()));
@@ -314,42 +363,60 @@ fn execute_select_stmt(&mut self, stmt: SelectStmt)
 
     fn get_rows(&self, table: &str) -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError> {
         let engine = try!(self.get_engine(table));
-        Ok(try!(engine.full_scan()))
+        let mut rows = try!(engine.full_scan());
+        try!(rows.reset_pos());
+        Ok(rows)
     }
 
     fn cross_rows(&self, mut left: Rows<Cursor<Vec<u8>>>, mut right: Rows<Cursor<Vec<u8>>>)
-        -> Rows<Cursor<Vec<u8>>>
+        -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError>
     {
-        let mut datasrc = Vec::<u8>::new();
-
-        loop {
-            let outerres = left.next_row(&mut datasrc);
-            match outerres {
-                Ok(_) => (),
-                Err(_) => break
-            }
-                loop {
-                    let innerres = right.next_row(&mut datasrc);
-                    match innerres {
-                    Ok(_) => (),
-                    Err(_) => break
-                    }
-                }
-
-        }
-
-        let mut columnvec = left.columns;
-        let mut appendvec = right.columns;
+        try!(left.reset_pos());
+        try!(right.reset_pos());
+        let mut columnvec = left.columns.clone();
+        let mut appendvec = right.columns.clone();
 
         for i in 0..appendvec.len() {
             let appendlength = appendvec.len();
             columnvec.push(appendvec.remove(0));
         }
+        let mut cursor = Cursor::new(Vec::<u8>::new());
+        let mut rows = Rows::<Cursor<Vec<u8>>>::new(cursor, &columnvec);
 
-        let mut cursor = Cursor::new(datasrc);
 
-        Rows::<Cursor<Vec<u8>>>::new(cursor, &columnvec)
+        loop {
+            let mut insertingrow = Vec::<u8>::new();
+            let outerres = left.next_row(&mut insertingrow);
 
+            match outerres {
+                Ok(_) => (),
+                Err(_) => break
+            }
+                loop {
+                    let mut datasrc = Vec::<u8>::new();
+                    for i in 0..insertingrow.len() {
+                        datasrc.push(insertingrow[i]);
+                    }
+                    let innerres = right.next_row(&mut datasrc);
+                    println!("");
+                    println!("Datasrc: {:?}", datasrc);
+                    println!("");
+                    match innerres {
+                        Ok(_) => {
+                            try!(rows.add_row(& datasrc));
+                            ()
+                        },
+                        Err(_) => {
+                            right.reset_pos();
+                            break
+                        }
+                    }
+                }
+
+        }
+
+
+        Ok(rows)
     }
 
 
@@ -376,6 +443,7 @@ pub enum ExecutionError {
     NoDatabaseSelected,
     InsertMissmatch,
     DebugError(String),
+    UnknownAlias
 }
 
 impl From<ParseError> for ExecutionError {
