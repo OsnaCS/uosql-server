@@ -175,7 +175,9 @@ fn main() {
         let mut linelen = 0;
 
         // Handle Up/Down input to jump in history and execute commands from history
-        while h_idx <= history.len() && (key_pressed == 0 || key_pressed == 1 || key_pressed == 13) {
+        while h_idx <= history.len() &&
+            (key_pressed == 0 || key_pressed == 1 || key_pressed == 13) 
+        {
             match key_pressed {
                 0 => {
                     if !history.is_empty() && h_idx < history.len() {
