@@ -5,10 +5,11 @@ use std::io::{Write, Read, Seek, SeekFrom, Cursor};
 use super::super::parse::ast::CompType;
 
 
+
 #[derive(Debug)]
 pub struct Rows <B: Write + Read + Seek> {
     data_src: B,
-    columns: Vec<Column>,
+    pub columns: Vec<Column>,
     columns_size: u64,
     pub column_offsets: Vec<u64>,
     pos: u64,

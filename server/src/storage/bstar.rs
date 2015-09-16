@@ -896,8 +896,6 @@ impl<T: KnownSize + PartialOrd + Clone + Debug> Bstar<T> {
                 let lookup = olookup.unwrap();
 
                     let mut bnode = lookup.bnode.unwrap();
-                    println!("{:?}",bnode );
-                    println!("{:?}",lookup.index );
                     let mut index = if direction == IterDirection::Forward {
                         0
                     } else {

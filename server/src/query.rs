@@ -5,14 +5,14 @@
 //!
 
 use super::parse::ast::*;
-use super::storage::{Database, Column, Table, Rows, ResultSet};
+use super::storage::{Database, Column, Table, Rows, ResultSet, Engine};
 use super::storage;
 use super::auth;
 use super::parse::parser::ParseError;
 use std::io::{Write, Read, Seek};
 use std::fs::File;
 use std::io::Cursor;
-
+use std::collections::HashMap;
 
 pub struct Executor<'a> {
     pub user: &'a mut auth::User,
@@ -32,9 +32,6 @@ pub struct Executor<'a> {
 
         };
         Ok(try!(try!(res).to_result_set()))
-
-
-    //info!("Not implemented! :-(");
     }
 
 
@@ -110,17 +107,61 @@ impl<'a> Executor<'a> {
                 index += 1;
             }
         }
-        //let n: Vec<_> = stmt.val.iter().map(|l| Some(l.into_DataSrc())).collect();
         let mut engine = table.create_engine();
         try!(engine.insert_row(&writevec));
         Ok(generate_rows_dummy())
 
     }
 
-    fn execute_select_stmt(&mut self, stmt: SelectStmt)
+fn execute_select_stmt(&mut self, stmt: SelectStmt)
         -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError>
     {
-        if stmt.target.len() != 1 {
+        let mut masterrow: Rows<Cursor<Vec<u8>>>;
+        let mut left = try!(self.get_rows(&stmt.tid[0]));
+        let mut name_column_map = HashMap::<String, HashMap<String, usize>>::new();
+        let mut column_index_map = HashMap::<String, usize>::new();
+        let mut columnindex: usize = 0;
+        for column in left.columns.clone() {
+            column_index_map.insert(column.name.into(), columnindex);
+            columnindex += 1;
+        }
+        name_column_map.insert(stmt.tid[0].clone(), column_index_map);
+
+        // create a very huge cross product from all tables and some hashmaputilities
+        for i in 1..stmt.tid.len() {
+            let right = try!(self.get_rows(&stmt.tid[i]));
+            column_index_map = HashMap::<String, usize>::new();
+            for column in right.columns.clone() {
+                column_index_map.insert(column.name.into(), columnindex);
+                columnindex += 1;
+            }
+            name_column_map.insert(stmt.tid[i].clone(), column_index_map);
+
+            let tmp = self.cross_rows(left, right);
+            left = tmp;
+
+
+        }
+        masterrow = left;
+
+        println!("{:?}",name_column_map);
+        // create the hashmap that gives every alias it's tablehash where the tablehash
+        // maps a columnname to a index
+
+        for i in 0..stmt.tid.len() {
+
+        }
+
+
+
+        let result = if stmt.cond.is_some() {
+                try!(self.execute_where(masterrow, &stmt.alias, &stmt.cond.unwrap()))
+            } else {
+                masterrow
+            };
+        Ok(result)
+
+        /*if stmt.target.len() != 1 {
             return Err(ExecutionError::DebugError("Select only implemented for select * ".into()));
         }
         if stmt.target[0].col != Col::Every {
@@ -129,10 +170,26 @@ impl<'a> Executor<'a> {
         if stmt.tid.len() != 1 {
             return Err(ExecutionError::DebugError("Select only implemented for 1 table ".into()));
         }
-        let table = try!(self.get_table(&stmt.tid[0]));
-        let engine = table.create_engine();
-        // Ok(try!(engine.full_scan()))
-        Err(ExecutionError::DebugError("engine.full_scan() not implemented ".into()))
+        let engine = try!(self.get_engine(&stmt.tid[0]));
+        Ok(try!(engine.full_scan()))*/
+
+    }
+
+    fn execute_where<'b>(&self, tableset:Rows<Cursor<Vec<u8>>>
+        , infos: &HashMap<String, String>, conditions: &Conditions)
+            -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError> {
+
+                match conditions {
+                    &Conditions::And(ref c1, ref c2) => {
+                        Ok(tableset)
+                        },
+                    &Conditions::Or(ref c1, ref c2) => Ok(tableset),
+                    &Conditions::Leaf(ref c) => {
+                        Ok(tableset)
+
+                    },
+                }
+
 
     }
 
@@ -173,8 +230,7 @@ impl<'a> Executor<'a> {
         let table = try!(base.create_table(&query.tid, tmp_vec, 0));
         let mut engine = table.create_engine();
         engine.create_table();
-        //Ok(generate_rows_dummy())
-        Err(ExecutionError::DebugError("Not implemented.".into()))
+        Ok(generate_rows_dummy())
     }
 
     fn execute_drop_stmt(&mut self, query: DropStmt)
@@ -244,6 +300,52 @@ impl<'a> Executor<'a> {
         let dbase = try!(self.get_own_database());
         Ok(try!(dbase.load_table(table)))
     }
+
+    fn get_engine<'b>(&'b self, table: &str) -> Result<Box<Engine + 'b>, ExecutionError> {
+        let table = try!(self.get_table(table));
+        Ok(table.create_engine())
+    }
+
+    fn get_rows(&self, table: &str) -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError> {
+        let engine = try!(self.get_engine(table));
+        Ok(try!(engine.full_scan()))
+    }
+
+    fn cross_rows(&self, mut left: Rows<Cursor<Vec<u8>>>, mut right: Rows<Cursor<Vec<u8>>>)
+        -> Rows<Cursor<Vec<u8>>>
+    {
+        let mut datasrc = Vec::<u8>::new();
+
+        loop {
+            let outerres = left.next_row(&mut datasrc);
+            match outerres {
+                Ok(_) => (),
+                Err(_) => break
+            }
+                loop {
+                    let innerres = right.next_row(&mut datasrc);
+                    match innerres {
+                    Ok(_) => (),
+                    Err(_) => break
+                    }
+                }
+
+        }
+
+        let mut columnvec = left.columns;
+        let mut appendvec = right.columns;
+
+        for i in 0..appendvec.len() {
+            let appendlength = appendvec.len();
+            columnvec.push(appendvec.remove(0));
+        }
+
+        let mut cursor = Cursor::new(datasrc);
+
+        Rows::<Cursor<Vec<u8>>>::new(cursor, &columnvec)
+
+    }
+
 
 
 }

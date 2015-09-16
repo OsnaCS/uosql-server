@@ -88,7 +88,7 @@ fn main() {
         Ok(t) => t,
         Err(e) => panic!(format!("{:?}",e)),
     };
-   /* println!("");
+    println!("");
     println!("DEBUG PRINTING {:?} ELEMENTS:", tree);
     println!("");
     tree.debug_print();
@@ -136,10 +136,10 @@ fn main() {
     println!("");
     tree.debug_print();
     println!("");
-    println!("");*/
+    println!("");
 
 
-    for keyaddr in tree.iter_options( IterDirection::Forward, Some(IterOption::Including(5))) {
+    for keyaddr in tree.iter_options( IterDirection::Backward, Some(IterOption::Excluding(10))) {
         println!("{:?}", keyaddr );
     }
 
