@@ -9,10 +9,22 @@ use std::cmp::Ordering;
 use std::marker::PhantomData;
 use std::fmt::Debug;
 use std::iter::Iterator;
+
+
 pub trait KnownSize {
+    /// returns the fixed size of all objects ever created
     fn size() -> u64;
+    /// reads the object from file, at address if specified.
+    /// if the address is not specified, the object will be read
+    /// from wherever the current seek is
     fn read(&mut File, Option<u64>) -> Result<Self>;
+    /// writes the object to file, at address if specified.
+    /// if the address is not specified, the object will be written
+    /// to wherever the current seek is
     fn write(&self, &mut File, Option<u64>) -> Result<()>;
+    /// writes a defaultversion of the Type to file
+    /// if no address is specified, the default will be written
+    /// to wherever the current seek of the file is.
     fn write_default(&mut File, Option<u64>) -> Result<()>;
 }
 
@@ -54,6 +66,7 @@ impl<T: KnownSize + PartialOrd + Clone + Debug> Bstar<T> {
         Ok(())
     }
 
+    /// Loads a Bstar object from the specified name/path
     pub fn load(name: &str) -> Result<Bstar<T>>{
 
         let mut _file = OpenOptions::new()
@@ -109,7 +122,9 @@ impl<T: KnownSize + PartialOrd + Clone + Debug> Bstar<T> {
     }
 
 
-
+    /// Creates a new permanent Bstar object.
+    /// target is the name of the table holding the data records,
+    /// order*2 specifies the maximal amount of keys stored per node in the tree
     pub fn create(name: &str, target: &str, order: u64) -> Result<Bstar<T>> {
         let allowduplicates = false;
         let mut _file = OpenOptions::new()
@@ -172,7 +187,7 @@ impl<T: KnownSize + PartialOrd + Clone + Debug> Bstar<T> {
         )
     }
 
-
+    /// resets the tree to 0 elements
     pub fn reset(&mut self) -> Result<()> {
         try!(self.update_root(0));
         try!(self.update_free_addr(0));
@@ -180,10 +195,12 @@ impl<T: KnownSize + PartialOrd + Clone + Debug> Bstar<T> {
         Ok(())
     }
 
+    /// returns the rootnode of the tree
     pub fn get_root(&mut self) -> Result<Bnode<T>> {
         Ok(try!(Bnode::read(&mut self.dat, Some(self.root))))
     }
 
+    /// prints a debug version of the tree
     pub fn debug_print(& mut self) -> Result<()>{
         let root = self.root;
         Ok(try!(self.debug_print_rec(root,"")))
@@ -204,6 +221,7 @@ impl<T: KnownSize + PartialOrd + Clone + Debug> Bstar<T> {
         Ok(())
     }
 
+    /// searches for key in the tree and returns the KeyAddr object or None
     pub fn lookup_keyaddr(&mut self, key: T) -> Result<Option<KeyAddr<T>>> {
         let lookup = try!(self.lookup_internal(& KeyAddr::new(key.clone(),0)));
         if lookup.found {
@@ -213,7 +231,7 @@ impl<T: KnownSize + PartialOrd + Clone + Debug> Bstar<T> {
         }
     }
 
-
+    /// inserts a keyaddr object
     pub fn insert_keyaddr(&mut self, key: KeyAddr<T>) -> Result<bool> {
         let lookup = try!(self.lookup_internal(&key));
 
@@ -389,7 +407,7 @@ impl<T: KnownSize + PartialOrd + Clone + Debug> Bstar<T> {
         }
     }
 
-
+    /// searches for the key and deletes and returns the keyaddr object
     pub fn delete_keyaddr(&mut self, key: T) -> Result<Option<KeyAddr<T>>> {
         if self.elementcount == 0 {
             Ok(None)
@@ -712,6 +730,8 @@ impl<T: KnownSize + PartialOrd + Clone + Debug> Bstar<T> {
         Ok(())
     }
 
+
+    /// returns an iterator for the elements of the tree
     pub fn iter(&mut self) -> Bterator<T> {
         let mut onode = Bnode::<T>::read(&mut self.dat, Some(self.root));
         let dummy = Bnode::<T>::create(
@@ -741,6 +761,9 @@ impl<T: KnownSize + PartialOrd + Clone + Debug> Bstar<T> {
         }
     }
 
+
+    /// returns a specific iterator, that starts at the keyaddr element found when
+    /// searching for key
     pub fn iter_start_at(&mut self, key: T) -> Bterator<T> {
         let olookup = self.lookup_internal(&KeyAddr::<T>::new(key,0));
         if olookup.is_ok() {
@@ -813,6 +836,8 @@ pub struct Bnode<T: PartialOrd + KnownSize + Debug> {
 
 impl<T: PartialOrd + KnownSize + Debug> Bnode<T> {
 
+    /// creates a new Bnode Object
+    /// all u64 fields are addresses to other nodes
     pub fn create(
                 node_list: SortedList<KeyAddr<T>>,
                 father: u64,
@@ -835,6 +860,7 @@ impl<T: PartialOrd + KnownSize + Debug> Bnode<T> {
         }
     }
 
+    /// reads a Bnode from disc at the specefied addr in the specified file
     pub fn read(file: &mut File, addr: Option<u64>) -> Result<Bnode<T>> {
         try!(seek_maybe(file, addr));
         let father = try!(file.read_u64::<BigEndian>());
@@ -881,7 +907,7 @@ impl<T: PartialOrd + KnownSize + Debug> Bnode<T> {
         )
     }
 
-
+    /// writes a Bnode from disc at the specefied addr in the specified file
     pub fn write(&mut self, file: &mut File, addr: Option<u64>) -> Result<()> {
         try!(seek_maybe(file, addr));
         try!(file.write_u64::<BigEndian>(self.father));
@@ -925,6 +951,7 @@ impl<T: PartialOrd + KnownSize + Debug> Bnode<T> {
 
     }
 
+    /// returns the size of the Bnode calculated using the order of the hosting B* tree
     pub fn size(order: u64) -> u64 {
         ((KeyAddr::<T>::size() * (order * 2)) + 44)
     }
@@ -940,22 +967,27 @@ pub struct SortedList<T: PartialOrd + Debug> {
 
 impl<T: PartialOrd + Debug> SortedList<T> {
 
+    /// generates a new SortedList
     pub fn new() -> SortedList<T> {
         SortedList { list: Vec::new(), elementcount: 0}
     }
 
+    /// allocates some memory for the new sorted list
     pub fn with_capacity(size: usize) -> SortedList<T> {
         SortedList { list: Vec::with_capacity(size), elementcount: 0 }
     }
 
+    /// returns true when the list is empty
     pub fn empty(&self) -> bool {
         self.elementcount == 0
     }
 
+    /// inserts a given key at a given index
     pub fn insert_at_index(&mut self, index: usize, key: T) {
         self.list.insert(index,key);
         self.elementcount += 1;
     }
+
     /// returns the index where the inserted value is located
     pub fn insert(&mut self, value: T) -> u64 {
         if self.empty() {
@@ -995,11 +1027,13 @@ impl<T: PartialOrd + Debug> SortedList<T> {
 
     }
 
+    /// behaves as split_by_index but splits the list at the key position
     pub fn split_by_key(&mut self, key: &T) -> SortedList<T> {
         let index = self.get_index_by_key(&key).1;
         self.split_by_index(index)
     }
 
+    /// deletes and returns a given key
     pub fn delete_by_key(&mut self, value: &T) -> Option<T> {
         if self.empty() {
             return None
@@ -1014,6 +1048,7 @@ impl<T: PartialOrd + Debug> SortedList<T> {
         }
     }
 
+    /// deletes a key at indexposition
     pub fn delete_by_index(&mut self, index: usize) -> Option<T> {
         if  index >= 0 && index <= ( self.elementcount -1 ) as usize {
             self.elementcount-=1;
@@ -1023,6 +1058,7 @@ impl<T: PartialOrd + Debug> SortedList<T> {
         }
     }
 
+    /// returns a mutable reference to a key found at index
     pub fn get_by_index(&mut self, index: usize) -> Option<&mut T> {
         if index >= 0 && index <= ( self.elementcount - 1 ) as usize {
             Some(&mut self.list[index])
@@ -1031,7 +1067,7 @@ impl<T: PartialOrd + Debug> SortedList<T> {
         }
     }
 
-
+    /// returns a mutable reference to a key found by searching for it
     pub fn get_by_key(&mut self, tofind: &T) -> Option<&mut T> {
         let res = self.get_index_by_key_rec(tofind, 0 , (self.elementcount - 1) as usize);
         if res.0 {
@@ -1041,6 +1077,10 @@ impl<T: PartialOrd + Debug> SortedList<T> {
         }
     }
 
+    /// returns the indexvalue where a key is located, or if it wasn't found
+    /// where it's proper place would be:
+    /// [0,1,5] <- serching for 3 will result in
+    /// (false, 2)
     pub fn get_index_by_key(&self, tofind: &T) -> (bool, usize) {
         self.get_index_by_key_rec(tofind, 0, (self.elementcount - 1) as usize)
     }
@@ -1079,6 +1119,7 @@ pub struct KeyAddr<T: PartialOrd + KnownSize + Debug> {
 }
 
 impl<T: PartialOrd + KnownSize + Debug> KeyAddr<T> {
+    /// returns a new KeyAddr object
     pub fn new(key: T, addr: u64) -> KeyAddr<T> {
         KeyAddr { key: key, addr: addr}
     }
@@ -1098,22 +1139,26 @@ impl<T: PartialOrd + KnownSize + Debug> PartialEq for KeyAddr<T> {
 
 
 impl<T: KnownSize + PartialOrd + Debug> KnownSize for KeyAddr<T> {
+    /// calculates the size of KeyValue Objects
     fn size() -> u64 {
         // Size of Key + 8 for addr
         T::size() + 8
     }
 
+    /// reads a KeyValue ojbect from disc at the specified file and addr
     fn read(file: &mut File, addr: Option<u64>) -> Result<KeyAddr<T>> {
         let key = try!(T::read(file, addr));
         let tmp = try!(u64::read(file, None));
         Ok(KeyAddr::new(key,tmp))
     }
 
+    /// writes a KeyValue ojbect to disc at the specified file and addr
     fn write(&self, file: &mut File, addr: Option<u64>) -> Result<()> {
         try!(self.key.write(file, addr));
         Ok(try!(self.addr.write(file, None)))
     }
 
+    /// writes a default version of KeyValue
     fn write_default(file: &mut File, addr: Option<u64>) -> Result<()> {
         try!(seek_maybe(file, addr));
         try!(T::write_default(file, None));
