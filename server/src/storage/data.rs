@@ -366,6 +366,7 @@ impl<B: Write + Read + Seek> Rows <B> {
     /// scans the entire file
     /// returns all rows which are not deleted
     pub fn full_scan(&mut self) -> Result<Rows<Cursor<Vec<u8>>>, Error> {
+        try!(self.reset_pos());
         let vec: Vec<u8> = Vec::new();
         let cursor = Cursor::new(vec);
         let mut rows = Rows::new(cursor, &self.columns);
@@ -376,6 +377,8 @@ impl<B: Write + Read + Seek> Rows <B> {
                 Ok(_) => {
                         try!(rows.add_row(& buf));
                         info!(".");
+                        //info!("buf: {:?}", &buf);
+                        buf.clear();
                 },
                 Err(Error::EndOfFile) => break,
                 Err(e) => { return Err(e) }

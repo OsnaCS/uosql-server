@@ -57,23 +57,9 @@ impl<'a> Engine for FlatFile<'a> {
 
     /// returns all rows which are not deleted
     fn full_scan(&self) -> Result<Rows<Cursor<Vec<u8>>>, Error> {
+        info!("full scan");
         let mut reader = try!(self.get_reader());
-        let vec: Vec<u8> = Vec::new();
-        let cursor = Cursor::new(vec);
-        let mut rows = Rows::new(cursor, &self.table.meta_data.columns);
-        let mut buf: Vec<u8> = Vec::new();
-
-        loop {
-            match reader.next_row(&mut buf) {
-                Ok(_) => {
-                    try!(rows.add_row(& buf));
-                    ()
-                },
-                Err(Error::EndOfFile) => break,
-                Err(e) => return Err(e),
-            }
-        }
-        Ok(rows)
+        reader.full_scan()
     }
 
     /// returns an new Rows object which fulfills a constraint

@@ -79,9 +79,6 @@ fn main() {
 
     d.clear();
 
-    rows.next_row(&mut d).unwrap();
-    println!{"{:?}", d};
-
     flat_file_test();
 
 }
@@ -154,7 +151,38 @@ fn flat_file_test() {
 
     rows = engine.full_scan().unwrap();
     println!("the rows: {:?}", rows);
-    rows.reset_pos().unwrap();
+    //rows.reset_pos().unwrap();
+
+    rows = engine.full_scan().unwrap();
+    println!("the rows2: {:?}", rows);
+
+    let mut cols = Vec::new();
+    cols.push(Column {
+        name: "Heiner".into(),
+        sql_type: SqlType::Char(6),
+        allow_null: false,
+        description: "Heiner".to_string(),
+        is_primary_key: true,
+    });
+
+    let db = Database::create("test").unwrap();
+    let _test = db.create_table("test", cols, 1).unwrap();
+
+    let mut engine = FlatFile::new(_test);
+    engine.create_table().unwrap();
+
+    let mut rnd_data = vec![0x48, 0x41, 0x4C, 0x4C, 0x4F, 0x00];
+    engine.insert_row(&rnd_data).unwrap();
+
+
+    rows = engine.full_scan().unwrap();
+    println!("the rows: {:?}", rows);
+
+    rnd_data = vec![0x48, 0x41, 0x4C, 0x4C, 0x4D, 0x00];
+    engine.insert_row(&rnd_data).unwrap();
+
+    let rows2 = engine.full_scan().unwrap();
+    println!("the rows2: {:?}", rows2);
 }
 
 fn _type_test() {
