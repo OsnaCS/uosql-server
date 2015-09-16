@@ -4,8 +4,11 @@
 mod engine;
 mod meta;
 pub mod types;
+pub mod bstar;
 
 mod data;
+
+use bincode::rustc_serialize::{EncodingError, DecodingError};
 
 pub use self::meta::Table;
 pub use self::meta::Database;
@@ -13,18 +16,18 @@ pub use self::data::Rows;
 pub use self::data::ResultSet;
 pub use self::types::Column;
 pub use self::types::SqlType;
-pub use parse::ast;
-pub use parse::ast::CompType;
-pub use std::string::FromUtf8Error;
 pub use self::engine::FlatFile;
 
+pub use parse::ast;
+pub use parse::ast::CompType;
+
+
+
 use std::io;
-use std::io::{Write, Read, Seek, SeekFrom, Cursor};
-
-//use self::meta::Table;
-
-use bincode::rustc_serialize::{EncodingError, DecodingError};
-
+use std::io::Cursor;
+use std::str::Utf8Error;
+use std::ffi::NulError;
+pub use std::string::FromUtf8Error;
 /// A database table
 ///
 /// Through this type, you can retreive certain meta information about the
@@ -38,6 +41,8 @@ pub enum Error {
     BinDe(DecodingError),
     Byteorder(::byteorder::Error),
     Utf8Error(FromUtf8Error),
+    Utf8StrError(Utf8Error),
+    NulError(NulError),
     WrongMagicNmbr,
     Engine, // cur not used
     LoadDataBase,
@@ -58,11 +63,25 @@ pub enum Error {
     FoundNoPrimaryKey,
 }
 
+impl From<NulError> for Error {
+    fn from(err: NulError) -> Error {
+        Error::NulError(err)
+    }
+}
+
+
+impl From<Utf8Error> for Error {
+    fn from(err: Utf8Error) -> Error {
+        Error::Utf8StrError(err)
+    }
+}
+
 impl From<FromUtf8Error> for Error {
     fn from(err: FromUtf8Error) -> Error {
         Error::Utf8Error(err)
     }
 }
+
 
 impl From<io::Error> for Error {
     fn from(err: io::Error) -> Error {
@@ -122,9 +141,10 @@ pub trait Engine {
 
 #[repr(u8)]
 #[derive(Clone,Copy,Debug,RustcDecodable, RustcEncodable)]
-enum EngineID {
+pub enum EngineID {
     FlatFile = 1,
     InvertedIndex,
+    BStar,
 }
 
 

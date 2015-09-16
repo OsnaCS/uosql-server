@@ -8,7 +8,6 @@ use bincode::SizeLimit;
 use server::logger;
 use server::parse::ast::DataSrc;
 use std::io::Cursor;
-//use server::storage::engine::flatfile::FlatFile;
 
 fn main() {
 
@@ -67,20 +66,17 @@ fn main() {
 
     let mut d = Vec::<u8>::new();
 
-    rows.next_row(&mut d);
+    rows.next_row(&mut d).unwrap();
     println!{"{:?}", d}
 
     let h = rows.get_value(&d, 2);
     println!{"{:?}", h}
 
-    rows.delete_row();
+    rows.delete_row().unwrap();
 
-    rows.reset_pos();
+    rows.reset_pos().unwrap();
 
     d.clear();
-
-    rows.next_row(&mut d);
-    println!{"{:?}", d};
 
     flat_file_test();
 
@@ -94,7 +90,7 @@ fn flat_file_test() {
     {
         let t = data.load_table("storage_team").unwrap();
         let mut engine = FlatFile::new(t);
-        engine.create_table();
+        engine.create_table().unwrap();
         let mut rnd_data = vec![0, 0, 0, 1, 0, 0x48, 0x41, 0x4C, 0x4C, 0x4F, 0x00];
 
         engine.insert_row(&rnd_data).unwrap();
@@ -124,24 +120,22 @@ fn flat_file_test() {
     println!("/////////////////////// Lookup ////////////////////////////////");
     println!("///////////////////////////////////////////////////////////////");
 
-
     let my_int: [u8; 4] = [0, 0, 0, 1];
     let mut rows = engine.lookup(0,&my_int[0..4],CompType::Equ).unwrap();
-    rows.reset_pos();
+    rows.reset_pos().unwrap();
 
     println!("engine.lookup rows: {:?}", rows);
-
 
     println!("///////////////////////////////////////////////////////////////");
     println!("//////////////////////// Delete ///////////////////////////////");
     println!("///////////////////////////////////////////////////////////////");
 
     engine.delete(0,&my_int[0..4],CompType::Equ).unwrap();
-    rows.reset_pos();
+    rows.reset_pos().unwrap();
 
     rows = engine.full_scan().unwrap();
     println!("the rows: {:?}", rows);
-    rows.reset_pos();
+    rows.reset_pos().unwrap();
 
     // modify a char
     let my_char: [u8; 6] = [0x48, 0x41, 0x4C, 0x4D, 0x4F, 0x00];
@@ -152,22 +146,42 @@ fn flat_file_test() {
     println!("///////////////////////////////////////////////////////////////");
     engine.modify(2, &my_char, CompType::Equ, &values).unwrap();
 
-    rows.reset_pos();
+    rows.reset_pos().unwrap();
 
     rows = engine.full_scan().unwrap();
     println!("the rows: {:?}", rows);
-    rows.reset_pos();
+    //rows.reset_pos().unwrap();
 
-    // let mut vec: Vec<u8> = Vec::new();
-    // rows.next_row(&mut vec).unwrap();
-    // println!("the rows: {:?}", vec);
-    // vec.clear();
+    rows = engine.full_scan().unwrap();
+    println!("the rows2: {:?}", rows);
 
-    // rows.next_row(&mut vec).unwrap();
-    // println!("the rows: {:?}", vec);
-    // vec.clear();
-    // rows.next_row(&mut vec).unwrap();
-    // println!("the rows: {:?}", vec);
+    let mut cols = Vec::new();
+    cols.push(Column {
+        name: "Heiner".into(),
+        sql_type: SqlType::Char(6),
+        allow_null: false,
+        description: "Heiner".to_string(),
+        is_primary_key: true,
+    });
+
+    let db = Database::create("test").unwrap();
+    let _test = db.create_table("test", cols, EngineID::FlatFile).unwrap();
+
+    let mut engine = FlatFile::new(_test);
+    engine.create_table().unwrap();
+
+    let mut rnd_data = vec![0x48, 0x41, 0x4C, 0x4C, 0x4F, 0x00];
+    engine.insert_row(&rnd_data).unwrap();
+
+
+    rows = engine.full_scan().unwrap();
+    println!("the rows: {:?}", rows);
+
+    rnd_data = vec![0x48, 0x41, 0x4C, 0x4C, 0x4D, 0x00];
+    engine.insert_row(&rnd_data).unwrap();
+
+    let rows2 = engine.full_scan().unwrap();
+    println!("the rows2: {:?}", rows2);
 }
 
 fn _type_test() {

@@ -1,20 +1,15 @@
 use super::super::meta::{Table};
 use super::super::{Engine, Error};
 use std::fs::{OpenOptions, File};
-use std::io::{Write, Read, Seek, SeekFrom, Cursor};
-use super::super::super::parse::ast;
+use std::io::{Write, Read, Cursor};
 use super::super::super::parse::ast::CompType;
-use super::super::types::SqlType;
-
+use super::super::data::{Rows};
 //---------------------------------------------------------------
 // FlatFile-Engine
 //---------------------------------------------------------------
-use super::super::data::{Rows};
-use std::fs;
 
 pub struct FlatFile<'a> {
     table: Table<'a>,
-
 }
 
 impl<'a> FlatFile<'a> {
@@ -26,7 +21,7 @@ impl<'a> FlatFile<'a> {
 
     /// return a rows object with the table.dat file as data_src
     pub fn get_reader(&self) -> Result<Rows<File>, Error> {
-        let mut file = try!(OpenOptions::new()
+        let file = try!(OpenOptions::new()
             .read(true)
             .write(true)
             .open(&self.table.get_table_data_path()));
@@ -53,7 +48,6 @@ impl<'a> Engine for FlatFile<'a> {
             .open(&self.table.get_table_data_path()));
 
         info!("created file for data: {:?}", _file);
-
         Ok(())
     }
     /// returns own table
@@ -63,26 +57,9 @@ impl<'a> Engine for FlatFile<'a> {
 
     /// returns all rows which are not deleted
     fn full_scan(&self) -> Result<Rows<Cursor<Vec<u8>>>, Error> {
+        info!("full scan");
         let mut reader = try!(self.get_reader());
-        let vec: Vec<u8> = Vec::new();
-        let cursor = Cursor::new(vec);
-        let mut rows = Rows::new(cursor, &self.table.meta_data.columns);
-        let mut buf: Vec<u8> = Vec::new();
-
-        while true {
-            match reader.next_row(&mut buf) {
-                Ok(_) => {
-                        rows.add_row(& buf);
-                },
-                Err(e) => {
-                    match e {
-                        Error::EndOfFile => break,
-                        _ => return Err(e)
-                    }
-                },
-            }
-        }
-        Ok(rows)
+        reader.full_scan()
     }
 
     /// returns an new Rows object which fulfills a constraint
@@ -118,6 +95,4 @@ impl<'a> Engine for FlatFile<'a> {
         let mut reader = try!(self.get_reader());
         reader.modify(constraint_column_index, constraint_value, comp, values)
     }
-
-
 }

@@ -164,7 +164,7 @@ pub fn send_info_package<W: Write>(mut stream: &mut W, pkg: PkgType)
     Ok(())
 }
 
-/// Send ResultSet package as response to a query.
+/// Send Result package as response to a query.
 pub fn send_response_package<W: Write>(mut stream: &mut W, data: ResultSet)
     -> Result<(), Error>
 {
