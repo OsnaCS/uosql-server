@@ -6,7 +6,6 @@ use server::storage::*;
 use bincode::rustc_serialize::{encode_into};
 use bincode::SizeLimit;
 use server::logger;
-use server::parse::ast::DataSrc;
 use std::io::Cursor;
 
 fn main() {
@@ -14,10 +13,6 @@ fn main() {
     logger::with_loglevel(::log::LogLevelFilter::Trace)
         .with_logfile(std::path::Path::new("log.txt"))
         .enable().unwrap();
-
-    let ty = SqlType::Int;
-    let mut v = Vec::new();
-    let _ = encode_into(&ty, &mut v, SizeLimit::Infinite);
 
     //let db = Database::create("storage_team").unwrap();
     let db = Database::load("storage_team").unwrap();
@@ -33,7 +28,7 @@ fn main() {
     cols.push(Column {
         name: "Mathias".into(),
         sql_type: SqlType::Bool,
-        allow_null: false,
+        allow_null: true,
         description: "Mathias".to_string(),
         is_primary_key: false,
     });
@@ -45,52 +40,27 @@ fn main() {
         is_primary_key: false,
     });
 
-    let mut my_data: Vec<Option<DataSrc>> = Vec::new();
-    my_data.push(Some(DataSrc::Int(10)));
-    my_data.push(Some(DataSrc::Bool(1)));
-    my_data.push(Some(DataSrc::String("sechs".to_string())));
+   let _storage_team = db.create_table("storage_team", cols, EngineID::BStar).unwrap();
 
-    let _storage_team = db.create_table("storage_team", cols, EngineID::FlatFile).unwrap();
+   //let _storage_team = db.load_table("storage_team").unwrap();
 
-    let _storage_team = db.load_table("storage_team").unwrap();
-
-
-    //RRROOOOWWWWSSS
-    let v = Vec::<u8>::new();
-    let c = Cursor::new(v);
-    let data = vec![1, 2, 3, 4, 1, 0x48, 0x41, 0x4C, 0x4C, 0x4F, 0x00];
-
-    let mut rows = Rows::new(c, &_storage_team.columns());
-    rows.add_row(&data).unwrap();
-    rows.reset_pos().unwrap();
-
-    let mut d = Vec::<u8>::new();
-
-    rows.next_row(&mut d).unwrap();
-    println!{"{:?}", d}
-
-    let h = rows.get_value(&d, 2);
-    println!{"{:?}", h}
-
-    rows.reset_pos().unwrap();
-
-    d.clear();
-
-    flat_file_test();
-
+   flat_file_test();
 }
 
 fn flat_file_test() {
     println!("start flat file test");
+
 
     let data = Database::load("storage_team").unwrap();
 
     {
         let t = data.load_table("storage_team").unwrap();
         let mut engine = FlatFile::new(t);
-        engine.create_table().unwrap();
-        let mut rnd_data = vec![0, 0, 0, 1, 0, 0x48, 0x41, 0x4C, 0x4C, 0x4F, 0x00];
 
+
+        engine.create_table().unwrap();
+
+        let mut rnd_data = vec![0, 0, 0, 1, 0, 0x48, 0x41, 0x4C, 0x4C, 0x4F, 0x00];
         engine.insert_row(&rnd_data).unwrap();
         rnd_data = vec![0, 0, 0, 2, 0, 0x48, 0x41, 0x4C, 0x4C, 0x4F, 0x00];
         engine.insert_row(&rnd_data).unwrap();
@@ -103,6 +73,7 @@ fn flat_file_test() {
     }
 
     let t = data.load_table("storage_team").unwrap();
+
     let mut engine = FlatFile::new(t);
 
     // delete with bool
@@ -120,7 +91,6 @@ fn flat_file_test() {
 
     let my_int: [u8; 4] = [0, 0, 0, 1];
     let mut rows = engine.lookup(0,&my_int[0..4],CompType::Equ).unwrap();
-    rows.reset_pos().unwrap();
 
     println!("engine.lookup rows: {:?}", rows);
 
@@ -130,30 +100,25 @@ fn flat_file_test() {
 
     engine.delete(0,&my_int[0..4],CompType::Equ).unwrap();
     engine.reorganize().unwrap();
-    panic!("done");
     rows.reset_pos().unwrap();
 
     rows = engine.full_scan().unwrap();
     println!("the rows: {:?}", rows);
-    rows.reset_pos().unwrap();
 
     // modify a char
     let my_char: [u8; 6] = [0x48, 0x41, 0x4C, 0x4D, 0x4F, 0x00];
     let my_char2: [u8; 6] = [0x48, 0x41, 0x4C, 0x4c, 0x4C, 0x00];
     let values = [(2 as usize, &(my_char2[..]))];
+
     println!("///////////////////////////////////////////////////////////////");
     println!("//////////////////////// Modify ///////////////////////////////");
     println!("///////////////////////////////////////////////////////////////");
+
     engine.modify(2, &my_char, CompType::Equ, &values).unwrap();
 
-    rows.reset_pos().unwrap();
-
+    //engine.modify(0, &my_int, CompType::Equ, &values).unwrap();
     rows = engine.full_scan().unwrap();
     println!("the rows: {:?}", rows);
-    //rows.reset_pos().unwrap();
-
-    rows = engine.full_scan().unwrap();
-    println!("the rows2: {:?}", rows);
 
     let mut cols = Vec::new();
     cols.push(Column {
@@ -164,24 +129,24 @@ fn flat_file_test() {
         is_primary_key: true,
     });
 
-    let db = Database::create("test").unwrap();
-    let _test = db.create_table("test", cols, EngineID::FlatFile).unwrap();
+    // let db = Database::create("test").unwrap();
+    // let _test = db.create_table("test", cols, EngineID::FlatFile).unwrap();
 
-    let mut engine = FlatFile::new(_test);
-    engine.create_table().unwrap();
+    // let mut engine = FlatFile::new(_test);
+    // engine.create_table().unwrap();
 
-    let mut rnd_data = vec![0x48, 0x41, 0x4C, 0x4C, 0x4F, 0x00];
-    engine.insert_row(&rnd_data).unwrap();
+    // let mut rnd_data = vec![0x48, 0x41, 0x4C, 0x4C, 0x4F, 0x00];
+    // engine.insert_row(&rnd_data).unwrap();
 
 
-    rows = engine.full_scan().unwrap();
-    println!("the rows: {:?}", rows);
+    // rows = engine.full_scan().unwrap();
+    // println!("the rows: {:?}", rows);
 
-    rnd_data = vec![0x48, 0x41, 0x4C, 0x4C, 0x4D, 0x00];
-    engine.insert_row(&rnd_data).unwrap();
+    // rnd_data = vec![0x48, 0x41, 0x4C, 0x4C, 0x4D, 0x00];
+    // engine.insert_row(&rnd_data).unwrap();
 
-    let rows2 = engine.full_scan().unwrap();
-    println!("the rows2: {:?}", rows2);
+    // let rows2 = engine.full_scan().unwrap();
+    // println!("the rows2: {:?}", rows2);
 }
 
 fn _type_test() {

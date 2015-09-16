@@ -4,11 +4,10 @@ use super::types::Column;
 use std::io::{Write, Read, Seek, SeekFrom, Cursor};
 use super::super::parse::ast::CompType;
 
-
 #[derive(Debug)]
 pub struct Rows <B: Write + Read + Seek> {
     data_src: B,
-    columns: Vec<Column>,
+    pub columns: Vec<Column>,
     columns_size: u64,
     pub column_offsets: Vec<u64>,
     pos: u64,
@@ -32,7 +31,7 @@ impl<B: Write + Read + Seek> Rows <B> {
                 pos: 0
             }
     }
-    // returns the sum of the column sizes
+    /// returns the sum of the column sizes
     fn get_columns_size(columns: &[Column]) -> u64 {
         let mut size: u64 = 0;
         for c in columns {
@@ -69,7 +68,7 @@ impl<B: Write + Read + Seek> Rows <B> {
         -> Result <bool, Error>
     {
         info!("Reading Header");
-        let mut row_header: RowHeader = try!(self.read_header());
+        let row_header: RowHeader = try!(self.read_header());
         info!("Header Read");
         if restore_cursor {
             try!(self.set_pos(SeekFrom::Current(-(RowHeader::size() as i64))));
@@ -195,7 +194,6 @@ impl<B: Write + Read + Seek> Rows <B> {
     /// Returns the new size of the reorganized object.
     pub fn reorganize(&mut self) -> Result<u64, Error> {
         try!(self.reset_pos());
-        let mut deleted_rows = 0;
         let mut move_result: Result<(), Error>;
         let mut saved_pos;
         let mut last_row_found: bool;
@@ -269,7 +267,7 @@ impl<B: Write + Read + Seek> Rows <B> {
         }
     }
 
-    // returns the columns
+    /// returns the columns
     pub fn get_column(&self, index: usize) -> &Column {
         &self.columns[index]
     }
@@ -310,6 +308,13 @@ impl<B: Write + Read + Seek> Rows <B> {
             },
             Err(e) => return Err(Error::Io(e))
         }
+    }
+
+    /// Inserts a new row with row_data. Does not check if the primary key exists.
+    /// Returns the number of rows_inserted.
+    pub fn insert_row_without_primary(&mut self, row_data: &[u8]) -> Result<u64, Error> {
+        try!(self.set_pos(SeekFrom::End(0)));
+        Ok(try!(self.add_row(row_data)))
     }
 
     /// Inserts a new row with row_data.
@@ -398,8 +403,8 @@ impl<B: Write + Read + Seek> Rows <B> {
     /// Panics if a row could not be updated. If modify fails, the updated row
     /// will be lost.
     pub fn modify(&mut self, constraint_column_index: usize,
-     constraint_value: &[u8], comp: CompType,
-     values: &[(usize, &[u8])] )-> Result<u64, Error>
+        constraint_value: &[u8], comp: CompType,
+        values: &[(usize, &[u8])] )-> Result<u64, Error>
     {
         info!("Modify rows values {:?}", values);
         let mut rows = try!(self.lookup(constraint_column_index,
@@ -413,7 +418,7 @@ impl<B: Write + Read + Seek> Rows <B> {
         let mut rows_deleted: u64;
         let mut updated_rows: u64 = 0;
 
-        if ( primary_key_index == constraint_column_index ) {
+        if primary_key_index == constraint_column_index {
             return Err(Error::PrimaryKeyNotAllowed);
         }
         // loop through rows.
@@ -442,7 +447,7 @@ impl<B: Write + Read + Seek> Rows <B> {
                              kvp.0); // column_index
             }
 
-            match self.insert_row(&row_data) {
+            match self.insert_row_without_primary(&row_data) {
                 Ok(_) => { updated_rows += 1 },
                 Err(e) => {
                     panic!("Modify failed. Deleted old row but could not insert
