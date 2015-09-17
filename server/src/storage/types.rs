@@ -101,7 +101,6 @@ impl SqlType {
         }
     }
 
-
     /// Convert s to a vector with l bytes.
     /// If length of s is > l, the returning vector will only contain the first
     /// l bytes.

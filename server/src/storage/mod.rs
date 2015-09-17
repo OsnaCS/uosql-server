@@ -59,8 +59,10 @@ pub enum Error {
     NoOperationPossible,
     InvalidState,
     EndOfFile,
+    BeginningOfFile,
     PrimaryKeyValueExists,
     FoundNoPrimaryKey,
+    PrimaryKeyNotAllowed,
 }
 
 impl From<NulError> for Error {
@@ -137,6 +139,8 @@ pub trait Engine {
     fn modify(&mut self, constraint_column_index: usize,
      constraint_value: (&[u8], Option<usize>), comp: CompType,
      values: &[(usize, &[u8])] )-> Result<u64, Error>;
+
+    fn reorganize(&mut self) -> Result<(), Error>;
 }
 
 #[repr(u8)]
