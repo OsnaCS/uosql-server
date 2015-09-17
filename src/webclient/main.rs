@@ -27,8 +27,8 @@ use url::form_urlencoded as urlencode;
 use std::net::Ipv4Addr;
 use std::str::FromStr;
 use nickel::QueryString;
-use server::storage::ResultSet;
-use server::storage::types::FromSql;
+use uosql::types::DataSet;
+use server::storage::SqlType;
 
 // Dummy key for typemap
 struct ConnKey;
@@ -42,7 +42,9 @@ struct Login {
     password: String
 }
 
-/// Web based client
+/// A web based client that is able to connect to a server and saves session
+/// data in a cookie. Queries can be sent and the results are displayed in
+/// html tables. The user is able to logout.
 fn main() {
 
     let mut server = Nickel::new();
@@ -240,7 +242,7 @@ fn main() {
 
         let query = req.query().get("sql");
         if !query.is_none() {
-            let result = match con.execute(query.unwrap().trim().to_string()) {
+            let mut result = match con.execute(query.unwrap().trim().to_string()) {
                 Ok(r) => r,
                 Err(e) => {
                     let errstr = match e {
@@ -257,7 +259,7 @@ fn main() {
                 }
             };
 
-            let res_output = display_html(&result);
+            let res_output = display_html(&mut result);
             data.insert("result", res_output);
         }
 
@@ -287,53 +289,73 @@ fn test_bind (bind : &str) -> bool {
     result
 }
 
-/// Display table data as HTML table
-fn display_html (rows: &ResultSet) -> String {
-    if rows.data.is_empty() {
-        display_meta_html(&rows)
+pub fn display_html(table: &mut DataSet) -> String {
+    if table.data_empty() && table.metadata_empty() {
+        // println!("done.");
+        return String::new();
+    } else if table.data_empty() {
+        display_meta_html(table)
     } else {
-        display_data_html(&rows)
+        display_data_html(table)
     }
 }
 
 /// Fill table with meta data
-fn display_meta_html (rows: &ResultSet) -> String {
+/// returns the data in a String with html syntax
+fn display_meta_html (table: &mut DataSet) -> String {
+
     let mut result = String::new();
     result.push_str("<table id=\"t01\"><caption>Results</caption>");
 
     // First table row with column names
     result.push_str("<tr><th>Column name</th>");
-    let cols = rows.columns.clone();
-    for i in 0..(cols.len()) {
-        result.push_str(&format!("<th>{}</th>", rows.columns[i].name).to_string());
+    let cols = table.get_col_cnt();
+    for i in 0..cols {
+        result.push_str(&format!("<th>{}</th>", table.get_col_name(i).unwrap_or("none")).to_string());
     }
     result.push_str("</tr>");
 
     // Second table row (Type)
     result.push_str("<tr><td>Type</td>");
-    for i in 0..(cols.len()) {
-        result.push_str(&format!("<td>{:?}</td>", rows.columns[i].sql_type).to_string());
+    for i in 0..cols {
+        let s = match table.get_type_by_idx(i) {
+            Some(n) => match n {
+                SqlType::Int => "int".to_string(),
+                SqlType::Bool => "bool".to_string(),
+                SqlType::Char(p) => format!("Char({})", p),
+            },
+            None => "none".to_string(),
+        };
+        result.push_str(&format!("<td>{}</td>", s).to_string());
     }
     result.push_str("</tr>");
 
     // Third table row (Primary Key)
     result.push_str("<tr><td>Primary</td>");
-    for i in 0..(cols.len()) {
-        result.push_str(&format!("<td>{}</td>", rows.columns[i].is_primary_key).to_string());
+    for i in 0..cols {
+        let b = match table.get_is_primary_key_by_idx(i) {
+            Some(n) => n.to_string(),
+            None => "none".to_string(),
+        };
+        result.push_str(&format!("<td>{}</td>", b).to_string());
     }
     result.push_str("</tr>");
 
     // Fourth table row (Allow null)
     result.push_str("<tr><td>Allow NULL</td>");
-    for i in 0..(cols.len()) {
-        result.push_str(&format!("<td>{}</td>", rows.columns[i].allow_null).to_string());
+    for i in 0..cols {
+        let tmp = match table.get_allow_null_by_idx(i) {
+            Some(n) => n.to_string(),
+            None => "none".to_string(),
+        };
+        result.push_str(&format!("<td>{}</td>", tmp).to_string());
     }
     result.push_str("</tr>");
 
     // Fifth table row (Description)
     result.push_str("<tr><td>Description</td>");
-    for i in 0..(cols.len()) {
-        result.push_str(&format!("<td>{}</td>", rows.columns[i].description).to_string());
+    for i in 0..cols {
+        result.push_str(&format!("<td>{}</td>", table.get_description_by_idx(i).unwrap_or("none")).to_string());
     }
     result.push_str("</tr>");
     // End table
@@ -341,44 +363,46 @@ fn display_meta_html (rows: &ResultSet) -> String {
     result
 }
 
-/// Fill table with row data
-fn display_data_html (rows: &ResultSet) -> String {
+// Fill table with row data
+// returns the data in a String with html syntax
+fn display_data_html (table: &mut DataSet) -> String {
 
     let mut result = String::new();
     result.push_str("<table id=\"t01\"><caption>Results</caption>");
 
-    let cols = rows.columns.clone();
+    let cols = table.get_col_cnt();
 
     // Row of column names
-    for i in 0..(cols.len()) {
-        result.push_str(&format!("<th>{}</th>", rows.columns[i].name).to_string());
+    for i in 0..cols {
+        result.push_str(&format!("<th>{}</th>", table.get_col_name(i).unwrap_or("none")).to_string());
     }
     result.push_str("</tr>");
 
-    // Push all the data into result
-    // take 1st element
-    // result.push_str("<tr>");
-    // result.push_str("<td>");
-    // let typ = rows.columns[0].get_sql_type();
-    // let len = typ.size();
-
-    // let mut sli : Vec<u8>;
-    // for i in 0..len {
-    //     let elem = match rows.data.iter().next() {
-    //         Some(n) => n.clone(),
-    //         None => break,
-    //     };
-    //     sli.push(elem);
-    // }
-
-    // let erg = match typ.decode_from(&mut sli) {
-    //     Ok(n) => n,
-    //     Err(_) => { return "Error".into();}
-    // };
-    // result.push_str(&format!("{}", erg));
-    // result.push_str("</td>");
-    // result.push_str("</tr>");
-
+    // Actual data input
+    while table.next() {
+        for i in 0..cols {
+            match table.get_type_by_idx(i) {
+                Some(t) => {
+                    match t {
+                        SqlType::Int =>
+                            match table.next_int_by_idx(i) {
+                                Some(val) => result.push_str(&format!("<td>{}</td>", val).to_string()),
+                                None => result.push_str("<td>none</td>"),
+                            },
+                        SqlType::Bool =>
+                            match table.next_bool_by_idx(i) {
+                                Some(val) => result.push_str(&format!("<td>{}</td>", val).to_string()),
+                                None => result.push_str("<td>none</td>"),
+                            },
+                        SqlType::Char(_) =>
+                            result.push_str(&format!("<td>{}</td>",table.next_char_by_idx(i).unwrap_or("none".to_string())))
+                    }
+                },
+                None => continue
+            }
+        }
+        result.push_str("</tr>");
+    }
 
     // End table
     result.push_str("</table>");
