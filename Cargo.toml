@@ -2,6 +2,7 @@
 name = "uosql"
 version = "0.1.0"
 authors = ["Lukas Kalbertodt <lukas.kalbertodt@gmail.com>"]
+build = "src/client/native/build.rs"
 
 [lib]
 name = "uosql"
@@ -11,15 +12,29 @@ path = "src/lib.rs"
 name = "uosql-client"
 path = "src/client/main.rs"
 
+[[bin]]
+name = "web-client"
+path = "src/webclient/main.rs"
+
 [dependencies]
 log = "*"
 byteorder = "0.3"
 bincode = "0.4.0"
 docopt = "0.6"
 rustc-serialize = "0.3"
+nickel = "*"
+plugin = "*"
+typemap = "*"
+hyper = "*"
+cookie = "0.1"
+url = "*"
 ncurses = "5.73.0"
 rand = "*"
 regex = "0.1.41"
+libc = "0.1.10"
 
 [dependencies.server]
 path = "server"
+
+[build-dependencies]
+gcc = "0.3"

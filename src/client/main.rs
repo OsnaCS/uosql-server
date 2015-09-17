@@ -9,6 +9,11 @@ extern crate docopt;
 extern crate rustc_serialize;
 extern crate server;
 extern crate regex;
+extern crate libc;
+
+extern {
+    fn key() -> libc::c_int;
+}
 
 mod specialcrate;
 
@@ -24,6 +29,8 @@ use uosql::types::{DataSet};
 use server::storage::SqlType;
 use docopt::Docopt;
 use regex::Regex;
+use bincode::rustc_serialize::{decode_from, encode_into};
+use bincode::SizeLimit;
 
 /// For console input, manages flags and arguments
 const USAGE: &'static str = "
@@ -141,29 +148,131 @@ fn main() {
     println!("Connected (version: {}) to {}:{}\n{}\n",
         conn.get_version(), conn.get_ip(), conn.get_port(), conn.get_message());
 
-    // read commands
+    // Load history from "uosql_client.history" if possible
+    let mut history: Vec<String>;
+    let f = File::open("uosql_client.history");
+    match f {
+        Ok(mut f) => {
+            history = match decode_from(&mut f, SizeLimit::Infinite) {
+                Ok(his) => { his },
+                Err(_) => { println!("Could not read command history."); vec![] }
+            }
+        },
+        Err(_) => {
+            history = vec![];
+            println!("Could not load command history.");
+        }
+    };
+
+    // Read commands from user
     loop {
         print!("> ");
-        let e = stdout().flush();
-        match e {
-            Ok(_) => {},
-            Err(_) => info!("")
-        }
-        let input = read_line();
+        stdout().flush().ok().expect("Could not flush stdout.");
 
-        // send code for command-package
-        let cs = process_input(&input, &mut conn);
-        match cs {
-            false => return, // end client
-            true => continue, // next iteration
+        let mut h_idx = 0;
+        let mut input: String = "".into();
+        let mut key_pressed = unsafe { key() };
+        let mut linelen = 0;
+
+        // Handle Up/Down input to jump in history and execute commands from history
+        while h_idx <= history.len() &&
+            (key_pressed == 0 || key_pressed == 1 || key_pressed == 13)
+        {
+            match key_pressed {
+                0 => {
+                    if !history.is_empty() && h_idx < history.len() {
+                        h_idx += 1;
+                        let mut whitespace: String = "".into();
+                        for _ in 0..linelen {
+                            whitespace.push_str(" ");
+                        }
+                        print!("\r{}", whitespace);
+                        print!("\r> {}", history[h_idx-1]);
+                        stdout().flush().ok().expect("Could not flush stdout.");
+                        linelen = history[h_idx-1].len() + 3;
+                    } else {
+                        break;
+                    }
+                },
+                1 => {
+                    if !history.is_empty() && h_idx > 1 {
+                        h_idx -= 1;
+                        let mut whitespace: String = "".into();
+                        for _ in 0..linelen {
+                            whitespace.push_str(" ");
+                        }
+                        print!("\r{}", whitespace);
+                        print!("\r> {}", history[h_idx-1]);
+                        stdout().flush().ok().expect("Could not flush stdout.");
+                        linelen = history[h_idx-1].len() + 3;
+                    } else {
+                        break;
+                    }
+                },
+                13 => {
+                    break;
+                }
+                _ => unreachable!()
+            }
+            key_pressed = unsafe { key() };
         }
+
+        // End of history reached, pressed enter on history item or got word characters
+        match key_pressed {
+            0 => {
+                print!("\nreached upper end of history");
+                stdout().flush().ok().expect("Could not flush stdout.");
+            },
+            1 => {
+                print!("\nreached lower end of history");
+                stdout().flush().ok().expect("Could not flush stdout.");
+            },
+            -1 => continue,
+            13 => {
+                let x = history[h_idx-1].clone();
+                history.insert(0, x.clone());
+                input = x;
+                println!("");
+            },
+            _ => {
+                print!("{}", key_pressed as u8 as char);
+                stdout().flush().ok().expect("Could not flush stdout.");
+
+                input = read_line();
+                input.insert(0, key_pressed as u8 as char);
+                let x = input.clone();
+                history.insert(0, x);
+            }
+        }
+
+        // if input was given process this input
+        if input != "" {
+            let cs = process_input(&input, &mut conn, &history);
+            match cs {
+                false => {
+                    // write history to file if client program closes
+                    let f = File::create("uosql_client.history");
+                    match f {
+                        Ok(mut f) => {
+                            match encode_into(&history, &mut f, SizeLimit::Infinite) {
+                                Ok(_) => {},
+                                Err(_) => println!("Could not write command history.")
+                            }
+                        },
+                        Err(_) => println!("Could not save command history.")
+                    }
+                    return; // end client
+                },
+                true => continue, // next iteration
+            }
+        }
+        println!("");
     }
 }
 
 /// Process commandline-input from user.
 /// Match on special commands from user input.
-fn process_input(input: &str, conn: &mut Connection) -> bool {
-
+fn process_input(input: &str, conn: &mut Connection, history: &Vec<String>) -> bool {
     let regex_load = match Regex::new(r"(?i):load .+\.sql") {
         Ok(e) => e,
         Err(_) => {
@@ -252,13 +361,24 @@ fn process_input(input: &str, conn: &mut Connection) -> bool {
             println!("Snakes bred under MIT License by Johannes Schickling
                     via github /schickling/rust-examples/");
             specialcrate::snake();
-        }
+            println!("");
+        },
+        ":log" => {
+            let sep = "###############################";
+            println!("{}", sep);
+            println!("{0: ^1$}", "Command History", sep.len());
+            println!("{}", sep);
+            for i in 0..history.len() {
+                println!("{0: <1$}", history[i], sep.len());
+            }
+            println!("{}", sep);
+        },
         ":insult" => {
             println!("Uh-uh, server responds with invasion fleet");
             println!("Fleet build under MIT License by Johannes Schickling
                     via github /schickling/rust-examples/");
             specialcrate::space_invaders();
-        }
+        },
         _ => { // Queries
             match conn.execute(input.into()) {
                 Ok(mut data) => {
