@@ -134,6 +134,7 @@ impl<'a> Executor<'a> {
         }
         let table = try!(self.get_table(&stmt.tid[0]));
         let engine = table.create_engine();
+
         Ok(try!(engine.full_scan()))
     }
 

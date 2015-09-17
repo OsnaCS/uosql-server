@@ -19,15 +19,21 @@ impl<'a> FlatFile<'a> {
         FlatFile { table: table }
     }
 
-    /// return a rows object with the table.dat file as data_src
-    pub fn get_reader(&self) -> Result<Rows<File>, Error> {
+    /// Opens table data file with read write access.
+    fn open_file_rw(&self) -> Result<File, Error> {
+        info!("Trying to open file: {}", &self.table.get_table_data_path());
         let file = try!(OpenOptions::new()
             .read(true)
             .write(true)
             .open(&self.table.get_table_data_path()));
         info!("opened file {:?}", file);
+        Ok(file)
+    }
 
-        Ok(Rows::new(file, &self.table.meta_data.columns))
+    /// return a rows object with the table.dat file as data_src
+    pub fn get_reader(&self) -> Result<Rows<File>, Error> {
+        Ok(Rows::new(try!(self.open_file_rw()),
+                     &self.table.meta_data.columns))
     }
 }
 
@@ -64,7 +70,7 @@ impl<'a> Engine for FlatFile<'a> {
 
     /// returns an new Rows object which fulfills a constraint
     fn lookup(&self, column_index: usize, value: &[u8], comp: CompType)
-    -> Result<Rows<Cursor<Vec<u8>>>, Error>
+        -> Result<Rows<Cursor<Vec<u8>>>, Error>
     {
         let mut reader = try!(self.get_reader());
         reader.lookup(column_index, value, comp)
@@ -80,7 +86,7 @@ impl<'a> Engine for FlatFile<'a> {
     /// delete rows which fulfills a constraint
     /// returns amount of deleted rows
     fn delete(&self, column_index: usize, value: &[u8], comp: CompType)
-    -> Result<u64, Error>
+        -> Result<u64, Error>
     {
         info!("Delete row");
         let mut reader = try!(self.get_reader());
@@ -88,11 +94,24 @@ impl<'a> Engine for FlatFile<'a> {
     }
 
     fn modify(&mut self, constraint_column_index: usize,
-    constraint_value: &[u8], comp: CompType,
-    values: &[(usize, &[u8])] )-> Result<u64, Error>
+        constraint_value: &[u8], comp: CompType,
+        values: &[(usize, &[u8])] )-> Result<u64, Error>
     {
         info!("modify row");
         let mut reader = try!(self.get_reader());
         reader.modify(constraint_column_index, constraint_value, comp, values)
+    }
+
+    fn reorganize(&mut self) -> Result<(), Error> {
+        info!("Reorganizing structure.");
+        let mut new_size: u64;
+        {
+            let mut reader = try!(self.get_reader());
+            new_size = try!(reader.reorganize());
+        }
+        let file = try!(self.open_file_rw());
+
+        try!(file.set_len(new_size));
+        Ok(())
     }
 }
