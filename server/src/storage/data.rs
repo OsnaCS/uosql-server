@@ -225,13 +225,13 @@ impl<B: Write + Read + Seek> Rows <B> {
             };
 
             let val = try!(self.get_value(row_data, *first));
-            let mut look = try!(self.lookup(*first, &val, CompType::Equ));
+            let mut look = try!(self.lookup(*first, (&val, None), CompType::Equ));
 
             loop {
                 match it.next() {
                     Some(x) => {
                         let value = try!(self.get_value(row_data, *x));
-                        look = try!(look.lookup(*x, &value, CompType::Equ));
+                        look = try!(look.lookup(*x, (&value, None), CompType::Equ));
                         if try!(look.is_empty()) {
                             break;
                         }
@@ -249,7 +249,7 @@ impl<B: Write + Read + Seek> Rows <B> {
 
     /// deletes rows which fulfills a constraint
     /// return rows deleted
-    pub fn delete(&mut self, column_index: usize, value: &[u8], comp: CompType)
+    pub fn delete(&mut self, column_index: usize, value: (&[u8], Option<usize>), comp: CompType)
      -> Result<u64, Error>
     {
         try!(self.reset_pos());
@@ -280,7 +280,7 @@ impl<B: Write + Read + Seek> Rows <B> {
     /// Panics if a row could not be updated. If modify fails, the updated row
     /// will be lost.
     pub fn modify(&mut self, constraint_column_index: usize,
-     constraint_value: &[u8], comp: CompType,
+     constraint_value: (&[u8], Option<usize>), comp: CompType,
      values: &[(usize, &[u8])] )-> Result<u64, Error>
     {
         info!("Modify rows values {:?}", values);
@@ -309,7 +309,7 @@ impl<B: Write + Read + Seek> Rows <B> {
                                                     primary_key_index));
 
             rows_deleted = try!(self.delete(primary_key_index,
-                                            &primary_key_value,
+                                            (&primary_key_value, None),
                                             CompType::Equ));
 
             if rows_deleted != 1 { panic!("Exactly one row should have been
@@ -339,7 +339,7 @@ impl<B: Write + Read + Seek> Rows <B> {
     /// Returns an new Rows object with all rows which fulfill the constraint.
     /// column_index: index of the column whose value should match value
     /// comp: defines how the value of the column and value should be compared.
-    pub fn lookup(&mut self, column_index: usize, value: &[u8], comp: CompType)
+    pub fn lookup(&mut self, column_index: usize, value: (&[u8], Option<usize>), comp: CompType)
         -> Result<Rows<Cursor<Vec<u8>>>, Error>
     {
         try!(self.reset_pos());
@@ -351,7 +351,7 @@ impl<B: Write + Read + Seek> Rows <B> {
             let result = self.get_next_row(column_index, value, comp);
             match result {
                 Ok(r) => {
-                    println!{"Row: {:?}", r};
+                    info!{"Row: {:?}", r};
                     try!(rows.add_row(&r));
                 },
                 Err(Error::EndOfFile) => {
@@ -413,7 +413,7 @@ impl<B: Write + Read + Seek> Rows <B> {
     /// moves the cursor from the current position the row after the first row
     /// which fulfills the constraint.
     /// Returns the first row which fulfilly the condition.
-    pub fn get_next_row(&mut self, column_index: usize, value: &[u8], comp: CompType)
+    pub fn get_next_row(&mut self, column_index: usize, value: (&[u8], Option<usize>), comp: CompType)
     -> Result<Vec<u8>, Error>
     {
         let mut row = Vec::<u8>::new();
@@ -425,13 +425,26 @@ impl<B: Write + Read + Seek> Rows <B> {
                     let col = self.get_column(column_index);
 
                     let row_value: &Vec<u8> = &try!(self.get_value(&row, column_index));
-                    let cmp_result = try!(col.sql_type.cmp(row_value, value, comp));
+                    if value.1.is_none() {
+                        let cmp_result = try!(col.sql_type.cmp(row_value, value.0, comp));
 
-                    if cmp_result {
-                        false
+                        if cmp_result {
+                            false
+                        } else {
+                            row.clear();
+                            true
+                        }
                     } else {
-                        row.clear();
-                        true
+                        let cmpindex = value.1.unwrap();
+                        let cmp_value: &Vec<u8> = &try!(self.get_value(&row, cmpindex));
+                        let cmp_result = try!(col.sql_type.cmp(row_value, cmp_value, comp));
+                        if cmp_result {
+                            false
+                        } else {
+                            row.clear();
+                            true
+                        }
+
                     }
                 },
                 Err(e) => {

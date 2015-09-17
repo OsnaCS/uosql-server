@@ -126,16 +126,16 @@ pub trait Engine {
 
     fn full_scan(&self) -> Result<Rows<Cursor<Vec<u8>>>, Error>;
 
-    fn lookup(&self, column_index: usize, value: &[u8], comp: CompType)
+    fn lookup(&self, column_index: usize, value: (&[u8], Option<usize>) , comp: CompType)
     -> Result<Rows<Cursor<Vec<u8>>>, Error>;
 
     fn insert_row(&mut self, row_data: &[u8]) -> Result<u64, Error>;
 
-    fn delete(&self, column_index: usize, value: &[u8], comp: CompType)
+    fn delete(&self, column_index: usize, value: (&[u8], Option<usize>), comp: CompType)
     -> Result<u64, Error>;
 
     fn modify(&mut self, constraint_column_index: usize,
-     constraint_value: &[u8], comp: CompType,
+     constraint_value: (&[u8], Option<usize>), comp: CompType,
      values: &[(usize, &[u8])] )-> Result<u64, Error>;
 }
 
