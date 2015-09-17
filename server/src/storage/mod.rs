@@ -141,6 +141,8 @@ pub trait Engine {
      values: &[(usize, &[u8])] )-> Result<u64, Error>;
 
     fn reorganize(&mut self) -> Result<(), Error>;
+
+    fn reset(&mut self) -> Result<(), Error>;
 }
 
 #[repr(u8)]

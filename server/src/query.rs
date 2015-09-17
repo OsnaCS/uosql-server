@@ -144,6 +144,7 @@ fn execute_select_stmt(&mut self, mut stmt: SelectStmt)
         // create a very huge cross product from all tables and some hashmaputilities
         for i in 1..stmt.tid.len() {
             let right = try!(self.get_rows(&stmt.tid[i]));
+
             column_index_map = HashMap::<String, usize>::new();
             for column in right.columns.clone() {
                 column_tablename_map.insert(column.name.clone(), stmt.tid[i].clone());
@@ -162,28 +163,50 @@ fn execute_select_stmt(&mut self, mut stmt: SelectStmt)
             println!("Wherestmt {:?}", stmt.cond );
                 try!(self.execute_where(masterrow,
                     (&stmt.alias, &column_tablename_map, &name_column_map),
-                    &stmt.cond.unwrap(), Where::Select))
+                    &stmt.cond.unwrap(), false, Where::Select))
             } else {
                 masterrow
             };
 
-        let mut indextargets: Vec<usize> = Vec::new();
+        // the string will be but in front of the original rows name.
+        // if bool = false. if bool = true the original columnname will be
+        // overwritten
+        let mut indextargets: Vec<((String, bool) , usize)> = Vec::new();
         for target in stmt.target {
+            let rename = if target.rename.is_some() {
+                let tmp = target.clone();
+                tmp.rename.unwrap().clone()
+            } else {
+                "".into()
+            };
+
             match target.col {
                 Col::Every => {
                     if target.alias.is_some() {
-                        let mut tablename = stmt.alias.get(&target.alias.unwrap());
+                        let mut targetclone = target.clone();
+                        let mut tablename = stmt.alias.get(&targetclone.alias.unwrap());
                         if tablename.is_none() {
                             return Err(ExecutionError::UnknownAlias)
                         }
                         let columntoindex = name_column_map.get(tablename.unwrap()).unwrap();
                         for index in columntoindex.values() {
-                            indextargets.push(index.clone());
+                            targetclone = target.clone();
+                            let append = if target.rename.is_some() {
+                                (rename.clone(), true)
+                            } else {
+                                (format!("{}.", targetclone.alias.unwrap()), false)
+                            };
+                            indextargets.push((append, index.clone()));
                         };
 
                     } else {
                         for i in 0..(whereresult.columns.len()) {
-                            indextargets.push(i);
+                            let append = if target.rename.is_some() {
+                                (rename.clone(),true)
+                            } else {
+                                ("".into(),false)
+                            };
+                            indextargets.push((append,i));
                         }
 
                     }
@@ -202,7 +225,12 @@ fn execute_select_stmt(&mut self, mut stmt: SelectStmt)
                     if column.is_none() {
                         return Err(ExecutionError::UnknownColumn)
                     }
-                    indextargets.push(column.unwrap().clone());
+                    let append = if target.rename.is_some() {
+                        (rename.clone(),true)
+                    } else {
+                        (format!("{}.",tablename.unwrap().clone()),false)
+                    };
+                    indextargets.push((append,column.unwrap().clone()));
 
 
                 }
@@ -212,8 +240,16 @@ fn execute_select_stmt(&mut self, mut stmt: SelectStmt)
         try!(whereresult.reset_pos());
         let mut columnvec: Vec<Column> = Vec::new();
         for index in indextargets.clone() {
-            columnvec.push(whereresult.columns[index].clone());
+            whereresult.columns[index.1].name =
+                if (index.0).1 {
+                    (index.0).0
+                } else {
+                    format!("{}{}",(index.0).0, whereresult.columns[index.1].name)
+                };
+
+            columnvec.push(whereresult.columns[index.1].clone());
         }
+
         let mut cursor = Cursor::new(Vec::<u8>::new());
         let mut resultrows = Rows::<Cursor<Vec<u8>>>::new(cursor, &columnvec);
 
@@ -247,7 +283,7 @@ fn execute_select_stmt(&mut self, mut stmt: SelectStmt)
             }
             let mut toinsert = Vec::<u8>::new();
             for index in indextargets.clone() {
-                toinsert.extend(try!(whereresult.get_value(&originalrow,index)).into_iter());
+                toinsert.extend(try!(whereresult.get_value(&originalrow,index.1)).into_iter());
             }
             resultrows.add_row(&toinsert);
             limitcount.1 -=1;
@@ -264,7 +300,7 @@ fn execute_select_stmt(&mut self, mut stmt: SelectStmt)
           infos: (&HashMap<String, String>,
                   &HashMap<String, String>,
                   &HashMap<String, HashMap<String, usize>>),
-          conditions: &Conditions,
+          conditions: &Conditions, negate: bool,
           wheretype: Where
         )
         -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError>
@@ -275,13 +311,21 @@ fn execute_select_stmt(&mut self, mut stmt: SelectStmt)
 
             &Conditions::And(ref c1, ref c2) => {
                 if wheretype == Where::Select {
-                    let mut leftside = try!(self.execute_where(tableset, infos, c1, wheretype.clone()));
-                    self.execute_where(leftside, infos, c2, wheretype)
+                    let mut leftside = try!(
+                        self.execute_where(tableset, infos, c1, false, wheretype.clone()));
+                    self.execute_where(leftside, infos, c2, false, wheretype)
                 } else {
+
+
                     // IMPLEMENT!!! Needs a custom merge function
-                   /* let rightresult = try!(self.execute_where(self.get_rows(&wheretype.unwrap()), infos, c1, Where::Select));
-                    try!(self.execute_where(self.get_rows(wheretype.unwrap()), infos, c1, wheretype.clone()));
-                    let mut engine = self.get_engine(&wheretype.unwrap());
+                    let mut rightresult = try!(
+                        self.execute_where(try!(tableset.full_scan()),
+                        infos, c1, true, Where::Select));
+                    try!(self.execute_where(
+                        tableset,
+                        infos, c2, false, wheretype.clone()));
+                    let mut engine = try!(self.get_engine(&wheretype.unwrap()));
+                    try!(rightresult.reset_pos());
                     loop {
                         let mut rightrow = Vec::<u8>::new();
                         let outerres = rightresult.next_row(&mut rightrow);
@@ -291,8 +335,10 @@ fn execute_select_stmt(&mut self, mut stmt: SelectStmt)
                         }
                         engine.insert_row(&rightrow);
                     }
-                    Ok(try!(tableset.full_scan()))*/
-                    Ok(generate_rows_dummy())
+
+
+                    Ok(rightresult)
+
                 }
             },
 
@@ -305,13 +351,13 @@ fn execute_select_stmt(&mut self, mut stmt: SelectStmt)
                 // REMEMBER CHANGING HERE TOO! (TODO)
                 if wheretype == Where::Select {
                     let tableset2 = try!(tableset.full_scan());
-                    let leftside = try!(self.execute_where(tableset, infos, c1, wheretype.clone()));
-                    let rightside = try!(self.execute_where(tableset2, infos, c2, wheretype));
+                    let leftside = try!(self.execute_where(tableset, infos, c1, false, wheretype.clone()));
+                    let rightside = try!(self.execute_where(tableset2, infos, c2, false, wheretype));
                     self.merge_rows(leftside, rightside)
                 }
                 else {
-                    try!(self.execute_where(try!(tableset.full_scan()), infos, c1, wheretype.clone()));
-                    self.execute_where(tableset, infos, c2, wheretype)
+                    try!(self.execute_where(try!(tableset.full_scan()), infos, c1, false, wheretype.clone()));
+                    self.execute_where(tableset, infos, c2, false, wheretype)
                 }
 
             },
@@ -359,11 +405,18 @@ fn execute_select_stmt(&mut self, mut stmt: SelectStmt)
                             return Err(ExecutionError::UnknownColumn)
                         }
                         let index2 = column2.unwrap().clone();
+                        let operator = if negate {
+                            c.op.negate()
+                        } else {
+                            c.op
+                        };
                         if wheretype == Where::Select {
-                            Ok(try!(tableset.lookup(index, (&Vec::<u8>::new(), Some(index2)) , c.op)))
+                            Ok(try!(tableset.lookup(index,
+                                (&Vec::<u8>::new(), Some(index2)) , operator)))
                         } else {
                             let engine = try!(self.get_engine(&wheretype.unwrap()));
-                            try!(engine.delete(index, (&Vec::<u8>::new(), Some(index2)),c.op));
+                            try!(engine.delete(index,
+                                (&Vec::<u8>::new(), Some(index2)), operator));
                             Ok(generate_rows_dummy())
                         }
 
@@ -382,11 +435,16 @@ fn execute_select_stmt(&mut self, mut stmt: SelectStmt)
                         // TODO: use get_column methods!!
                         let mut comparedata = Vec::<u8>::new();
                         try!(tableset.columns[index].sql_type.encode_into(& mut comparedata,lit));
+                        let operator = if negate {
+                            c.op.negate()
+                        } else {
+                            c.op
+                        };
                         if wheretype == Where::Select {
-                            Ok(try!(tableset.lookup(index, (&comparedata, None) , c.op)))
+                            Ok(try!(tableset.lookup(index, (&comparedata, None) , operator)))
                         } else {
                             let engine = try!(self.get_engine(&wheretype.unwrap()));
-                            engine.delete(index, (&comparedata, None),c.op);
+                            engine.delete(index, (&comparedata, None), operator);
                             Ok(generate_rows_dummy())
                         }
                     },
@@ -416,13 +474,13 @@ fn execute_select_stmt(&mut self, mut stmt: SelectStmt)
         query.alias.insert(query.tid.clone(), query.tid.clone());
 
         if query.cond.is_some() {
-            self.execute_where(table,
+            try!(self.execute_where(table,
                     (&query.alias, &column_tablename_map, &name_column_map),
-                    &query.cond.unwrap(), Where::Delete(query.tid));
+                    &query.cond.unwrap(), false, Where::Delete(query.tid)));
         } else {
-            let engine = try!(self.get_engine(&query.tid));
+            let mut engine = try!(self.get_engine(&query.tid));
             // Todo: Storage: enable full table reset!!
-            panic!("Unimplemented: specify what to delete");
+            try!(engine.reset());
         }
 
         Ok(generate_rows_dummy())
@@ -517,9 +575,66 @@ fn execute_select_stmt(&mut self, mut stmt: SelectStmt)
     {
         let table = try!(self.get_table(&stmt.tid));
         match stmt.op {
-            AlterOp::Add(columninfo) => Ok(generate_rows_dummy()),
-            AlterOp::Drop(column) => Ok(generate_rows_dummy()),
-            AlterOp::Modify(columninfo) => Ok(generate_rows_dummy()),
+            AlterOp::Add(columninfo) => {
+                let mut table = try!(self.get_table(&stmt.tid));
+                // Todo: no fullscan necessary!
+                let mut rows = try!(self.get_rows(&stmt.tid));
+                if !try!(rows.is_empty()) {
+                    return Err(ExecutionError::TableNotEmpty)
+                }
+
+                let comment = if columninfo.comment.is_some() {
+                    columninfo.comment.unwrap()
+                } else {
+                    "".into()
+                };
+
+                table.add_column(&columninfo.cid,
+                                 columninfo.datatype,
+                                 !columninfo.not_null,
+                                 &comment,
+                                 columninfo.primary
+                                 );
+                try!(table.save());
+                Ok(generate_rows_dummy())
+            },
+            AlterOp::Drop(column) => {
+                let mut table = try!(self.get_table(&stmt.tid));
+                // Todo: no fullscan necessary!
+                let mut rows = try!(self.get_rows(&stmt.tid));
+                if !try!(rows.is_empty()) {
+                    return Err(ExecutionError::TableNotEmpty)
+                }
+                table.remove_column(&column);
+                try!(table.save());
+                Ok(generate_rows_dummy())
+            },
+            AlterOp::Modify(columninfo) => {
+                let mut table = try!(self.get_table(&stmt.tid));
+                {
+                let columns = &mut table.meta_data.columns;
+                let comment = if columninfo.comment.is_some() {
+                    columninfo.comment.unwrap()
+                } else {
+                    "".into()
+                };
+
+                for index in 0..columns.len() {
+                    if columns[index].name == columninfo.cid {
+                        columns[index] = Column {
+                            name: columninfo.cid.clone(),
+                            sql_type: columninfo.datatype,
+                            is_primary_key: columninfo.primary,
+                            allow_null: !columninfo.not_null,
+                            description: comment.clone()
+                        };
+                    }
+                }
+                }
+                //println!("{:?}",table);
+                try!(table.save());
+                Ok(generate_rows_dummy())
+            },
         }
 
 
@@ -669,6 +784,7 @@ pub enum ExecutionError {
     UnknownAlias,
     UnknownColumn,
     CompareDatatypeMissmatch,
+    TableNotEmpty,
 }
 
 impl From<ParseError> for ExecutionError {

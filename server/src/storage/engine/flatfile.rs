@@ -114,4 +114,12 @@ impl<'a> Engine for FlatFile<'a> {
         try!(file.set_len(new_size));
         Ok(())
     }
+    fn reset(&mut self) -> Result<(), Error> {
+        info!("Reset structure.");
+
+        let file = try!(self.open_file_rw());
+
+        try!(file.set_len(0));
+        Ok(())
+    }
 }
