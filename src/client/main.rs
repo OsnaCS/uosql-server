@@ -173,6 +173,7 @@ fn main() {
         let mut input: String = "".into();
         let mut key_pressed = unsafe { key() };
         let mut linelen = 0;
+        let mut enter = false;
 
         // Handle Up/Down input to jump in history and execute commands from history
         while h_idx <= history.len() &&
@@ -210,6 +211,7 @@ fn main() {
                     }
                 },
                 13 => {
+                    enter = true;
                     break;
                 }
                 _ => unreachable!()
@@ -229,10 +231,16 @@ fn main() {
             },
             -1 => continue,
             13 => {
-                let x = history[h_idx-1].clone();
-                history.insert(0, x.clone());
-                input = x;
-                println!("");
+                if h_idx != history.len() && h_idx != 0 {
+                    let x = history[h_idx-1].clone();
+                    history.insert(0, x.clone());
+                    input = x;
+                    println!("");
+                }
+                else {
+                    print!("Type ':help' for more information on usage.");
+                    stdout().flush().ok().expect("Could not flush stdout.");
+                }
             },
             _ => {
                 print!("{}", key_pressed as u8 as char);
