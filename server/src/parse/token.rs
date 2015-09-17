@@ -26,6 +26,15 @@ impl Lit {
         }
     }
 
+    pub fn sqltype(&self) -> SqlType {
+        match self {
+            &Lit::String(_) => SqlType::Char(0),
+            &Lit::Int(_) => SqlType::Int,
+            &Lit::Float(_) => SqlType::Char(0),
+            &Lit::Bool(_) => SqlType::Bool,
+        }
+    }
+
 
 }
 

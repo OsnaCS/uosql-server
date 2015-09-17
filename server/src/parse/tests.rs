@@ -93,7 +93,7 @@ fn test_create_table_full() {
             primary: true,
             auto_increment: true,
             not_null: true,
-            comment: Some(Lit::String("TEST".to_string())),
+            comment: Some("TEST".to_string()),
         }
     ];
 

@@ -14,7 +14,6 @@ use bincode::rustc_serialize::{EncodingError, DecodingError,
     decode_from, encode_into};
 use types::*;
 
-
 const PROTOCOL_VERSION : u8 = 1;
 
 /// Client specific Error definition.

@@ -78,7 +78,7 @@ fn flat_file_test() {
 
     // delete with bool
     let my_bool: [u8; 1] = [0x01];
-    engine.delete(1, &my_bool[..], CompType::Equ).unwrap();
+    engine.delete(1, (&my_bool[..], None), CompType::Equ).unwrap();
 
     // delete with char
     // let my_char: [u8; 6] = [0x48, 0x41, 0x4C, 0x4D, 0x4F, 0x00];
@@ -90,7 +90,7 @@ fn flat_file_test() {
     println!("///////////////////////////////////////////////////////////////");
 
     let my_int: [u8; 4] = [0, 0, 0, 1];
-    let mut rows = engine.lookup(0,&my_int[0..4],CompType::Equ).unwrap();
+    let mut rows = engine.lookup(0, (&my_int[0..4], None),CompType::Equ).unwrap();
 
     println!("engine.lookup rows: {:?}", rows);
 
@@ -98,7 +98,7 @@ fn flat_file_test() {
     println!("//////////////////////// Delete ///////////////////////////////");
     println!("///////////////////////////////////////////////////////////////");
 
-    engine.delete(0,&my_int[0..4],CompType::Equ).unwrap();
+    engine.delete(0,(&my_int[0..4], None),CompType::Equ).unwrap();
     engine.reorganize().unwrap();
     rows.reset_pos().unwrap();
 
@@ -114,7 +114,7 @@ fn flat_file_test() {
     println!("//////////////////////// Modify ///////////////////////////////");
     println!("///////////////////////////////////////////////////////////////");
 
-    engine.modify(2, &my_char, CompType::Equ, &values).unwrap();
+    engine.modify(2, (&my_char, None), CompType::Equ, &values).unwrap();
 
     //engine.modify(0, &my_int, CompType::Equ, &values).unwrap();
     rows = engine.full_scan().unwrap();
