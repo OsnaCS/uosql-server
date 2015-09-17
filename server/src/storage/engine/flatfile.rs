@@ -69,8 +69,8 @@ impl<'a> Engine for FlatFile<'a> {
     }
 
     /// returns an new Rows object which fulfills a constraint
-    fn lookup(&self, column_index: usize, value: &[u8], comp: CompType)
-        -> Result<Rows<Cursor<Vec<u8>>>, Error>
+    fn lookup(&self, column_index: usize, value: (&[u8], Option<usize>), comp: CompType)
+    -> Result<Rows<Cursor<Vec<u8>>>, Error>
     {
         let mut reader = try!(self.get_reader());
         reader.lookup(column_index, value, comp)
@@ -85,8 +85,8 @@ impl<'a> Engine for FlatFile<'a> {
 
     /// delete rows which fulfills a constraint
     /// returns amount of deleted rows
-    fn delete(&self, column_index: usize, value: &[u8], comp: CompType)
-        -> Result<u64, Error>
+    fn delete(&self, column_index: usize, value: (&[u8], Option<usize>), comp: CompType)
+    -> Result<u64, Error>
     {
         info!("Delete row");
         let mut reader = try!(self.get_reader());
@@ -94,8 +94,8 @@ impl<'a> Engine for FlatFile<'a> {
     }
 
     fn modify(&mut self, constraint_column_index: usize,
-        constraint_value: &[u8], comp: CompType,
-        values: &[(usize, &[u8])] )-> Result<u64, Error>
+    constraint_value: (&[u8], Option<usize>), comp: CompType,
+    values: &[(usize, &[u8])] )-> Result<u64, Error>
     {
         info!("modify row");
         let mut reader = try!(self.get_reader());
@@ -112,6 +112,14 @@ impl<'a> Engine for FlatFile<'a> {
         let file = try!(self.open_file_rw());
 
         try!(file.set_len(new_size));
+        Ok(())
+    }
+    fn reset(&mut self) -> Result<(), Error> {
+        info!("Reset structure.");
+
+        let file = try!(self.open_file_rw());
+
+        try!(file.set_len(0));
         Ok(())
     }
 }

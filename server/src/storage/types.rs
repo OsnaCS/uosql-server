@@ -261,7 +261,7 @@ impl SqlType {
         let int1: i32 = try!(i32::from_sql(val));
         let int2: i32 = try!(i32::from_sql(val2));
         info!("start comparing i32");
-        Ok(int1 == int2)
+        Ok(int1 > int2)
     }
 
     /// converts value to i32 and compares if first value is lesser (needs 4 bytes)

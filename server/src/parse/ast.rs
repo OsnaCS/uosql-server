@@ -79,7 +79,7 @@ pub struct ColumnInfo {
     pub primary: bool,
     pub auto_increment: bool,
     pub not_null: bool,
-    pub comment: Option<token::Lit>,
+    pub comment: Option<String>,
 }
 
 /// Information for table alteration
@@ -210,6 +210,19 @@ pub enum CompType {
     SThan,
     GEThan,
     SEThan
+}
+
+impl CompType {
+    pub fn negate(&self) -> CompType {
+        match self {
+            &CompType::Equ => CompType::NEqu,
+            &CompType::NEqu => CompType::Equ,
+            &CompType::GThan => CompType::SEThan,
+            &CompType::SThan => CompType::GEThan,
+            &CompType::GEThan => CompType::SThan,
+            &CompType::SEThan => CompType::GThan,
+        }
+    }
 }
 
 /// Allowed data types for where-clause
