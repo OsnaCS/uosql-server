@@ -311,7 +311,8 @@ fn display_meta_html (table: &mut DataSet) -> String {
     result.push_str("<tr><th>Column name</th>");
     let cols = table.get_col_cnt();
     for i in 0..cols {
-        result.push_str(&format!("<th>{}</th>", table.get_col_name(i).unwrap_or("none")).to_string());
+        result.push_str(&format!("<th>{}</th>", table.get_col_name(i)
+                .unwrap_or("none")).to_string());
     }
     result.push_str("</tr>");
 
@@ -355,7 +356,8 @@ fn display_meta_html (table: &mut DataSet) -> String {
     // Fifth table row (Description)
     result.push_str("<tr><td>Description</td>");
     for i in 0..cols {
-        result.push_str(&format!("<td>{}</td>", table.get_description_by_idx(i).unwrap_or("none")).to_string());
+        result.push_str(&format!("<td>{}</td>", table.get_description_by_idx(i)
+                    .unwrap_or("none")).to_string());
     }
     result.push_str("</tr>");
     // End table
@@ -374,7 +376,8 @@ fn display_data_html (table: &mut DataSet) -> String {
 
     // Row of column names
     for i in 0..cols {
-        result.push_str(&format!("<th>{}</th>", table.get_col_name(i).unwrap_or("none")).to_string());
+        result.push_str(&format!("<th>{}</th>", table.get_col_name(i)
+                    .unwrap_or("none")).to_string());
     }
     result.push_str("</tr>");
 
@@ -386,16 +389,20 @@ fn display_data_html (table: &mut DataSet) -> String {
                     match t {
                         SqlType::Int =>
                             match table.next_int_by_idx(i) {
-                                Some(val) => result.push_str(&format!("<td>{}</td>", val).to_string()),
+                                Some(val) => result.push_str(
+                                    &format!("<td>{}</td>", val).to_string()),
                                 None => result.push_str("<td>none</td>"),
                             },
                         SqlType::Bool =>
                             match table.next_bool_by_idx(i) {
-                                Some(val) => result.push_str(&format!("<td>{}</td>", val).to_string()),
+                                Some(val) => result.push_str(
+                                    &format!("<td>{}</td>", val).to_string()),
                                 None => result.push_str("<td>none</td>"),
                             },
                         SqlType::Char(_) =>
-                            result.push_str(&format!("<td>{}</td>",table.next_char_by_idx(i).unwrap_or("none".to_string())))
+                            result.push_str(&format!("<td>{}</td>",
+                                table.next_char_by_idx(i)
+                                .unwrap_or("none".to_string())))
                     }
                 },
                 None => continue
