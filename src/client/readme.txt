@@ -13,6 +13,7 @@ Commands
 :load           Loads script.sql from client-folder and executes querys. See
                 script.sql for further information on syntax.
 :load [path]    Loads .sql file with sql commands from specified path
+:log            Displays the current command history - if present
 :ping	 	    Checks if server is available and active.
 :quit	 	    Terminates connection with server and exits client.
 
