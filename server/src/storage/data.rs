@@ -536,7 +536,9 @@ impl<B: Write + Read + Seek> Rows <B> {
     /// moves the cursor from the current position the row after the first row
     /// which fulfills the constraint.
     /// Returns the first row which fulfilly the condition.
-    pub fn get_next_row(&mut self, column_index: usize, value: (&[u8], Option<usize>), comp: CompType)
+    pub fn get_next_row(&mut self, column_index: usize,
+                         value: (&[u8], Option<usize>),
+                          comp: CompType)
     -> Result<Vec<u8>, Error>
     {
         let mut row = Vec::<u8>::new();

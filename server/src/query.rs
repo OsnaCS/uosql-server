@@ -351,12 +351,15 @@ fn execute_select_stmt(&mut self, mut stmt: SelectStmt)
                 // REMEMBER CHANGING HERE TOO! (TODO)
                 if wheretype == Where::Select {
                     let tableset2 = try!(tableset.full_scan());
-                    let leftside = try!(self.execute_where(tableset, infos, c1, false, wheretype.clone()));
-                    let rightside = try!(self.execute_where(tableset2, infos, c2, false, wheretype));
+                    let leftside = try!(self.execute_where(
+                        tableset, infos, c1, false, wheretype.clone()));
+                    let rightside = try!(self.execute_where(
+                        tableset2, infos, c2, false, wheretype));
                     self.merge_rows(leftside, rightside)
                 }
                 else {
-                    try!(self.execute_where(try!(tableset.full_scan()), infos, c1, false, wheretype.clone()));
+                    try!(self.execute_where(try!(
+                        tableset.full_scan()), infos, c1, false, wheretype.clone()));
                     self.execute_where(tableset, infos, c2, false, wheretype)
                 }
 
@@ -457,7 +460,8 @@ fn execute_select_stmt(&mut self, mut stmt: SelectStmt)
 
     }
 
-    fn execute_delete_stmt(&mut self, mut query: DeleteStmt) -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError> {
+    fn execute_delete_stmt(&mut self, mut query: DeleteStmt)
+        -> Result<Rows<Cursor<Vec<u8>>>, ExecutionError> {
 
         let mut table = try!(self.get_rows(&query.tid));
         let mut name_column_map = HashMap::<String, HashMap<String, usize>>::new();
