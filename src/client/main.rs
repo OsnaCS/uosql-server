@@ -173,7 +173,6 @@ fn main() {
         let mut input: String = "".into();
         let mut key_pressed = unsafe { key() };
         let mut linelen = 0;
-        let mut enter = false;
 
         // Handle Up/Down input to jump in history and execute commands from history
         while h_idx <= history.len() &&
@@ -211,7 +210,6 @@ fn main() {
                     }
                 },
                 13 => {
-                    enter = true;
                     break;
                 }
                 _ => unreachable!()
