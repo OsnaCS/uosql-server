@@ -145,7 +145,7 @@ fn main() {
         }
     };
 
-    println!("Connected (version: {}) to {}:{}\n{}\n",
+    println!("Connected (version: {}) to {}:{}\n{}",
         conn.get_version(), conn.get_ip(), conn.get_port(), conn.get_message());
 
     // Load history from "uosql_client.history" if possible
@@ -164,20 +164,34 @@ fn main() {
         }
     };
 
+    let mut nobreak = false;
+    let mut linelen = 0;
+
     // Read commands from user
     loop {
-        print!("> ");
-        stdout().flush().ok().expect("Could not flush stdout.");
+        if !nobreak {
+            println!("");
+            print!("> ");
+            stdout().flush().ok().expect("Could not flush stdout.");
+        } else {
+            let mut whitespace: String = "".into();
+            for _ in 0..linelen {
+                whitespace.push_str(" ");
+            }
+            print!("\r{}", whitespace);
+            print!("\r> ");
+            stdout().flush().ok().expect("Could not flush stdout.");
+        }
 
         let mut h_idx = 0;
         let mut input: String = "".into();
         let mut key_pressed = unsafe { key() };
-        let mut linelen = 0;
 
         // Handle Up/Down input to jump in history and execute commands from history
         while h_idx <= history.len() &&
             (key_pressed == 0 || key_pressed == 1 || key_pressed == 13)
         {
+            nobreak = false;
             match key_pressed {
                 0 => {
                     if !history.is_empty() && h_idx < history.len() {
@@ -191,6 +205,7 @@ fn main() {
                         stdout().flush().ok().expect("Could not flush stdout.");
                         linelen = history[h_idx-1].len() + 3;
                     } else {
+                        nobreak = true;
                         break;
                     }
                 },
@@ -206,6 +221,7 @@ fn main() {
                         stdout().flush().ok().expect("Could not flush stdout.");
                         linelen = history[h_idx-1].len() + 3;
                     } else {
+                        nobreak = true;
                         break;
                     }
                 },
@@ -220,19 +236,25 @@ fn main() {
         // End of history reached, pressed enter on history item or got word characters
         match key_pressed {
             0 => {
-                print!("\nreached upper end of history");
-                stdout().flush().ok().expect("Could not flush stdout.");
+                // print!("\nreached upper end of history");
+                // stdout().flush().ok().expect("Could not flush stdout.");
             },
             1 => {
-                print!("\nreached lower end of history");
-                stdout().flush().ok().expect("Could not flush stdout.");
+                // print!("\nreached lower end of history");
+                // stdout().flush().ok().expect("Could not flush stdout.");
             },
             -1 => continue,
             13 => {
-                let x = history[h_idx-1].clone();
-                history.insert(0, x.clone());
-                input = x;
-                println!("");
+                if h_idx != history.len() && h_idx != 0 {
+                    let x = history[h_idx-1].clone();
+                    history.insert(0, x.clone());
+                    input = x;
+                    println!("");
+                }
+                else {
+                    print!("Type ':help' for more information on usage.");
+                    stdout().flush().ok().expect("Could not flush stdout.");
+                }
             },
             _ => {
                 print!("{}", key_pressed as u8 as char);
@@ -266,7 +288,6 @@ fn main() {
                 true => continue, // next iteration
             }
         }
-        println!("");
     }
 }
 
