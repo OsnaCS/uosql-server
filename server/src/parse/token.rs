@@ -1,5 +1,6 @@
 use super::Span;
-
+use parse::ast::*;
+use storage::SqlType;
 /// A token with it's associated Span in the source code
 #[derive(Debug)]
 pub struct TokenSpan {
@@ -9,8 +10,32 @@ pub struct TokenSpan {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
-	Str(String),
-	Int(String)
+	String(String),
+	Int(i64),
+    Float(f64),
+    Bool(u8),
+}
+
+impl Lit {
+    pub fn into_DataSrc(&self) -> DataSrc {
+        match self {
+            &Lit::String(ref s) => DataSrc::String(s.clone()),
+            &Lit::Int(ref i) => DataSrc::Int(i.clone()),
+            &Lit::Float(ref f) => DataSrc::String(f.to_string()),
+            &Lit::Bool(ref b) => DataSrc::Bool(b.clone()),
+        }
+    }
+
+    pub fn sqltype(&self) -> SqlType {
+        match self {
+            &Lit::String(_) => SqlType::Char(0),
+            &Lit::Int(_) => SqlType::Int,
+            &Lit::Float(_) => SqlType::Char(0),
+            &Lit::Bool(_) => SqlType::Bool,
+        }
+    }
+
+
 }
 
 /// A token: Everything the lexer can produce
@@ -18,7 +43,6 @@ pub enum Lit {
 pub enum Token {
 
     Word(String),
-    Num(String),
 
     // detects literals
     Literal(Lit),

@@ -8,11 +8,11 @@ pub mod ast;
 pub mod token;
 pub mod lex;
 pub mod parser;
-
+pub mod tests;
 pub use self::parser::Parser;
 
 /// Represents a substring in the query string in byte indices.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Span {
     pub lo: usize,
     pub hi: usize,
@@ -20,7 +20,8 @@ pub struct Span {
 
 /// Main function of this module: Takes a sql query as string and returns
 /// the parsed AST.
-pub fn parse(query: &str) -> ast::Query {
+pub fn parse(query: &str) -> Result<ast::Query,parser::ParseError> {
 
-    ast::Query::Dummy
+    Parser::create(query).parse()
+
 }

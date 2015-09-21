@@ -1,5 +1,8 @@
 /// Top level type. Is returned by `parse`.
-#[derive(Debug, Clone)]
+use super::token;
+use super::super::storage::SqlType;
+use std::collections::HashMap;
+#[derive(Debug, Clone, PartialEq)]
 pub enum Query {
     Dummy, // For Compiling
     DefStmt(DefStmt),
@@ -7,7 +10,7 @@ pub enum Query {
 }
 
 /// All Data Definition Statements
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum DefStmt {
     Create(CreateStmt),
     Alter(AltStmt),
@@ -15,25 +18,26 @@ pub enum DefStmt {
 }
 
 /// All Data Manipulation Statements
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ManipulationStmt {
     Update(UpdateStmt),
     Select(SelectStmt),
     Insert(InsertStmt),
     Delete(DeleteStmt),
-    Use(UseStmt)
+    Use(UseStmt),
+    Describe(String),
 }
 
 /// Split between creatable content (only Tables yet)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum CreateStmt {
     Table(CreateTableStmt),
-    // View
+    View(CreateViewStmt),
     Database(String),
 }
 
 /// Split between alterable content (only Tables yet)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum AltStmt {
     Table(AlterTableStmt)
     //Column(String)
@@ -41,41 +45,52 @@ pub enum AltStmt {
 }
 
 /// Split between drop-able content (only Tables yet)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum DropStmt {
     Table(String),
-    //Index(String)
+    View(String),
     Database(String)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum UseStmt {
     Database(String)
 }
 
 /// Information for table creation
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CreateTableStmt {
     pub tid: String,
     pub cols: Vec<ColumnInfo>,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct CreateViewStmt {
+    pub name: String,
+    pub opt: bool, // OR REPLACE keyword
+    pub sel : SelectStmt,
+}
+
 /// Information for column creation
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ColumnInfo {
     pub cid: String,
     pub datatype: SqlType,
+    pub primary: bool,
+    pub auto_increment: bool,
+    pub not_null: bool,
+    pub comment: Option<String>,
 }
 
 /// Information for table alteration
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AlterTableStmt {
     pub tid: String,
     pub op: AlterOp
 }
 
 /// Possible operations for table alterations
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum AlterOp {
     Add(ColumnInfo),
     Drop(String),
@@ -83,39 +98,73 @@ pub enum AlterOp {
 }
 
 /// Information for table update
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct UpdateStmt {
     pub tid: String,
+    pub alias: HashMap<String, String>,
     pub set: Vec<Condition>,
     pub conds: Option<Conditions>
 }
 
 /// Information for data selection
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SelectStmt {
-    pub target: Vec<String>,
+    pub target: Vec<Target>,
     pub tid: Vec<String>,
+    pub alias: HashMap<String, String>,
     pub cond: Option<Conditions>,
-    pub spec_op: Option<SpecOps>
+    //pub groupby: Option<GroupBy>,
+    //pub orderby: Option<OrderBy>,
+    pub spec_op: Option<SpecOps>,
+    pub order: Vec<Sort>,
+    pub limit: Option<Limit>,
+}
+
+/// Information for data selection
+#[derive(Debug, Clone, PartialEq)]
+pub struct Target {
+    pub alias: Option<String>,
+    pub col: Col,
+    pub rename: Option<String>,
+}
+
+/// Information for data selection in select
+#[derive(Debug, Clone, PartialEq)]
+pub enum Col {
+    // select a specified column
+    Specified(String),
+    // for example: table.* => select every column in table
+    Every
+
+}
+
+/// Information for data output limiting
+#[derive(Debug, Clone, PartialEq)]
+pub struct Limit {
+    //limit the count of the output
+    pub count: Option<i64>,
+    //offset the output: 0 = no offset, n = display from the nth row
+    pub offset: Option<i64>,
 }
 
 /// Information for data insertion
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct InsertStmt {
     pub tid: String,
     pub col: Vec<String>,
-    pub val: Vec<SqlType>
+    pub val: Vec<token::Lit>
 }
 
 /// Information for data deletion
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DeleteStmt {
     pub tid: String,
+    pub alias: HashMap<String, String>,
     pub cond: Option<Conditions>
 }
 
 /// Additional operations for ordering and limiting
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum SpecOps {
     OrderByAsc(String),
     OrderByDesc(String),
@@ -124,7 +173,7 @@ pub enum SpecOps {
 }
 
 /// Conditions for managing AND/OR where-clauses
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Conditions {
     Leaf(Condition),
     And(Box<Conditions>, Box<Conditions>),
@@ -132,15 +181,28 @@ pub enum Conditions {
 }
 
 /// Information for the where-clause
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Condition {
+    pub aliascol: Option<String>,
     pub col: String,
     pub op: CompType,
+    // in where clause, the condition may consist of two column names,
+    // this alaiasrhs is existent, if the right side is a word (=column)
+    // and if there exists an alias in the sql statement
+    // example: where p.name = s.name
+    pub aliasrhs: Option<String>,
     pub rhs: CondType
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct Sort {
+    pub alias: Option<String>,
+    pub col: String,
+    pub order: Option<Order>,
+}
+
 /// Allowed operators for where-clause
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum CompType {
     Equ,
     NEqu,
@@ -150,32 +212,57 @@ pub enum CompType {
     SEThan
 }
 
+impl CompType {
+    pub fn negate(&self) -> CompType {
+        match self {
+            &CompType::Equ => CompType::NEqu,
+            &CompType::NEqu => CompType::Equ,
+            &CompType::GThan => CompType::SEThan,
+            &CompType::SThan => CompType::GEThan,
+            &CompType::GEThan => CompType::SThan,
+            &CompType::SEThan => CompType::GThan,
+        }
+    }
+}
+
 /// Allowed data types for where-clause
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum CondType {
-    Literal(String),
-    Num(f32),
+    Literal(token::Lit),
     Word(String)
 }
 
-/// General enums in SQL
-#[derive(Debug, Clone, Copy, RustcDecodable, RustcEncodable)]
-pub enum SqlType {
-    Int,
-    Bool,
-    Char(u8),
-    VarChar(u16)
+#[derive(Debug, PartialEq)]
+pub enum DataSrc {
+    Int(i64),
+    String(String),
+    Bool(u8),
 }
 
-/// Defines the size of Sql data types
-/// and returns them
-impl SqlType {
-    pub fn size(&self) -> u32 {
+
+/// Possible values for "Order By" keyword
+#[derive(Debug, Clone, PartialEq)]
+pub enum Order {
+    Asc,
+    Desc
+}
+
+impl DataSrc {
+    /// checks if Value is true
+    /// return is true for Int when Value no null
+    /// return is true for String when String is not empty
+    /// return is true for Bool when Bool is not null
+    pub fn is_true(&self) -> bool {
         match self {
-            &SqlType::Int => 4 as u32,
-            &SqlType::Bool => 1 as u32,
-            &SqlType::Char(len) => (len + 1) as u32,
-            &SqlType::VarChar(len) => (len + 1) as u32
+            &DataSrc::Int(x) => x == 0,
+            &DataSrc::String(ref x) => !x.is_empty(),
+            &DataSrc::Bool(x) => x != 0,
         }
     }
+    /// static method to turn u8 into bool
+    /// return is true for input when input is not null
+    pub fn to_bool(input: u8) -> bool {
+        input != 0
+    }
+
 }

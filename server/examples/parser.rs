@@ -8,8 +8,7 @@ use server::parse;
 
 fn main() {
 
-    let mut p = parse::Parser::create("create table test");
-
+    let mut p = parse::Parser::create("insert into foo values ('⊂(▀¯▀⊂)', 420, 'lel')");
     println!("{:?}",p.parse());
 
 }

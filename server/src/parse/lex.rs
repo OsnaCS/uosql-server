@@ -103,22 +103,28 @@ impl<'a> Lexer<'a> {
         s
     }
 
-    fn scan_lit(&mut self) -> String {
+    fn scan_lit(&mut self) -> Result<String, LexError> {
         let mut s = String::new();
         self.bump(); // To first char of literal
         loop {
-            match self.curr.unwrap_or(' ') {
-                c @ '\'' |
-                c @ '"' => {
-                    break
+            if self.curr.is_some() {
+                match self.curr.unwrap_or(' ') {
+                    c @ '\'' |
+                    c @ '"' => {
+                        break
+                    }
+                    c @ _ => {
+                        s.push(c);
+                    }
+
                 }
-                c @ _ => {
-                    s.push(c);
-                }
+            } else {
+                return Err(LexError::UnclosedQuotationmark)
             }
             self.bump();
         }
-        s
+        self.bump();
+        Ok(s)
     }
 
     /// Skips all the whitespaces
@@ -127,6 +133,28 @@ impl<'a> Lexer<'a> {
             self.bump();
         }
     }
+
+    /// Returns next token that is not a whitespace
+    pub fn next_real(&mut self) -> Result<Option<TokenSpan>, LexError> {
+        let tokspanop = try!(self.next());
+        let  wspace = match tokspanop {
+            Some(ref tokspan) => {
+                match tokspan.tok {
+                    Token::Whitespace => true,
+                    _ => false
+                }
+
+            }
+            _ => false,
+        };
+
+        if wspace {
+            self.next()
+        } else {
+            Ok(tokspanop)
+        }
+    }
+
 }
 
 /// Checks for whitespace/line break/tab
@@ -137,11 +165,11 @@ fn is_whitespace(c: char) -> bool {
     }
 }
 
-impl<'a> Iterator for Lexer<'a> {
+impl<'a> Lexer<'a> {
 
-    type Item = TokenSpan;
+    //type Item = TokenSpan;
 
-    fn next(&mut self) -> Option<TokenSpan> {
+    fn next(&mut self) -> Result<Option<TokenSpan>, LexError> {
 
         // For two char ops (e.g. >=), we need to check the next char
         // if we are at the end of the string, we end
@@ -152,7 +180,7 @@ impl<'a> Iterator for Lexer<'a> {
 
         // Getting current char, else return None
         let curr = match self.curr {
-            None => return None,
+            None => return Ok(None),
             Some(c) => c
         };
 
@@ -162,14 +190,21 @@ impl<'a> Iterator for Lexer<'a> {
             // Words
             'a' ... 'z' | 'A' ... 'Z' => {
                 let w = self.scan_words();
-                Token::Word(w.to_lowercase())
+                Token::Word(w)
             },
 
-            // Nums
+            // Lit Num
             '0' ... '9' => {
                 let n = self.scan_nums();
-                Token::Num(n)
-
+                if let Ok(i) = n.parse::<i64>() {
+                    Token::Literal(Lit::Int(i))
+                } else {
+                    if let Ok(f) = n.parse::<f64>() {
+                        Token::Literal(Lit::Float(f))
+                    } else {
+                        Token::Unknown
+                    }
+                }
             },
 
             // Semicolon
@@ -216,9 +251,8 @@ impl<'a> Iterator for Lexer<'a> {
 
             // Literals
             '\'' | '"' => {
-                let l = self.scan_lit();
-                self.bump();
-                Token::Literal(Lit::Str(l))
+                let l = try!(self.scan_lit());
+                Token::Literal(Lit::String(l))
             },
 
             // Equ
@@ -302,12 +336,17 @@ impl<'a> Iterator for Lexer<'a> {
         };
 
         // Return an Option
-        Some(TokenSpan {
+        Ok(Some(TokenSpan {
             tok: token,
             span: Span {
                 lo: self.span_start.unwrap(),
                 hi: self.curr_pos.unwrap()
             }
-        })
+        }))
     }
+}
+
+#[derive(PartialEq, Debug)]
+pub enum LexError {
+    UnclosedQuotationmark
 }
