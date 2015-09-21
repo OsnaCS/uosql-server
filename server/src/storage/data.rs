@@ -370,7 +370,7 @@ impl<B: Write + Read + Seek> Rows <B> {
     /// deletes rows which fulfills a constraint
     /// return rows deleted
     pub fn delete(&mut self, column_index: usize, value: (&[u8], Option<usize>), comp: CompType)
-     -> Result<u64, Error>
+        -> Result<u64, Error>
     {
         try!(self.reset_pos());
         let mut count = 0;
@@ -400,60 +400,39 @@ impl<B: Write + Read + Seek> Rows <B> {
     /// Panics if a row could not be updated. If modify fails, the updated row
     /// will be lost.
     pub fn modify(&mut self, constraint_column_index: usize,
-     constraint_value: (&[u8], Option<usize>), comp: CompType,
-     values: &[(usize, &[u8])] )-> Result<u64, Error>
+        constraint_value: (&[u8], Option<usize>), comp: CompType,
+        values: &[(usize, &[u8])] )-> Result<u64, Error>
     {
         info!("Modify rows values {:?}", values);
-        let mut rows = try!(self.lookup(constraint_column_index,
-                                        constraint_value,
-                                        comp));
-        try!(rows.reset_pos());
-        let primary_key_index = self.get_primary_key_column_index();
-        let mut primary_key_value: Vec<u8>;
-        let mut row_data = Vec::<u8>::new();
-        let mut result = rows.next_row(&mut row_data);
-        let mut rows_deleted: u64;
+        try!(self.reset_pos());
         let mut updated_rows: u64 = 0;
+        let mut row_data: Vec<u8>;
+        let primary_key_index = self.get_primary_key_column_index();
 
         if primary_key_index == constraint_column_index {
             return Err(Error::PrimaryKeyNotAllowed);
         }
+
         // loop through rows.
         loop {
-            match result {
-                Ok(_) => { },
-                Err(Error::EndOfFile) => {
-                    break;
-                },
+            row_data = match self.get_next_row(constraint_column_index,
+                                               constraint_value,
+                                               comp) {
+                Ok(r) => r,
+                Err(Error::EndOfFile) => break,
                 Err(e) => return Err(e)
             };
 
-            primary_key_value = try!(rows.get_value(&row_data,
-                                                    primary_key_index));
-
-            rows_deleted = try!(self.delete(primary_key_index,
-                                            (&primary_key_value, None),
-                                            CompType::Equ));
-
-            if rows_deleted != 1 { panic!("Exactly one row should have been
-                                           deleted! database inconsistent") };
+            try!(self.prev_row());
 
             for kvp in values {
-              self.set_value(&mut row_data,
+                self.set_value(&mut row_data,
                              &kvp.1, // new_value
                              kvp.0); // column_index
             }
 
-            match self.insert_row_without_primary(&row_data) {
-                Ok(_) => { updated_rows += 1 },
-                Err(e) => {
-                    panic!("Modify failed. Deleted old row but could not insert
-                            modified new row. Returned error: {:?}", e);
-                }
-            }
-
-            row_data.clear();
-            result = rows.next_row(&mut row_data);
+            try!(self.add_row(&row_data));
+            updated_rows += 1;
         }
         info!("rows modified");
         Ok(updated_rows)
