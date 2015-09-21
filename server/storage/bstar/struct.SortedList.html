@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `SortedList` struct in crate `server`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, SortedList">
+
+    <title>server::storage::bstar::SortedList - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../../main.css">
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <section class="sidebar">
+        
+        <p class='location'><a href='../../index.html'>server</a>::<wbr><a href='../index.html'>storage</a>::<wbr><a href='index.html'>bstar</a></p><script>window.sidebarCurrent = {name: 'SortedList', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </section>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../../index.html'>server</a>::<wbr><a href='../index.html'>storage</a>::<wbr><a href='index.html'>bstar</a>::<wbr><a class='struct' href=''>SortedList</a></span><span class='out-of-band'><span id='render-detail'>
+            <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                [<span class='inner'>&#x2212;</span>]
+            </a>
+        </span><a id='src-42776' class='srclink' href='../../../src/server/storage/bstar.rs.html#1137-1141' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct SortedList&lt;T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html' title='core::cmp::PartialOrd'>PartialOrd</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a>&gt; {
+    pub list: <a class='struct' href='http://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;T&gt;,
+    pub elementcount: <a href='http://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a>,
+}</pre><h2 class='fields'>Fields</h2>
+<table><tr class='stab '>
+                                  <td id='structfield.list'><code>list</code></td><td></td></tr><tr class='stab '>
+                                  <td id='structfield.elementcount'><code>elementcount</code></td><td></td></tr></table><h2 id='methods'>Methods</h2><h3 class='impl'><code>impl&lt;T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html' title='core::cmp::PartialOrd'>PartialOrd</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a>&gt; <a class='struct' href='../../../server/storage/bstar/struct.SortedList.html' title='server::storage::bstar::SortedList'>SortedList</a>&lt;T&gt;</code></h3><div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>() -&gt; <a class='struct' href='../../../server/storage/bstar/struct.SortedList.html' title='server::storage::bstar::SortedList'>SortedList</a>&lt;T&gt;</code></h4>
+<div class='docblock'><p>generates a new SortedList</p>
+</div><h4 id='method.with_capacity' class='method'><code>fn <a href='#method.with_capacity' class='fnname'>with_capacity</a>(size: <a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='struct' href='../../../server/storage/bstar/struct.SortedList.html' title='server::storage::bstar::SortedList'>SortedList</a>&lt;T&gt;</code></h4>
+<div class='docblock'><p>allocates some memory for the new sorted list</p>
+</div><h4 id='method.empty' class='method'><code>fn <a href='#method.empty' class='fnname'>empty</a>(&amp;self) -&gt; <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>returns true when the list is empty</p>
+</div><h4 id='method.insert_at_index' class='method'><code>fn <a href='#method.insert_at_index' class='fnname'>insert_at_index</a>(&amp;mut self, index: <a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, key: T)</code></h4>
+<div class='docblock'><p>inserts a given key at a given index</p>
+</div><h4 id='method.insert' class='method'><code>fn <a href='#method.insert' class='fnname'>insert</a>(&amp;mut self, value: T) -&gt; <a href='http://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a></code></h4>
+<div class='docblock'><p>returns the index where the inserted value is located</p>
+</div><h4 id='method.split_by_index' class='method'><code>fn <a href='#method.split_by_index' class='fnname'>split_by_index</a>(&amp;mut self, index: <a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='struct' href='../../../server/storage/bstar/struct.SortedList.html' title='server::storage::bstar::SortedList'>SortedList</a>&lt;T&gt;</code></h4>
+<div class='docblock'><p>Splits the SortedList into 2 based on index.
+After calling this function the original list will contain
+the data from [0, index], the returned List will contain the data from
+(index, elementcount)</p>
+
+<p>panics if index is out of bounds</p>
+</div><h4 id='method.split_by_key' class='method'><code>fn <a href='#method.split_by_key' class='fnname'>split_by_key</a>(&amp;mut self, key: &amp;T) -&gt; <a class='struct' href='../../../server/storage/bstar/struct.SortedList.html' title='server::storage::bstar::SortedList'>SortedList</a>&lt;T&gt;</code></h4>
+<div class='docblock'><p>behaves as split_by_index but splits the list at the key position</p>
+</div><h4 id='method.delete_by_key' class='method'><code>fn <a href='#method.delete_by_key' class='fnname'>delete_by_key</a>(&amp;mut self, value: &amp;T) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;T&gt;</code></h4>
+<div class='docblock'><p>deletes and returns a given key</p>
+</div><h4 id='method.delete_by_index' class='method'><code>fn <a href='#method.delete_by_index' class='fnname'>delete_by_index</a>(&amp;mut self, index: <a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;T&gt;</code></h4>
+<div class='docblock'><p>deletes a key at indexposition</p>
+</div><h4 id='method.get_by_index' class='method'><code>fn <a href='#method.get_by_index' class='fnname'>get_by_index</a>(&amp;mut self, index: <a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;&amp;mut T&gt;</code></h4>
+<div class='docblock'><p>returns a mutable reference to a key found at index</p>
+</div><h4 id='method.get_by_key' class='method'><code>fn <a href='#method.get_by_key' class='fnname'>get_by_key</a>(&amp;mut self, tofind: &amp;T) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;&amp;mut T&gt;</code></h4>
+<div class='docblock'><p>returns a mutable reference to a key found by searching for it</p>
+</div><h4 id='method.get_index_by_key' class='method'><code>fn <a href='#method.get_index_by_key' class='fnname'>get_index_by_key</a>(&amp;self, tofind: &amp;T) -&gt; <a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(<a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>, <a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>)</a></code></h4>
+<div class='docblock'><p>returns the indexvalue where a key is located, or if it wasn&#39;t found
+where it&#39;s proper place would be:
+[0,1,5] &lt;- serching for 3 will result in
+(false, 2)</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 id='derived_implementations'>Derived Implementations </h3><h3 class='impl'><code>impl&lt;T: <a class='trait' href='../../../rustc_serialize/serialize/trait.Encodable.html' title='rustc_serialize::serialize::Encodable'>Encodable</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html' title='core::cmp::PartialOrd'>PartialOrd</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a>&gt; <a class='trait' href='../../../rustc_serialize/serialize/trait.Encodable.html' title='rustc_serialize::serialize::Encodable'>Encodable</a> for <a class='struct' href='../../../server/storage/bstar/struct.SortedList.html' title='server::storage::bstar::SortedList'>SortedList</a>&lt;T&gt;</code></h3><div class='impl-items'><h4 id='method.encode' class='method'><code>fn <a href='../../../rustc_serialize/serialize/trait.Encodable.html#method.encode' class='fnname'>encode</a>&lt;__S: <a class='trait' href='../../../rustc_serialize/serialize/trait.Encoder.html' title='rustc_serialize::serialize::Encoder'>Encoder</a>&gt;(&amp;self, __arg_0: &amp;mut __S) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>, __S::Error&gt;</code></h4>
+</div><h3 class='impl'><code>impl&lt;T: <a class='trait' href='../../../rustc_serialize/serialize/trait.Decodable.html' title='rustc_serialize::serialize::Decodable'>Decodable</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html' title='core::cmp::PartialOrd'>PartialOrd</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a>&gt; <a class='trait' href='../../../rustc_serialize/serialize/trait.Decodable.html' title='rustc_serialize::serialize::Decodable'>Decodable</a> for <a class='struct' href='../../../server/storage/bstar/struct.SortedList.html' title='server::storage::bstar::SortedList'>SortedList</a>&lt;T&gt;</code></h3><div class='impl-items'><h4 id='method.decode' class='method'><code>fn <a href='../../../rustc_serialize/serialize/trait.Decodable.html#method.decode' class='fnname'>decode</a>&lt;__D: <a class='trait' href='../../../rustc_serialize/serialize/trait.Decoder.html' title='rustc_serialize::serialize::Decoder'>Decoder</a>&gt;(__arg_0: &amp;mut __D) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../../server/storage/bstar/struct.SortedList.html' title='server::storage::bstar::SortedList'>SortedList</a>&lt;T&gt;, __D::Error&gt;</code></h4>
+</div><h3 class='impl'><code>impl&lt;T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html' title='core::cmp::PartialOrd'>PartialOrd</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a>&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='struct' href='../../../server/storage/bstar/struct.SortedList.html' title='server::storage::bstar::SortedList'>SortedList</a>&lt;T&gt;</code></h3><div class='impl-items'><h4 id='method.fmt' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#method.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class='struct' href='http://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <div id="help" class="hidden">
+        <div>
+            <div class="shortcuts">
+                <h1>Keyboard Shortcuts</h1>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h1>Search Tricks</h1>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>typedef</code> (or
+                    <code>tdef</code>).
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code>)
+                </p>
+            </div>
+        </div>
+    </div>
+
+    
+
+    <script>
+        window.rootPath = "../../../";
+        window.currentCrate = "server";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../../jquery.js"></script>
+    <script src="../../../main.js"></script>
+    
+    <script async src="../../../search-index.js"></script>
+</body>
+</html>

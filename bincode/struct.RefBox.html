@@ -34,7 +34,7 @@
             <div class="search-container">
                 <input class="search-input" name="search"
                        autocomplete="off"
-                       placeholder="Click or press 'S' to search, '?' for more options..."
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
                        type="search">
             </div>
         </form>
@@ -60,8 +60,7 @@ reference is inside of a struct.</p>
 <span class='kw'>struct</span> <span class='ident'>Message</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span>  {
   <span class='ident'>big_map</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>HashMap</span><span class='op'>&lt;</span><span class='ident'>u32</span>, <span class='ident'>u32</span><span class='op'>&gt;</span>,
   <span class='ident'>message_type</span>: <span class='ident'>String</span>,
-}
-</pre>
+}</pre>
 
 <p>This is because on the decoding side, you can&#39;t create the Message struct
 because it needs to have a reference to a HashMap, which is impossible because
@@ -76,8 +75,7 @@ but during deserialization, it puts that sub-object into a box!</p>
 <span class='kw'>struct</span> <span class='ident'>Message</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> {
     <span class='ident'>big_map</span>: <span class='ident'>RefBox</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span>, <span class='ident'>HashMap</span><span class='op'>&lt;</span><span class='ident'>u32</span>, <span class='ident'>u32</span><span class='op'>&gt;&gt;</span>,
     <span class='ident'>message_type</span>: <span class='ident'>String</span>
-}
-</pre>
+}</pre>
 
 <p>Now we can write</p>
 <pre class='rust rust-example-rendered'>
@@ -88,8 +86,7 @@ but during deserialization, it puts that sub-object into a box!</p>
 };
 
 <span class='kw'>let</span> <span class='ident'>encoded</span> <span class='op'>=</span> <span class='ident'>encode</span>(<span class='kw-2'>&amp;</span><span class='ident'>my_msg</span>, ...).<span class='ident'>unwrap</span>();
-<span class='kw'>let</span> <span class='ident'>decoded</span>: <span class='ident'>Message</span><span class='op'>&lt;</span><span class='lifetime'>&#39;static</span><span class='op'>&gt;</span> <span class='op'>=</span> <span class='ident'>decode</span>(<span class='kw-2'>&amp;</span><span class='ident'>encoded</span>[]).<span class='ident'>unwrap</span>();
-</pre>
+<span class='kw'>let</span> <span class='ident'>decoded</span>: <span class='ident'>Message</span><span class='op'>&lt;</span><span class='lifetime'>&#39;static</span><span class='op'>&gt;</span> <span class='op'>=</span> <span class='ident'>decode</span>(<span class='kw-2'>&amp;</span><span class='ident'>encoded</span>[]).<span class='ident'>unwrap</span>();</pre>
 
 <p>Notice that we managed to encode and decode a struct with a nested reference
 and that the decoded message has the lifetime <code>&#39;static</code> which shows us
@@ -114,56 +111,63 @@ this function will never fail.</p>
 </div><h3 class='impl'><code>impl&lt;T: <a class='trait' href='../serde/de/trait.Deserialize.html' title='serde::de::Deserialize'>Deserialize</a>&gt; <a class='trait' href='../serde/de/trait.Deserialize.html' title='serde::de::Deserialize'>Deserialize</a> for <a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'static, T&gt;</code></h3><div class='impl-items'><h4 id='method.deserialize' class='method'><code>fn <a href='../serde/de/trait.Deserialize.html#method.deserialize' class='fnname'>deserialize</a>&lt;D&gt;(deserializer: &amp;mut D) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;Self, D::Error&gt; <span class='where'>where D: <a class='trait' href='../serde/de/trait.Deserializer.html' title='serde::de::Deserializer'>Deserializer</a></span></code></h4>
 </div><h3 class='impl'><code>impl&lt;'a, T&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/ops/trait.Deref.html' title='core::ops::Deref'>Deref</a> for <a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'a, T&gt;</code></h3><div class='impl-items'><h4 id='assoc_type.Target' class='type'><code>type Target = T</code></h4>
 <h4 id='method.deref' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/ops/trait.Deref.html#method.deref' class='fnname'>deref</a>(&amp;self) -&gt; &amp;T</code></h4>
-</div><h3 id='derived_implementations'>Derived Implementations </h3><h3 class='impl'><code>impl&lt;'a, T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> + 'a&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'a, T&gt; <span class='where'>where T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a>, T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a></span></code></h3><div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'a, T&gt;</code></h4>
+</div><h3 id='derived_implementations'>Derived Implementations </h3><h3 class='impl'><code>impl&lt;'a, T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> + 'a&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'a, T&gt;</code></h3><div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'a, T&gt;</code></h4>
 <h4 id='method.clone_from' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code></h4>
-</div><h3 class='impl'><code>impl&lt;'a, T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/hash/trait.Hash.html' title='core::hash::Hash'>Hash</a> + 'a&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/hash/trait.Hash.html' title='core::hash::Hash'>Hash</a> for <a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'a, T&gt; <span class='where'>where T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/hash/trait.Hash.html' title='core::hash::Hash'>Hash</a>, T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/hash/trait.Hash.html' title='core::hash::Hash'>Hash</a></span></code></h3><div class='impl-items'><h4 id='method.hash' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/hash/trait.Hash.html#method.hash' class='fnname'>hash</a>&lt;__H: <a class='trait' href='http://doc.rust-lang.org/nightly/core/hash/trait.Hasher.html' title='core::hash::Hasher'>Hasher</a>&gt;(&amp;self, __arg_0: &amp;mut __H)</code></h4>
+</div><h3 class='impl'><code>impl&lt;'a, T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/hash/trait.Hash.html' title='core::hash::Hash'>Hash</a> + 'a&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/hash/trait.Hash.html' title='core::hash::Hash'>Hash</a> for <a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'a, T&gt;</code></h3><div class='impl-items'><h4 id='method.hash' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/hash/trait.Hash.html#method.hash' class='fnname'>hash</a>&lt;__H: <a class='trait' href='http://doc.rust-lang.org/nightly/core/hash/trait.Hasher.html' title='core::hash::Hasher'>Hasher</a>&gt;(&amp;self, __arg_0: &amp;mut __H)</code></h4>
 <h4 id='method.hash_slice' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/hash/trait.Hash.html#method.hash_slice' class='fnname'>hash_slice</a>&lt;H&gt;(data: <a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[Self]</a>, state: &amp;mut H) <span class='where'>where H: <a class='trait' href='http://doc.rust-lang.org/nightly/core/hash/trait.Hasher.html' title='core::hash::Hasher'>Hasher</a></span></code></h4>
-</div><h3 class='impl'><code>impl&lt;'a, T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html' title='core::cmp::Ord'>Ord</a> + 'a&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html' title='core::cmp::Ord'>Ord</a> for <a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'a, T&gt; <span class='where'>where T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html' title='core::cmp::Ord'>Ord</a>, T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html' title='core::cmp::Ord'>Ord</a></span></code></h3><div class='impl-items'><h4 id='method.cmp' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html#method.cmp' class='fnname'>cmp</a>(&amp;self, __arg_0: &amp;<a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'a, T&gt;) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/cmp/enum.Ordering.html' title='core::cmp::Ordering'>Ordering</a></code></h4>
-</div><h3 class='impl'><code>impl&lt;'a, T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html' title='core::cmp::Eq'>Eq</a> + 'a&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html' title='core::cmp::Eq'>Eq</a> for <a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'a, T&gt; <span class='where'>where T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html' title='core::cmp::Eq'>Eq</a>, T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html' title='core::cmp::Eq'>Eq</a></span></code></h3><div class='impl-items'></div><h3 class='impl'><code>impl&lt;'a, T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html' title='core::cmp::PartialOrd'>PartialOrd</a> + 'a&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html' title='core::cmp::PartialOrd'>PartialOrd</a> for <a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'a, T&gt; <span class='where'>where T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html' title='core::cmp::PartialOrd'>PartialOrd</a>, T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html' title='core::cmp::PartialOrd'>PartialOrd</a></span></code></h3><div class='impl-items'><h4 id='method.partial_cmp' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.partial_cmp' class='fnname'>partial_cmp</a>(&amp;self, __arg_0: &amp;<a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'a, T&gt;) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='enum' href='http://doc.rust-lang.org/nightly/core/cmp/enum.Ordering.html' title='core::cmp::Ordering'>Ordering</a>&gt;</code></h4>
+</div><h3 class='impl'><code>impl&lt;'a, T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html' title='core::cmp::Ord'>Ord</a> + 'a&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html' title='core::cmp::Ord'>Ord</a> for <a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'a, T&gt;</code></h3><div class='impl-items'><h4 id='method.cmp' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html#method.cmp' class='fnname'>cmp</a>(&amp;self, __arg_0: &amp;<a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'a, T&gt;) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/cmp/enum.Ordering.html' title='core::cmp::Ordering'>Ordering</a></code></h4>
+</div><h3 class='impl'><code>impl&lt;'a, T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html' title='core::cmp::Eq'>Eq</a> + 'a&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html' title='core::cmp::Eq'>Eq</a> for <a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'a, T&gt;</code></h3><div class='impl-items'></div><h3 class='impl'><code>impl&lt;'a, T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html' title='core::cmp::PartialOrd'>PartialOrd</a> + 'a&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html' title='core::cmp::PartialOrd'>PartialOrd</a> for <a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'a, T&gt;</code></h3><div class='impl-items'><h4 id='method.partial_cmp' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.partial_cmp' class='fnname'>partial_cmp</a>(&amp;self, __arg_0: &amp;<a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'a, T&gt;) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='enum' href='http://doc.rust-lang.org/nightly/core/cmp/enum.Ordering.html' title='core::cmp::Ordering'>Ordering</a>&gt;</code></h4>
 <h4 id='method.lt' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.lt' class='fnname'>lt</a>(&amp;self, __arg_0: &amp;<a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'a, T&gt;) -&gt; <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
 <h4 id='method.le' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.le' class='fnname'>le</a>(&amp;self, __arg_0: &amp;<a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'a, T&gt;) -&gt; <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
 <h4 id='method.gt' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.gt' class='fnname'>gt</a>(&amp;self, __arg_0: &amp;<a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'a, T&gt;) -&gt; <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
 <h4 id='method.ge' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.ge' class='fnname'>ge</a>(&amp;self, __arg_0: &amp;<a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'a, T&gt;) -&gt; <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
-</div><h3 class='impl'><code>impl&lt;'a, T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html' title='core::cmp::PartialEq'>PartialEq</a> + 'a&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html' title='core::cmp::PartialEq'>PartialEq</a> for <a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'a, T&gt; <span class='where'>where T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html' title='core::cmp::PartialEq'>PartialEq</a>, T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html' title='core::cmp::PartialEq'>PartialEq</a></span></code></h3><div class='impl-items'><h4 id='method.eq' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#method.eq' class='fnname'>eq</a>(&amp;self, __arg_0: &amp;<a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'a, T&gt;) -&gt; <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+</div><h3 class='impl'><code>impl&lt;'a, T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html' title='core::cmp::PartialEq'>PartialEq</a> + 'a&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html' title='core::cmp::PartialEq'>PartialEq</a> for <a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'a, T&gt;</code></h3><div class='impl-items'><h4 id='method.eq' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#method.eq' class='fnname'>eq</a>(&amp;self, __arg_0: &amp;<a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'a, T&gt;) -&gt; <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
 <h4 id='method.ne' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#method.ne' class='fnname'>ne</a>(&amp;self, __arg_0: &amp;<a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'a, T&gt;) -&gt; <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
-</div><h3 class='impl'><code>impl&lt;'a, T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> + 'a&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'a, T&gt; <span class='where'>where T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a>, T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a></span></code></h3><div class='impl-items'><h4 id='method.fmt' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#method.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class='struct' href='http://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
+</div><h3 class='impl'><code>impl&lt;'a, T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> + 'a&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='struct' href='../bincode/struct.RefBox.html' title='bincode::RefBox'>RefBox</a>&lt;'a, T&gt;</code></h3><div class='impl-items'><h4 id='method.fmt' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#method.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class='struct' href='http://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
 </div></section>
     <section id='search' class="content hidden"></section>
 
     <section class="footer"></section>
 
     <div id="help" class="hidden">
-        <div class="shortcuts">
-            <h1>Keyboard shortcuts</h1>
-            <dl>
-                <dt>?</dt>
-                <dd>Show this help dialog</dd>
-                <dt>S</dt>
-                <dd>Focus the search field</dd>
-                <dt>&larrb;</dt>
-                <dd>Move up in search results</dd>
-                <dt>&rarrb;</dt>
-                <dd>Move down in search results</dd>
-                <dt>&#9166;</dt>
-                <dd>Go to active search result</dd>
-            </dl>
-        </div>
-        <div class="infos">
-            <h1>Search tricks</h1>
-            <p>
-                Prefix searches with a type followed by a colon (e.g.
-                <code>fn:</code>) to restrict the search to a given type.
-            </p>
-            <p>
-                Accepted types are: <code>fn</code>, <code>mod</code>,
-                <code>struct</code>, <code>enum</code>,
-                <code>trait</code>, <code>typedef</code> (or
-                <code>tdef</code>).
-            </p>
-            <p>
-                Search functions by type signature (e.g.
-                <code>vec -> usize</code>)
-            </p>
+        <div>
+            <div class="shortcuts">
+                <h1>Keyboard Shortcuts</h1>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h1>Search Tricks</h1>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>typedef</code> (or
+                    <code>tdef</code>).
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code>)
+                </p>
+            </div>
         </div>
     </div>
 

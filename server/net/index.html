@@ -34,7 +34,7 @@
             <div class="search-container">
                 <input class="search-input" name="search"
                        autocomplete="off"
-                       placeholder="Click or press 'S' to search, '?' for more options..."
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
                        type="search">
             </div>
         </form>
@@ -45,7 +45,7 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-1549' class='srclink' href='../../src/server/net.rs.html#1-340' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-2183' class='srclink' href='../../src/server/net/mod.rs.html#1-264' title='goto source code'>[src]</a></span></h1>
 <div class='docblock'><p>The network api</p>
 
 <p>This module defines types and functions to read and write objects from
@@ -62,70 +62,22 @@ of TCP, this database sends single packets.</p>
 size of the packet in network byte order.</p>
 
 <p>...</p>
-</div><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+</div><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
 <table>
                     <tr class=' module-item'>
-                        <td><a class='struct' href='struct.ClientErrMsg.html'
-                               title='server::net::ClientErrMsg'>ClientErrMsg</a></td>
+                        <td><a class='mod' href='types/index.html'
+                               title='server::net::types'>types</a></td>
                         <td class='docblock short'>
-                             <p>Struct to send the kind of error and error message to the client</p>
-
-                        </td>
-                    </tr>
-                
-                    <tr class=' module-item'>
-                        <td><a class='struct' href='struct.Greeting.html'
-                               title='server::net::Greeting'>Greeting</a></td>
-                        <td class='docblock short'>
-                             <p>This is the first packet being sent by the server after the TCP connection
-is established.</p>
-
-                        </td>
-                    </tr>
-                
-                    <tr class=' module-item'>
-                        <td><a class='struct' href='struct.Login.html'
-                               title='server::net::Login'>Login</a></td>
-                        <td class='docblock short'>
-                             <p>The client responds with this packet to a <code>Greeting</code> packet, finishing the
-authentication handshake.</p>
-
-                        </td>
-                    </tr>
-                
-                    <tr class=' module-item'>
-                        <td><a class='struct' href='struct.Response.html'
-                               title='server::net::Response'>Response</a></td>
-                        <td class='docblock short'>
-                             <p>Sent by the server to the client.</p>
-
+                             
                         </td>
                     </tr>
                 </table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
 <table>
                     <tr class=' module-item'>
-                        <td><a class='enum' href='enum.Cnv.html'
-                               title='server::net::Cnv'>Cnv</a></td>
+                        <td><a class='enum' href='enum.Error.html'
+                               title='server::net::Error'>Error</a></td>
                         <td class='docblock short'>
-                             <p>Code numeric value sent as first byte</p>
-
-                        </td>
-                    </tr>
-                
-                    <tr class=' module-item'>
-                        <td><a class='enum' href='enum.Command.html'
-                               title='server::net::Command'>Command</a></td>
-                        <td class='docblock short'>
-                             <p>Sent by the client to the server.</p>
-
-                        </td>
-                    </tr>
-                
-                    <tr class=' module-item'>
-                        <td><a class='enum' href='enum.NetworkErrors.html'
-                               title='server::net::NetworkErrors'>NetworkErrors</a></td>
-                        <td class='docblock short'>
-                             <p>Collection of possible errors while communicating with the client</p>
+                             <p>Collection of possible errors while communicating with the client.</p>
 
                         </td>
                     </tr>
@@ -135,7 +87,7 @@ authentication handshake.</p>
                         <td><a class='fn' href='fn.do_handshake.html'
                                title='server::net::do_handshake'>do_handshake</a></td>
                         <td class='docblock short'>
-                             <p>Write a welcome-message to the given server-client-stream</p>
+                             <p>Write a welcome-message to the given server-client-stream.</p>
 
                         </td>
                     </tr>
@@ -144,7 +96,7 @@ authentication handshake.</p>
                         <td><a class='fn' href='fn.read_commands.html'
                                title='server::net::read_commands'>read_commands</a></td>
                         <td class='docblock short'>
-                             <p>Read the sent bytes, extract the kind of command</p>
+                             <p>Read the sent bytes, extract the kind of command.</p>
 
                         </td>
                     </tr>
@@ -153,8 +105,8 @@ authentication handshake.</p>
                         <td><a class='fn' href='fn.read_login.html'
                                title='server::net::read_login'>read_login</a></td>
                         <td class='docblock short'>
-                             <p>reads the data from the response to the handshake,
-username and password extracted and authenticated</p>
+                             <p>Read the data from the response to the handshake,
+username and password extracted and returned.</p>
 
                         </td>
                     </tr>
@@ -163,25 +115,25 @@ username and password extracted and authenticated</p>
                         <td><a class='fn' href='fn.send_error_package.html'
                                title='server::net::send_error_package'>send_error_package</a></td>
                         <td class='docblock short'>
-                             <p>send error package with given error code status</p>
+                             <p>Send error package with given error code status.</p>
 
                         </td>
                     </tr>
                 
                     <tr class=' module-item'>
-                        <td><a class='fn' href='fn.send_error_packet.html'
-                               title='server::net::send_error_packet'>send_error_packet</a></td>
+                        <td><a class='fn' href='fn.send_info_package.html'
+                               title='server::net::send_info_package'>send_info_package</a></td>
                         <td class='docblock short'>
-                             <p>Send error packet with given error code status</p>
+                             <p>Send information package only with package type information.</p>
 
                         </td>
                     </tr>
                 
                     <tr class=' module-item'>
-                        <td><a class='fn' href='fn.send_ok_packet.html'
-                               title='server::net::send_ok_packet'>send_ok_packet</a></td>
+                        <td><a class='fn' href='fn.send_response_package.html'
+                               title='server::net::send_response_package'>send_response_package</a></td>
                         <td class='docblock short'>
-                             <p>Send ok packet</p>
+                             <p>Send Result package as response to a query.</p>
 
                         </td>
                     </tr>
@@ -191,37 +143,44 @@ username and password extracted and authenticated</p>
     <section class="footer"></section>
 
     <div id="help" class="hidden">
-        <div class="shortcuts">
-            <h1>Keyboard shortcuts</h1>
-            <dl>
-                <dt>?</dt>
-                <dd>Show this help dialog</dd>
-                <dt>S</dt>
-                <dd>Focus the search field</dd>
-                <dt>&larrb;</dt>
-                <dd>Move up in search results</dd>
-                <dt>&rarrb;</dt>
-                <dd>Move down in search results</dd>
-                <dt>&#9166;</dt>
-                <dd>Go to active search result</dd>
-            </dl>
-        </div>
-        <div class="infos">
-            <h1>Search tricks</h1>
-            <p>
-                Prefix searches with a type followed by a colon (e.g.
-                <code>fn:</code>) to restrict the search to a given type.
-            </p>
-            <p>
-                Accepted types are: <code>fn</code>, <code>mod</code>,
-                <code>struct</code>, <code>enum</code>,
-                <code>trait</code>, <code>typedef</code> (or
-                <code>tdef</code>).
-            </p>
-            <p>
-                Search functions by type signature (e.g.
-                <code>vec -> usize</code>)
-            </p>
+        <div>
+            <div class="shortcuts">
+                <h1>Keyboard Shortcuts</h1>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h1>Search Tricks</h1>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>typedef</code> (or
+                    <code>tdef</code>).
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code>)
+                </p>
+            </div>
         </div>
     </div>
 

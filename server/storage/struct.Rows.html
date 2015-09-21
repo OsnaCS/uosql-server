@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Rows` struct in crate `server`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Rows">
+
+    <title>server::storage::Rows - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <section class="sidebar">
+        
+        <p class='location'><a href='../index.html'>server</a>::<wbr><a href='index.html'>storage</a></p><script>window.sidebarCurrent = {name: 'Rows', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </section>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>server</a>::<wbr><a href='index.html'>storage</a>::<wbr><a class='struct' href=''>Rows</a></span><span class='out-of-band'><span id='render-detail'>
+            <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                [<span class='inner'>&#x2212;</span>]
+            </a>
+        </span><a id='src-44955' class='srclink' href='../../src/server/storage/data.rs.html#8-14' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct Rows&lt;B: <a class='trait' href='http://doc.rust-lang.org/nightly/std/io/trait.Write.html' title='std::io::Write'>Write</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/std/io/trait.Read.html' title='std::io::Read'>Read</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/std/io/trait.Seek.html' title='std::io::Seek'>Seek</a>&gt; {
+    pub columns: <a class='struct' href='http://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='struct' href='../../server/storage/types/struct.Column.html' title='server::storage::types::Column'>Column</a>&gt;,
+    pub column_offsets: <a class='struct' href='http://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a>&gt;,
+    // some fields omitted
+}</pre><h2 class='fields'>Fields</h2>
+<table><tr class='stab '>
+                                  <td id='structfield.columns'><code>columns</code></td><td></td></tr><tr class='stab '>
+                                  <td id='structfield.column_offsets'><code>column_offsets</code></td><td></td></tr></table><h2 id='methods'>Methods</h2><h3 class='impl'><code>impl&lt;B: <a class='trait' href='http://doc.rust-lang.org/nightly/std/io/trait.Write.html' title='std::io::Write'>Write</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/std/io/trait.Read.html' title='std::io::Read'>Read</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/std/io/trait.Seek.html' title='std::io::Seek'>Seek</a>&gt; <a class='struct' href='../../server/storage/struct.Rows.html' title='server::storage::Rows'>Rows</a>&lt;B&gt;</code></h3><div class='docblock'><p>Represents the lines read from file.</p>
+</div><div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(data_src: B, columns: <a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='struct' href='../../server/storage/types/struct.Column.html' title='server::storage::types::Column'>Column</a><a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='struct' href='../../server/storage/struct.Rows.html' title='server::storage::Rows'>Rows</a>&lt;B&gt;</code></h4>
+<h4 id='method.next_row' class='method'><code>fn <a href='#method.next_row' class='fnname'>next_row</a>&lt;W: <a class='trait' href='http://doc.rust-lang.org/nightly/std/io/trait.Write.html' title='std::io::Write'>Write</a>&gt;(&amp;mut self, target_buf: &amp;mut W) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a>, <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a>&gt;</code></h4>
+<div class='docblock'><p>reads the next row, which is not marked as deleted
+and writes the data into target_buf
+returns the bytes read or an Error otherwise.
+Returns Error:EndOfFile if no next row could be read.</p>
+</div><h4 id='method.reset_pos' class='method'><code>fn <a href='#method.reset_pos' class='fnname'>reset_pos</a>(&amp;mut self) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a>, <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a>&gt;</code></h4>
+<div class='docblock'><p>sets position before the first line</p>
+</div><h4 id='method.add_row' class='method'><code>fn <a href='#method.add_row' class='fnname'>add_row</a>(&amp;mut self, data: <a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a>, <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a>&gt;</code></h4>
+<div class='docblock'><p>writes a new row into buf, returns bytes written</p>
+</div><h4 id='method.reorganize' class='method'><code>fn <a href='#method.reorganize' class='fnname'>reorganize</a>(&amp;mut self) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a>, <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a>&gt;</code></h4>
+<div class='docblock'><p>Reorganizes the current instance
+Removes all rows which are marked as deleted.
+Returns the new size of the reorganized object.</p>
+</div><h4 id='method.get_value' class='method'><code>fn <a href='#method.get_value' class='fnname'>get_value</a>(&amp;self, row_data: <a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, column_index: <a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='http://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;, <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a>&gt;</code></h4>
+<div class='docblock'><p>returns the value of the column_index&#39; column of the current row
+returns Error::InvalidState if no current row exists</p>
+</div><h4 id='method.get_column' class='method'><code>fn <a href='#method.get_column' class='fnname'>get_column</a>(&amp;self, index: <a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; &amp;<a class='struct' href='../../server/storage/types/struct.Column.html' title='server::storage::types::Column'>Column</a></code></h4>
+<div class='docblock'><p>returns the columns</p>
+</div><h4 id='method.insert_row_without_primary' class='method'><code>fn <a href='#method.insert_row_without_primary' class='fnname'>insert_row_without_primary</a>(&amp;mut self, row_data: <a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a>, <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a>&gt;</code></h4>
+<div class='docblock'><p>Inserts a new row with row_data. Does not check if the primary key exists.
+Returns the number of rows_inserted.</p>
+</div><h4 id='method.insert_row' class='method'><code>fn <a href='#method.insert_row' class='fnname'>insert_row</a>(&amp;mut self, row_data: <a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a>, <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a>&gt;</code></h4>
+<div class='docblock'><p>Inserts a new row with row_data.
+Returns the number of rows inserted.</p>
+</div><h4 id='method.delete' class='method'><code>fn <a href='#method.delete' class='fnname'>delete</a>(&amp;mut self, column_index: <a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, value: <a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(<a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>&gt;)</a>, comp: <a class='enum' href='../../server/parse/ast/enum.CompType.html' title='server::parse::ast::CompType'>CompType</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a>, <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a>&gt;</code></h4>
+<div class='docblock'><p>deletes rows which fulfills a constraint
+return rows deleted</p>
+</div><h4 id='method.modify' class='method'><code>fn <a href='#method.modify' class='fnname'>modify</a>(&amp;mut self, constraint_column_index: <a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, constraint_value: <a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(<a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>&gt;)</a>, comp: <a class='enum' href='../../server/parse/ast/enum.CompType.html' title='server::parse::ast::CompType'>CompType</a>, values: <a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(<a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, <a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>)</a><a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a>, <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a>&gt;</code></h4>
+<div class='docblock'><p>Updates all rows fulfilling the constraint.
+constraint_column_index: index of the rows whose value is compared
+to constraint_value.
+values[(column_index: usize, new_value: &amp;[u8])]: Slice of tuples
+The first value of the tuple contains the index of the column to be
+updated. The second value contains the new value for the column.
+returns the numer of rows updated.
+Panics if a row could not be updated. If modify fails, the updated row
+will be lost.</p>
+</div><h4 id='method.lookup' class='method'><code>fn <a href='#method.lookup' class='fnname'>lookup</a>(&amp;mut self, column_index: <a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, value: <a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(<a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>&gt;)</a>, comp: <a class='enum' href='../../server/parse/ast/enum.CompType.html' title='server::parse::ast::CompType'>CompType</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../server/storage/struct.Rows.html' title='server::storage::Rows'>Rows</a>&lt;<a class='struct' href='http://doc.rust-lang.org/nightly/std/io/cursor/struct.Cursor.html' title='std::io::cursor::Cursor'>Cursor</a>&lt;<a class='struct' href='http://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;&gt;&gt;, <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a>&gt;</code></h4>
+<div class='docblock'><p>Returns an new Rows object with all rows which fulfill the constraint.
+column_index: index of the column whose value should match value
+comp: defines how the value of the column and value should be compared.</p>
+</div><h4 id='method.full_scan' class='method'><code>fn <a href='#method.full_scan' class='fnname'>full_scan</a>(&amp;mut self) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../server/storage/struct.Rows.html' title='server::storage::Rows'>Rows</a>&lt;<a class='struct' href='http://doc.rust-lang.org/nightly/std/io/cursor/struct.Cursor.html' title='std::io::cursor::Cursor'>Cursor</a>&lt;<a class='struct' href='http://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;&gt;&gt;, <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a>&gt;</code></h4>
+<div class='docblock'><p>scans the entire file
+returns all rows which are not deleted</p>
+</div><h4 id='method.is_empty' class='method'><code>fn <a href='#method.is_empty' class='fnname'>is_empty</a>(&amp;mut self) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>, <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a>&gt;</code></h4>
+<div class='docblock'><p>checks if object is containing rows
+returns bool on success else Error</p>
+</div><h4 id='method.get_next_row' class='method'><code>fn <a href='#method.get_next_row' class='fnname'>get_next_row</a>(&amp;mut self, column_index: <a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, value: <a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(<a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>&gt;)</a>, comp: <a class='enum' href='../../server/parse/ast/enum.CompType.html' title='server::parse::ast::CompType'>CompType</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='http://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;, <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a>&gt;</code></h4>
+<div class='docblock'><p>moves the cursor from the current position the row after the first row
+which fulfills the constraint.
+Returns the first row which fulfilly the condition.</p>
+</div><h4 id='method.to_result_set' class='method'><code>fn <a href='#method.to_result_set' class='fnname'>to_result_set</a>(&amp;mut self) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../server/storage/struct.ResultSet.html' title='server::storage::ResultSet'>ResultSet</a>, <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a>&gt;</code></h4>
+<div class='docblock'><p>Returns a new ResultSet containing all rows of the current object</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 id='derived_implementations'>Derived Implementations </h3><h3 class='impl'><code>impl&lt;B: <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/std/io/trait.Write.html' title='std::io::Write'>Write</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/std/io/trait.Read.html' title='std::io::Read'>Read</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/std/io/trait.Seek.html' title='std::io::Seek'>Seek</a>&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='struct' href='../../server/storage/struct.Rows.html' title='server::storage::Rows'>Rows</a>&lt;B&gt;</code></h3><div class='impl-items'><h4 id='method.fmt' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#method.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class='struct' href='http://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <div id="help" class="hidden">
+        <div>
+            <div class="shortcuts">
+                <h1>Keyboard Shortcuts</h1>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h1>Search Tricks</h1>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>typedef</code> (or
+                    <code>tdef</code>).
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code>)
+                </p>
+            </div>
+        </div>
+    </div>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "server";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script async src="../../search-index.js"></script>
+</body>
+</html>

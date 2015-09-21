@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Error` enum in crate `server`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Error">
+
+    <title>server::storage::Error - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <section class="sidebar">
+        
+        <p class='location'><a href='../index.html'>server</a>::<wbr><a href='index.html'>storage</a></p><script>window.sidebarCurrent = {name: 'Error', ty: 'enum', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </section>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content enum">
+<h1 class='fqn'><span class='in-band'>Enum <a href='../index.html'>server</a>::<wbr><a href='index.html'>storage</a>::<wbr><a class='enum' href=''>Error</a></span><span class='out-of-band'><span id='render-detail'>
+            <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                [<span class='inner'>&#x2212;</span>]
+            </a>
+        </span><a id='src-49688' class='srclink' href='../../src/server/storage/mod.rs.html#38-66' title='goto source code'>[src]</a></span></h1>
+<pre class='rust enum'>pub enum Error {
+    Io(<a class='struct' href='http://doc.rust-lang.org/nightly/std/io/error/struct.Error.html' title='std::io::error::Error'>Error</a>),
+    BinEn(<a class='enum' href='../../bincode/rustc_serialize/writer/enum.EncodingError.html' title='bincode::rustc_serialize::writer::EncodingError'>EncodingError</a>),
+    BinDe(<a class='enum' href='../../bincode/rustc_serialize/reader/enum.DecodingError.html' title='bincode::rustc_serialize::reader::DecodingError'>DecodingError</a>),
+    Byteorder(<a class='enum' href='../../byteorder/new/enum.Error.html' title='byteorder::new::Error'>Error</a>),
+    Utf8Error(<a class='struct' href='../../server/storage/struct.FromUtf8Error.html' title='server::storage::FromUtf8Error'>FromUtf8Error</a>),
+    Utf8StrError(<a class='struct' href='http://doc.rust-lang.org/nightly/core/str/struct.Utf8Error.html' title='core::str::Utf8Error'>Utf8Error</a>),
+    NulError(<a class='struct' href='http://doc.rust-lang.org/nightly/std/ffi/c_str/struct.NulError.html' title='std::ffi::c_str::NulError'>NulError</a>),
+    WrongMagicNmbr,
+    Engine,
+    LoadDataBase,
+    RemoveColumn,
+    AddColumn,
+    InvalidType,
+    InterruptedRead,
+    OutOfBounds,
+    MissingPrimaryKey,
+    InvalidColumn,
+    NotAPrimaryKey,
+    NoImplementation,
+    WrongLength,
+    NoOperationPossible,
+    InvalidState,
+    EndOfFile,
+    BeginningOfFile,
+    PrimaryKeyValueExists,
+    FoundNoPrimaryKey,
+    PrimaryKeyNotAllowed,
+}</pre><div class='docblock'><p>A database table</p>
+
+<p>Through this type, you can retreive certain meta information about the
+table (like column names, column types, storage engine, ...). It&#39;s <code>access</code>
+method locks the table globally and returns a storage engine to access
+the table data.</p>
+</div><h2 class='variants'>Variants</h2>
+<table><tr><td id='variant.Io'><code>Io</code></td><td></td></tr><tr><td id='variant.BinEn'><code>BinEn</code></td><td></td></tr><tr><td id='variant.BinDe'><code>BinDe</code></td><td></td></tr><tr><td id='variant.Byteorder'><code>Byteorder</code></td><td></td></tr><tr><td id='variant.Utf8Error'><code>Utf8Error</code></td><td></td></tr><tr><td id='variant.Utf8StrError'><code>Utf8StrError</code></td><td></td></tr><tr><td id='variant.NulError'><code>NulError</code></td><td></td></tr><tr><td id='variant.WrongMagicNmbr'><code>WrongMagicNmbr</code></td><td></td></tr><tr><td id='variant.Engine'><code>Engine</code></td><td></td></tr><tr><td id='variant.LoadDataBase'><code>LoadDataBase</code></td><td></td></tr><tr><td id='variant.RemoveColumn'><code>RemoveColumn</code></td><td></td></tr><tr><td id='variant.AddColumn'><code>AddColumn</code></td><td></td></tr><tr><td id='variant.InvalidType'><code>InvalidType</code></td><td></td></tr><tr><td id='variant.InterruptedRead'><code>InterruptedRead</code></td><td></td></tr><tr><td id='variant.OutOfBounds'><code>OutOfBounds</code></td><td></td></tr><tr><td id='variant.MissingPrimaryKey'><code>MissingPrimaryKey</code></td><td></td></tr><tr><td id='variant.InvalidColumn'><code>InvalidColumn</code></td><td></td></tr><tr><td id='variant.NotAPrimaryKey'><code>NotAPrimaryKey</code></td><td></td></tr><tr><td id='variant.NoImplementation'><code>NoImplementation</code></td><td></td></tr><tr><td id='variant.WrongLength'><code>WrongLength</code></td><td></td></tr><tr><td id='variant.NoOperationPossible'><code>NoOperationPossible</code></td><td></td></tr><tr><td id='variant.InvalidState'><code>InvalidState</code></td><td></td></tr><tr><td id='variant.EndOfFile'><code>EndOfFile</code></td><td></td></tr><tr><td id='variant.BeginningOfFile'><code>BeginningOfFile</code></td><td></td></tr><tr><td id='variant.PrimaryKeyValueExists'><code>PrimaryKeyValueExists</code></td><td></td></tr><tr><td id='variant.FoundNoPrimaryKey'><code>FoundNoPrimaryKey</code></td><td></td></tr><tr><td id='variant.PrimaryKeyNotAllowed'><code>PrimaryKeyNotAllowed</code></td><td></td></tr></table><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><code>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/convert/trait.From.html' title='core::convert::From'>From</a>&lt;<a class='struct' href='http://doc.rust-lang.org/nightly/std/ffi/c_str/struct.NulError.html' title='std::ffi::c_str::NulError'>NulError</a>&gt; for <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a></code></h3><div class='impl-items'><h4 id='method.from' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/convert/trait.From.html#method.from' class='fnname'>from</a>(err: <a class='struct' href='http://doc.rust-lang.org/nightly/std/ffi/c_str/struct.NulError.html' title='std::ffi::c_str::NulError'>NulError</a>) -&gt; <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a></code></h4>
+</div><h3 class='impl'><code>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/convert/trait.From.html' title='core::convert::From'>From</a>&lt;<a class='struct' href='http://doc.rust-lang.org/nightly/core/str/struct.Utf8Error.html' title='core::str::Utf8Error'>Utf8Error</a>&gt; for <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a></code></h3><div class='impl-items'><h4 id='method.from' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/convert/trait.From.html#method.from' class='fnname'>from</a>(err: <a class='struct' href='http://doc.rust-lang.org/nightly/core/str/struct.Utf8Error.html' title='core::str::Utf8Error'>Utf8Error</a>) -&gt; <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a></code></h4>
+</div><h3 class='impl'><code>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/convert/trait.From.html' title='core::convert::From'>From</a>&lt;<a class='struct' href='../../server/storage/struct.FromUtf8Error.html' title='server::storage::FromUtf8Error'>FromUtf8Error</a>&gt; for <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a></code></h3><div class='impl-items'><h4 id='method.from' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/convert/trait.From.html#method.from' class='fnname'>from</a>(err: <a class='struct' href='../../server/storage/struct.FromUtf8Error.html' title='server::storage::FromUtf8Error'>FromUtf8Error</a>) -&gt; <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a></code></h4>
+</div><h3 class='impl'><code>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/convert/trait.From.html' title='core::convert::From'>From</a>&lt;<a class='struct' href='http://doc.rust-lang.org/nightly/std/io/error/struct.Error.html' title='std::io::error::Error'>Error</a>&gt; for <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a></code></h3><div class='impl-items'><h4 id='method.from' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/convert/trait.From.html#method.from' class='fnname'>from</a>(err: <a class='struct' href='http://doc.rust-lang.org/nightly/std/io/error/struct.Error.html' title='std::io::error::Error'>Error</a>) -&gt; <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a></code></h4>
+</div><h3 class='impl'><code>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/convert/trait.From.html' title='core::convert::From'>From</a>&lt;<a class='enum' href='../../bincode/rustc_serialize/writer/enum.EncodingError.html' title='bincode::rustc_serialize::writer::EncodingError'>EncodingError</a>&gt; for <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a></code></h3><div class='impl-items'><h4 id='method.from' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/convert/trait.From.html#method.from' class='fnname'>from</a>(err: <a class='enum' href='../../bincode/rustc_serialize/writer/enum.EncodingError.html' title='bincode::rustc_serialize::writer::EncodingError'>EncodingError</a>) -&gt; <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a></code></h4>
+</div><h3 class='impl'><code>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/convert/trait.From.html' title='core::convert::From'>From</a>&lt;<a class='enum' href='../../bincode/rustc_serialize/reader/enum.DecodingError.html' title='bincode::rustc_serialize::reader::DecodingError'>DecodingError</a>&gt; for <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a></code></h3><div class='impl-items'><h4 id='method.from' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/convert/trait.From.html#method.from' class='fnname'>from</a>(err: <a class='enum' href='../../bincode/rustc_serialize/reader/enum.DecodingError.html' title='bincode::rustc_serialize::reader::DecodingError'>DecodingError</a>) -&gt; <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a></code></h4>
+</div><h3 class='impl'><code>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/convert/trait.From.html' title='core::convert::From'>From</a>&lt;<a class='enum' href='../../byteorder/new/enum.Error.html' title='byteorder::new::Error'>Error</a>&gt; for <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a></code></h3><div class='impl-items'><h4 id='method.from' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/convert/trait.From.html#method.from' class='fnname'>from</a>(err: <a class='enum' href='../../byteorder/new/enum.Error.html' title='byteorder::new::Error'>Error</a>) -&gt; <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a></code></h4>
+</div><h3 id='derived_implementations'>Derived Implementations </h3><h3 class='impl'><code>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='enum' href='../../server/storage/enum.Error.html' title='server::storage::Error'>Error</a></code></h3><div class='impl-items'><h4 id='method.fmt' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#method.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class='struct' href='http://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <div id="help" class="hidden">
+        <div>
+            <div class="shortcuts">
+                <h1>Keyboard Shortcuts</h1>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h1>Search Tricks</h1>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>typedef</code> (or
+                    <code>tdef</code>).
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code>)
+                </p>
+            </div>
+        </div>
+    </div>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "server";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script async src="../../search-index.js"></script>
+</body>
+</html>

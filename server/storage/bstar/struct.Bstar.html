@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Bstar` struct in crate `server`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Bstar">
+
+    <title>server::storage::bstar::Bstar - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../../main.css">
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <section class="sidebar">
+        
+        <p class='location'><a href='../../index.html'>server</a>::<wbr><a href='../index.html'>storage</a>::<wbr><a href='index.html'>bstar</a></p><script>window.sidebarCurrent = {name: 'Bstar', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </section>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../../index.html'>server</a>::<wbr><a href='../index.html'>storage</a>::<wbr><a href='index.html'>bstar</a>::<wbr><a class='struct' href=''>Bstar</a></span><span class='out-of-band'><span id='render-detail'>
+            <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                [<span class='inner'>&#x2212;</span>]
+            </a>
+        </span><a id='src-36155' class='srclink' href='../../../src/server/storage/bstar.rs.html#49-60' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct Bstar&lt;T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html' title='core::cmp::PartialOrd'>PartialOrd</a> + <a class='trait' href='../../../server/storage/bstar/trait.KnownSize.html' title='server::storage::bstar::KnownSize'>KnownSize</a>&gt; {
+    pub root: <a href='http://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a>,
+    pub elementcount: <a href='http://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a>,
+    pub order: <a href='http://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a>,
+    pub freeaddr: <a href='http://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a>,
+    pub eof: <a href='http://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a>,
+    pub allowduplicates: <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>,
+    pub target: <a class='struct' href='http://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>,
+    // some fields omitted
+}</pre><h2 class='fields'>Fields</h2>
+<table><tr class='stab '>
+                                  <td id='structfield.root'><code>root</code></td><td></td></tr><tr class='stab '>
+                                  <td id='structfield.elementcount'><code>elementcount</code></td><td></td></tr><tr class='stab '>
+                                  <td id='structfield.order'><code>order</code></td><td></td></tr><tr class='stab '>
+                                  <td id='structfield.freeaddr'><code>freeaddr</code></td><td></td></tr><tr class='stab '>
+                                  <td id='structfield.eof'><code>eof</code></td><td></td></tr><tr class='stab '>
+                                  <td id='structfield.allowduplicates'><code>allowduplicates</code></td><td></td></tr><tr class='stab '>
+                                  <td id='structfield.target'><code>target</code></td><td></td></tr></table><h2 id='methods'>Methods</h2><h3 class='impl'><code>impl&lt;T: <a class='trait' href='../../../server/storage/bstar/trait.KnownSize.html' title='server::storage::bstar::KnownSize'>KnownSize</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html' title='core::cmp::PartialOrd'>PartialOrd</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a>&gt; <a class='struct' href='../../../server/storage/bstar/struct.Bstar.html' title='server::storage::bstar::Bstar'>Bstar</a>&lt;T&gt;</code></h3><div class='impl-items'><h4 id='method.delete' class='method'><code>fn <a href='#method.delete' class='fnname'>delete</a>(name: &amp;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<h4 id='method.load' class='method'><code>fn <a href='#method.load' class='fnname'>load</a>(name: &amp;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='struct' href='../../../server/storage/bstar/struct.Bstar.html' title='server::storage::bstar::Bstar'>Bstar</a>&lt;T&gt;&gt;</code></h4>
+<div class='docblock'><p>Loads a Bstar object from the specified name/path</p>
+</div><h4 id='method.create' class='method'><code>fn <a href='#method.create' class='fnname'>create</a>(name: &amp;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, target: &amp;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, order: <a href='http://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a>) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='struct' href='../../../server/storage/bstar/struct.Bstar.html' title='server::storage::bstar::Bstar'>Bstar</a>&lt;T&gt;&gt;</code></h4>
+<div class='docblock'><p>Creates a new permanent Bstar object.
+target is the name of the table holding the data records,
+order*2 specifies the maximal amount of keys stored per node in the tree</p>
+</div><h4 id='method.reset' class='method'><code>fn <a href='#method.reset' class='fnname'>reset</a>(&amp;mut self) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>resets the tree to 0 elements</p>
+</div><h4 id='method.get_root' class='method'><code>fn <a href='#method.get_root' class='fnname'>get_root</a>(&amp;mut self) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='struct' href='../../../server/storage/bstar/struct.Bnode.html' title='server::storage::bstar::Bnode'>Bnode</a>&lt;T&gt;&gt;</code></h4>
+<div class='docblock'><p>returns the rootnode of the tree</p>
+</div><h4 id='method.debug_print' class='method'><code>fn <a href='#method.debug_print' class='fnname'>debug_print</a>(&amp;mut self) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>prints a debug version of the tree</p>
+</div><h4 id='method.lookup_keyaddr' class='method'><code>fn <a href='#method.lookup_keyaddr' class='fnname'>lookup_keyaddr</a>(&amp;mut self, key: T) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='../../../server/storage/bstar/struct.KeyAddr.html' title='server::storage::bstar::KeyAddr'>KeyAddr</a>&lt;T&gt;&gt;&gt;</code></h4>
+<div class='docblock'><p>searches for key in the tree and returns the KeyAddr object or None</p>
+</div><h4 id='method.insert_keyaddr' class='method'><code>fn <a href='#method.insert_keyaddr' class='fnname'>insert_keyaddr</a>(&amp;mut self, key: <a class='struct' href='../../../server/storage/bstar/struct.KeyAddr.html' title='server::storage::bstar::KeyAddr'>KeyAddr</a>&lt;T&gt;) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>&gt;</code></h4>
+<div class='docblock'><p>inserts a keyaddr object</p>
+</div><h4 id='method.delete_keyaddr' class='method'><code>fn <a href='#method.delete_keyaddr' class='fnname'>delete_keyaddr</a>(&amp;mut self, key: T) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='../../../server/storage/bstar/struct.KeyAddr.html' title='server::storage::bstar::KeyAddr'>KeyAddr</a>&lt;T&gt;&gt;&gt;</code></h4>
+<div class='docblock'><p>searches for the key and deletes and returns the keyaddr object</p>
+</div><h4 id='method.iter' class='method'><code>fn <a href='#method.iter' class='fnname'>iter</a>(&amp;mut self) -&gt; <a class='struct' href='../../../server/storage/bstar/struct.Bterator.html' title='server::storage::bstar::Bterator'>Bterator</a>&lt;T&gt;</code></h4>
+<div class='docblock'><p>returns an iterator for the elements of the tree</p>
+</div><h4 id='method.iter_options' class='method'><code>fn <a href='#method.iter_options' class='fnname'>iter_options</a>(&amp;mut self, direction: <a class='enum' href='../../../server/storage/bstar/enum.IterDirection.html' title='server::storage::bstar::IterDirection'>IterDirection</a>, key: <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='enum' href='../../../server/storage/bstar/enum.IterOption.html' title='server::storage::bstar::IterOption'>IterOption</a>&lt;T&gt;&gt;) -&gt; <a class='struct' href='../../../server/storage/bstar/struct.Bterator.html' title='server::storage::bstar::Bterator'>Bterator</a>&lt;T&gt;</code></h4>
+<div class='docblock'><p>returns a specific iterator moving in the specified direction
+if a key is given to the function with the Option to include or exclude it,
+the iterator will do so.
+It does not matter if the key is in the tree or not.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 id='derived_implementations'>Derived Implementations </h3><h3 class='impl'><code>impl&lt;T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html' title='core::cmp::PartialOrd'>PartialOrd</a> + <a class='trait' href='../../../server/storage/bstar/trait.KnownSize.html' title='server::storage::bstar::KnownSize'>KnownSize</a>&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='struct' href='../../../server/storage/bstar/struct.Bstar.html' title='server::storage::bstar::Bstar'>Bstar</a>&lt;T&gt;</code></h3><div class='impl-items'><h4 id='method.fmt' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#method.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class='struct' href='http://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <div id="help" class="hidden">
+        <div>
+            <div class="shortcuts">
+                <h1>Keyboard Shortcuts</h1>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h1>Search Tricks</h1>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>typedef</code> (or
+                    <code>tdef</code>).
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code>)
+                </p>
+            </div>
+        </div>
+    </div>
+
+    
+
+    <script>
+        window.rootPath = "../../../";
+        window.currentCrate = "server";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../../jquery.js"></script>
+    <script src="../../../main.js"></script>
+    
+    <script async src="../../../search-index.js"></script>
+</body>
+</html>

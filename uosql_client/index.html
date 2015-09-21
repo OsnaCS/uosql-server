@@ -34,7 +34,7 @@
             <div class="search-container">
                 <input class="search-input" name="search"
                        autocomplete="off"
-                       placeholder="Click or press 'S' to search, '?' for more options..."
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
                        type="search">
             </div>
         </form>
@@ -45,46 +45,101 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-0' class='srclink' href='../src/uosql_client/main.rs.html#1-213' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-0' class='srclink' href='../src/uosql_client/main.rs.html#1-813' title='goto source code'>[src]</a></span></h1>
 <div class='docblock'><p>Simple client program
 Establishes connection to server and sends login information</p>
-</div></table></section>
+</div><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+<table>
+                    <tr class=' module-item'>
+                        <td><a class='fn' href='fn.display.html'
+                               title='uosql_client::display'>display</a></td>
+                        <td class='docblock short'>
+                             <p>Display data from ResultSet.</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='fn' href='fn.display_seperator.html'
+                               title='uosql_client::display_seperator'>display_seperator</a></td>
+                        <td class='docblock short'>
+                             <p>Display separator line adjusted to given column sizes. (Pattern +-...-+)</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='fn' href='fn.read_address.html'
+                               title='uosql_client::read_address'>read_address</a></td>
+                        <td class='docblock short'>
+                             <p>Read IP-address to connect to from command-line.
+In case no input was given (&quot;\n&quot;) default address &quot;127.0.0.1&quot; is returned.</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='fn' href='fn.read_port.html'
+                               title='uosql_client::read_port'>read_port</a></td>
+                        <td class='docblock short'>
+                             <p>Read Port number to connect to from command-line.
+In case no input given (&quot;\n&quot;) default port &quot;4242&quot; is returned.</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='fn' href='fn.read_string.html'
+                               title='uosql_client::read_string'>read_string</a></td>
+                        <td class='docblock short'>
+                             <p>Read a string from command line. Return a valid string, else loop.</p>
+
+                        </td>
+                    </tr>
+                </table></section>
     <section id='search' class="content hidden"></section>
 
     <section class="footer"></section>
 
     <div id="help" class="hidden">
-        <div class="shortcuts">
-            <h1>Keyboard shortcuts</h1>
-            <dl>
-                <dt>?</dt>
-                <dd>Show this help dialog</dd>
-                <dt>S</dt>
-                <dd>Focus the search field</dd>
-                <dt>&larrb;</dt>
-                <dd>Move up in search results</dd>
-                <dt>&rarrb;</dt>
-                <dd>Move down in search results</dd>
-                <dt>&#9166;</dt>
-                <dd>Go to active search result</dd>
-            </dl>
-        </div>
-        <div class="infos">
-            <h1>Search tricks</h1>
-            <p>
-                Prefix searches with a type followed by a colon (e.g.
-                <code>fn:</code>) to restrict the search to a given type.
-            </p>
-            <p>
-                Accepted types are: <code>fn</code>, <code>mod</code>,
-                <code>struct</code>, <code>enum</code>,
-                <code>trait</code>, <code>typedef</code> (or
-                <code>tdef</code>).
-            </p>
-            <p>
-                Search functions by type signature (e.g.
-                <code>vec -> usize</code>)
-            </p>
+        <div>
+            <div class="shortcuts">
+                <h1>Keyboard Shortcuts</h1>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h1>Search Tricks</h1>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>typedef</code> (or
+                    <code>tdef</code>).
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code>)
+                </p>
+            </div>
         </div>
     </div>
 

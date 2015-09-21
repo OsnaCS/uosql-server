@@ -1,1 +1,1 @@
-initSidebarItems({});
+initSidebarItems({"enum":[["Error","Client specific Error definition."]],"mod":[["logger","Logging functionality"],["types",""]],"struct":[["Connection","Stores TCPConnection with a server. Contains IP, Port, Login data and greeting from server."]]});

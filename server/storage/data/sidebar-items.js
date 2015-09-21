@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["ResultSet","Encodable and decodable representation of a Rows object"],["Rows",""]]});

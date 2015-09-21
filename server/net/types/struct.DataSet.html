@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `DataSet` struct in crate `server`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, DataSet">
+
+    <title>server::net::types::DataSet - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../../main.css">
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <section class="sidebar">
+        
+        <p class='location'><a href='../../index.html'>server</a>::<wbr><a href='../index.html'>net</a>::<wbr><a href='index.html'>types</a></p><script>window.sidebarCurrent = {name: 'DataSet', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </section>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../../index.html'>server</a>::<wbr><a href='../index.html'>net</a>::<wbr><a href='index.html'>types</a>::<wbr><a class='struct' href=''>DataSet</a></span><span class='out-of-band'><span id='render-detail'>
+            <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                [<span class='inner'>&#x2212;</span>]
+            </a>
+        </span><a id='src-2195' class='srclink' href='../../../src/server/net/types.rs.html#12-17' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct DataSet {
+    // some fields omitted
+}</pre><div class='docblock'><p>Representation of a ResultSet with its useful functions to get data.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><code>impl <a class='struct' href='../../../server/net/types/struct.DataSet.html' title='server::net::types::DataSet'>DataSet</a></code></h3><div class='impl-items'><h4 id='method.get_col_cnt' class='method'><code>fn <a href='#method.get_col_cnt' class='fnname'>get_col_cnt</a>(&amp;self) -&gt; <a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></h4>
+<h4 id='method.data_empty' class='method'><code>fn <a href='#method.data_empty' class='fnname'>data_empty</a>(&amp;self) -&gt; <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<h4 id='method.metadata_empty' class='method'><code>fn <a href='#method.metadata_empty' class='fnname'>metadata_empty</a>(&amp;self) -&gt; <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<h4 id='method.get_col_idx' class='method'><code>fn <a href='#method.get_col_idx' class='fnname'>get_col_idx</a>(&amp;self, name: <a class='struct' href='http://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>&gt;</code></h4>
+<h4 id='method.get_col_name' class='method'><code>fn <a href='#method.get_col_name' class='fnname'>get_col_name</a>(&amp;mut self, idx: <a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;&amp;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>&gt;</code></h4>
+<h4 id='method.get_type_by_name' class='method'><code>fn <a href='#method.get_type_by_name' class='fnname'>get_type_by_name</a>(&amp;mut self, name: <a class='struct' href='http://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='enum' href='../../../server/storage/types/enum.SqlType.html' title='server::storage::types::SqlType'>SqlType</a>&gt;</code></h4>
+<h4 id='method.get_is_primary_by_name' class='method'><code>fn <a href='#method.get_is_primary_by_name' class='fnname'>get_is_primary_by_name</a>(&amp;mut self, name: <a class='struct' href='http://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>&gt;</code></h4>
+<h4 id='method.get_allow_null_by_name' class='method'><code>fn <a href='#method.get_allow_null_by_name' class='fnname'>get_allow_null_by_name</a>(&amp;mut self, name: <a class='struct' href='http://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>&gt;</code></h4>
+<h4 id='method.get_description_by_name' class='method'><code>fn <a href='#method.get_description_by_name' class='fnname'>get_description_by_name</a>(&amp;mut self, name: <a class='struct' href='http://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;&amp;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>&gt;</code></h4>
+<h4 id='method.get_type_by_idx' class='method'><code>fn <a href='#method.get_type_by_idx' class='fnname'>get_type_by_idx</a>(&amp;mut self, idx: <a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='enum' href='../../../server/storage/types/enum.SqlType.html' title='server::storage::types::SqlType'>SqlType</a>&gt;</code></h4>
+<h4 id='method.get_is_primary_key_by_idx' class='method'><code>fn <a href='#method.get_is_primary_key_by_idx' class='fnname'>get_is_primary_key_by_idx</a>(&amp;mut self, idx: <a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>&gt;</code></h4>
+<h4 id='method.get_allow_null_by_idx' class='method'><code>fn <a href='#method.get_allow_null_by_idx' class='fnname'>get_allow_null_by_idx</a>(&amp;mut self, idx: <a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>&gt;</code></h4>
+<h4 id='method.get_description_by_idx' class='method'><code>fn <a href='#method.get_description_by_idx' class='fnname'>get_description_by_idx</a>(&amp;mut self, idx: <a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;&amp;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>&gt;</code></h4>
+<h4 id='method.next_int_by_idx' class='method'><code>fn <a href='#method.next_int_by_idx' class='fnname'>next_int_by_idx</a>(&amp;mut self, idx: <a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a>&gt;</code></h4>
+<div class='docblock'><p>Return next data entry. next() has to be called first it initialize
+the pointer</p>
+</div><h4 id='method.next_bool_by_idx' class='method'><code>fn <a href='#method.next_bool_by_idx' class='fnname'>next_bool_by_idx</a>(&amp;mut self, idx: <a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>&gt;</code></h4>
+<div class='docblock'><p>Return next data entry. next() has to be called first it initialize
+the pointer</p>
+</div><h4 id='method.next_char_by_idx' class='method'><code>fn <a href='#method.next_char_by_idx' class='fnname'>next_char_by_idx</a>(&amp;mut self, idx: <a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='http://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>&gt;</code></h4>
+<div class='docblock'><p>Return next data entry. next() has to be called first it initialize
+the pointer</p>
+</div><h4 id='method.next_int_by_name' class='method'><code>fn <a href='#method.next_int_by_name' class='fnname'>next_int_by_name</a>(&amp;mut self, name: <a class='struct' href='http://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a>&gt;</code></h4>
+<div class='docblock'><p>Return next data entry. next() has to be called first it initialize
+the pointer</p>
+</div><h4 id='method.next_bool_by_name' class='method'><code>fn <a href='#method.next_bool_by_name' class='fnname'>next_bool_by_name</a>(&amp;mut self, name: <a class='struct' href='http://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>&gt;</code></h4>
+<div class='docblock'><p>Return next data entry. next() has to be called first it initialize
+the pointer</p>
+</div><h4 id='method.next_char_by_name' class='method'><code>fn <a href='#method.next_char_by_name' class='fnname'>next_char_by_name</a>(&amp;mut self, name: <a class='struct' href='http://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='http://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>&gt;</code></h4>
+<div class='docblock'><p>Return next data entry. next() has to be called first it initialize
+the pointer</p>
+</div><h4 id='method.first' class='method'><code>fn <a href='#method.first' class='fnname'>first</a>(&amp;mut self)</code></h4>
+<div class='docblock'><p>Set the data pointer before the first entry (pos = -1). next() has to be
+called first to start a new next... - loop</p>
+</div><h4 id='method.last' class='method'><code>fn <a href='#method.last' class='fnname'>last</a>(&amp;mut self)</code></h4>
+<div class='docblock'><p>Set the data pointer after the last entry . previous() has to be called
+first to start a new backward loop</p>
+</div><h4 id='method.next' class='method'><code>fn <a href='#method.next' class='fnname'>next</a>(&amp;mut self) -&gt; <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>Move the pointer to the next line. Return false if end of data, else true.</p>
+</div><h4 id='method.previous' class='method'><code>fn <a href='#method.previous' class='fnname'>previous</a>(&amp;mut self) -&gt; <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>Move the pointer to the previous line. Return false if end of data, else true.</p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <div id="help" class="hidden">
+        <div>
+            <div class="shortcuts">
+                <h1>Keyboard Shortcuts</h1>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h1>Search Tricks</h1>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>typedef</code> (or
+                    <code>tdef</code>).
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code>)
+                </p>
+            </div>
+        </div>
+    </div>
+
+    
+
+    <script>
+        window.rootPath = "../../../";
+        window.currentCrate = "server";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../../jquery.js"></script>
+    <script src="../../../main.js"></script>
+    
+    <script async src="../../../search-index.js"></script>
+</body>
+</html>

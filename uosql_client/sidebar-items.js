@@ -1,1 +1,1 @@
-initSidebarItems({});
+initSidebarItems({"fn":[["display","Display data from ResultSet."],["display_seperator","Display separator line adjusted to given column sizes. (Pattern +-...-+)"],["read_address","Read IP-address to connect to from command-line. In case no input was given (\"\\n\") default address \"127.0.0.1\" is returned."],["read_port","Read Port number to connect to from command-line. In case no input given (\"\\n\") default port \"4242\" is returned."],["read_string","Read a string from command line. Return a valid string, else loop."]]});

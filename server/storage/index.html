@@ -34,7 +34,7 @@
             <div class="search-container">
                 <input class="search-input" name="search"
                        autocomplete="off"
-                       placeholder="Click or press 'S' to search, '?' for more options..."
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
                        type="search">
             </div>
         </form>
@@ -45,13 +45,25 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-10522' class='srclink' href='../../src/server/storage/mod.rs.html#1-369' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-27239' class='srclink' href='../../src/server/storage/mod.rs.html#1-154' title='goto source code'>[src]</a></span></h1>
 <div class='docblock'><p>Storage Engine trait and several implementations</p>
-</div><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+</div><h2 id='reexports' class='section-header'><a href="#reexports">Reexports</a></h2>
+<table><tr><td><code>pub use self::<a class='mod'
+                                            href='./types/index.html'>types</a>::<a class='struct' href='../../server/storage/types/struct.Column.html' title='server::storage::types::Column'>Column</a>;</code></td></tr><tr><td><code>pub use self::<a class='mod'
+                                            href='./types/index.html'>types</a>::<a class='enum' href='../../server/storage/types/enum.SqlType.html' title='server::storage::types::SqlType'>SqlType</a>;</code></td></tr><tr><td><code>pub use self::<a class='mod'
+                                            href='./engine/index.html'>engine</a>::FlatFile;</code></td></tr><tr><td><code>pub use parse::<a class='mod' href='../../server/parse/ast/index.html' title='server::parse::ast'>ast</a>;</code></td></tr><tr><td><code>pub use parse::ast::<a class='enum' href='../../server/parse/ast/enum.CompType.html' title='server::parse::ast::CompType'>CompType</a>;</code></td></tr></table><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
 <table>
                     <tr class=' module-item'>
-                        <td><a class='mod' href='flatfile/index.html'
-                               title='server::storage::flatfile'>flatfile</a></td>
+                        <td><a class='mod' href='bstar/index.html'
+                               title='server::storage::bstar'>bstar</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='types/index.html'
+                               title='server::storage::types'>types</a></td>
                         <td class='docblock short'>
                              
                         </td>
@@ -59,17 +71,34 @@
                 </table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
 <table>
                     <tr class=' module-item'>
-                        <td><a class='struct' href='struct.Column.html'
-                               title='server::storage::Column'>Column</a></td>
+                        <td><a class='struct' href='struct.Database.html'
+                               title='server::storage::Database'>Database</a></td>
                         <td class='docblock short'>
-                             <p>A table column. Has a name, a type, ...</p>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.FromUtf8Error.html'
+                               title='server::storage::FromUtf8Error'>FromUtf8Error</a></td>
+                        <td class='docblock short'>
+                             <p>A possible error value from the <code>String::from_utf8</code> function.</p>
 
                         </td>
                     </tr>
                 
                     <tr class=' module-item'>
-                        <td><a class='struct' href='struct.Database.html'
-                               title='server::storage::Database'>Database</a></td>
+                        <td><a class='struct' href='struct.ResultSet.html'
+                               title='server::storage::ResultSet'>ResultSet</a></td>
+                        <td class='docblock short'>
+                             <p>Encodable and decodable representation of a Rows object</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.Rows.html'
+                               title='server::storage::Rows'>Rows</a></td>
                         <td class='docblock short'>
                              
                         </td>
@@ -83,28 +112,19 @@
 
                         </td>
                     </tr>
-                
+                </table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
+<table>
                     <tr class=' module-item'>
-                        <td><a class='struct' href='struct.TableMetaData.html'
-                               title='server::storage::TableMetaData'>TableMetaData</a></td>
+                        <td><a class='enum' href='enum.EngineID.html'
+                               title='server::storage::EngineID'>EngineID</a></td>
                         <td class='docblock short'>
                              
                         </td>
                     </tr>
-                </table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
-<table>
-                    <tr class=' module-item'>
-                        <td><a class='enum' href='enum.DataType.html'
-                               title='server::storage::DataType'>DataType</a></td>
-                        <td class='docblock short'>
-                             <p>A Enum for Datatypes (will be removed later)</p>
-
-                        </td>
-                    </tr>
                 
                     <tr class=' module-item'>
-                        <td><a class='enum' href='enum.DatabaseError.html'
-                               title='server::storage::DatabaseError'>DatabaseError</a></td>
+                        <td><a class='enum' href='enum.Error.html'
+                               title='server::storage::Error'>Error</a></td>
                         <td class='docblock short'>
                              <p>A database table</p>
 
@@ -126,37 +146,44 @@
     <section class="footer"></section>
 
     <div id="help" class="hidden">
-        <div class="shortcuts">
-            <h1>Keyboard shortcuts</h1>
-            <dl>
-                <dt>?</dt>
-                <dd>Show this help dialog</dd>
-                <dt>S</dt>
-                <dd>Focus the search field</dd>
-                <dt>&larrb;</dt>
-                <dd>Move up in search results</dd>
-                <dt>&rarrb;</dt>
-                <dd>Move down in search results</dd>
-                <dt>&#9166;</dt>
-                <dd>Go to active search result</dd>
-            </dl>
-        </div>
-        <div class="infos">
-            <h1>Search tricks</h1>
-            <p>
-                Prefix searches with a type followed by a colon (e.g.
-                <code>fn:</code>) to restrict the search to a given type.
-            </p>
-            <p>
-                Accepted types are: <code>fn</code>, <code>mod</code>,
-                <code>struct</code>, <code>enum</code>,
-                <code>trait</code>, <code>typedef</code> (or
-                <code>tdef</code>).
-            </p>
-            <p>
-                Search functions by type signature (e.g.
-                <code>vec -> usize</code>)
-            </p>
+        <div>
+            <div class="shortcuts">
+                <h1>Keyboard Shortcuts</h1>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h1>Search Tricks</h1>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>typedef</code> (or
+                    <code>tdef</code>).
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code>)
+                </p>
+            </div>
         </div>
     </div>
 
