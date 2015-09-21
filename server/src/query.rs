@@ -413,6 +413,9 @@ fn execute_select_stmt(&mut self, mut stmt: SelectStmt)
                         } else {
                             c.op
                         };
+                        if tableset.columns[index].sql_type != tableset.columns[index2].sql_type {
+                            return Err(ExecutionError::CompareDatatypeMissmatch)
+                        }
                         if wheretype == Where::Select {
                             Ok(try!(tableset.lookup(index,
                                 (&Vec::<u8>::new(), Some(index2)) , operator)))
