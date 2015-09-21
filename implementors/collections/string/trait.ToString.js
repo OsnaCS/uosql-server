@@ -1,5 +1,5 @@
 (function() {var implementors = {};
-implementors['regex_syntax'] = [];implementors['openssl'] = ["impl <a class='trait' href='http://doc.rust-lang.org/nightly/collections/string/trait.ToString.html' title='collections::string::ToString'>ToString</a> for <a class='enum' href='openssl/x509/extension/enum.Extension.html' title='openssl::x509::extension::Extension'>Extension</a>",];implementors['hyper'] = [];implementors['server'] = [];implementors['nickel'] = [];
+implementors['regex_syntax'] = [];implementors['openssl'] = ["impl <a class='trait' href='http://doc.rust-lang.org/nightly/collections/string/trait.ToString.html' title='collections::string::ToString'>ToString</a> for <a class='enum' href='openssl/x509/extension/enum.Extension.html' title='openssl::x509::extension::Extension'>Extension</a>",];implementors['hyper'] = [];implementors['nickel'] = [];implementors['server'] = [];
 
             if (window.register_implementors) {
                 window.register_implementors(implementors);
